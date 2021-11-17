@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="geth子命令源码分析：init、account">
+<meta property="og:url" content="http://example.com/2019/06/08/geth%E5%AD%90%E5%91%BD%E4%BB%A4%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%9Ainit%E3%80%81account/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/reinis-birznieks-646962-unsplash.jpg">
+<meta property="article:published_time" content="2019-06-08T08:10:56.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.488Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/reinis-birznieks-646962-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/06/08/geth%E5%AD%90%E5%91%BD%E4%BB%A4%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%9Ainit%E3%80%81account/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/06/08/geth%E5%AD%90%E5%91%BD%E4%BB%A4%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%9Ainit%E3%80%81account/","path":"2019/06/08/geth子命令源码分析：init、account/","title":"geth子命令源码分析：init、account"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>geth子命令源码分析：init、account | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#geth%E6%80%BB%E8%A7%88"><span class="nav-number">1.</span> <span class="nav-text">geth总览</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#init"><span class="nav-number">2.</span> <span class="nav-text">init</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#account"><span class="nav-number">3.</span> <span class="nav-text">account</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#list"><span class="nav-number">3.1.</span> <span class="nav-text">list</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#new"><span class="nav-number">3.2.</span> <span class="nav-text">new</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#update"><span class="nav-number">3.3.</span> <span class="nav-text">update</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#import"><span class="nav-number">3.4.</span> <span class="nav-text">import</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/06/08/geth%E5%AD%90%E5%91%BD%E4%BB%A4%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%9Ainit%E3%80%81account/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          geth子命令源码分析：init、account
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-08 16:10:56" itemprop="dateCreated datePublished" datetime="2019-06-08T16:10:56+08:00">2019-06-08</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go-ethereum%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">go-ethereum源码学习</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>23k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>21 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/reinis-birznieks-646962-unsplash.jpg"></p>
+<span id="more"></span>
+<h1 id="geth总览"><a href="#geth总览" class="headerlink" title="geth总览"></a>geth总览</h1><p>首先看一下geth这个程序的总体设计，其主要代码位于go-ethereum\cmd\geth里面，先看main.go,这是一个利用urfave/cli开发的命令行程序，关于这个库的简单介绍见<a target="_blank" rel="noopener" href="https://chenyaoyang.github.io/2019/02/21/go%E7%9A%84CLI%E7%A8%8B%E5%BA%8F%E5%BC%80%E5%8F%91/">这里</a>。在开头var代码块中中实例化了cli的app对象:</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">app <span class="token operator">=</span> utils<span class="token punctuation">.</span><span class="token function">NewApp</span><span class="token punctuation">(</span>gitCommit<span class="token punctuation">,</span> <span class="token string">"the go-ethereum command line interface"</span><span class="token punctuation">)</span>
+<span class="token keyword">func</span> <span class="token function">NewApp</span><span class="token punctuation">(</span>gitCommit<span class="token punctuation">,</span> usage <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token operator">*</span>cli<span class="token punctuation">.</span>App <span class="token punctuation">&#123;</span>
+	app <span class="token operator">:=</span> cli<span class="token punctuation">.</span><span class="token function">NewApp</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	app<span class="token punctuation">.</span>Name <span class="token operator">=</span> filepath<span class="token punctuation">.</span><span class="token function">Base</span><span class="token punctuation">(</span>os<span class="token punctuation">.</span>Args<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	app<span class="token punctuation">.</span>Author <span class="token operator">=</span> <span class="token string">""</span>
+	<span class="token comment">//app.Authors = nil</span>
+	app<span class="token punctuation">.</span>Email <span class="token operator">=</span> <span class="token string">""</span>
+	app<span class="token punctuation">.</span>Version <span class="token operator">=</span> params<span class="token punctuation">.</span>VersionWithMeta <span class="token comment">//见go-ethereum\params\version.go 生成版本号</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>gitCommit<span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token number">8</span> <span class="token punctuation">&#123;</span>
+		app<span class="token punctuation">.</span>Version <span class="token operator">+=</span> <span class="token string">"-"</span> <span class="token operator">+</span> gitCommit<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">8</span><span class="token punctuation">]</span> <span class="token comment">//gitCommit之前在编译时定义</span>
+	<span class="token punctuation">&#125;</span>
+	app<span class="token punctuation">.</span>Usage <span class="token operator">=</span> usage
+	<span class="token keyword">return</span> app
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>实例化之后，定义了大量flag，详细信息可以输入geth -h或到<a target="_blank" rel="noopener" href="https://github.com/ethereum/go-ethereum/wiki/Command-Line-Options">官方文档</a>查看。接下来，在init()方法中进行进一步初始化，添加了大量command及先前定义的flag。并定义了geth的action：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">app<span class="token punctuation">.</span>Action <span class="token operator">=</span> geth
+<span class="token keyword">func</span> <span class="token function">geth</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> args <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">Args</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">len</span><span class="token punctuation">(</span>args<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span> 
+		<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"invalid command: %q"</span><span class="token punctuation">,</span> args<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	node <span class="token operator">:=</span> <span class="token function">makeFullNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span> 
+	<span class="token keyword">defer</span> node<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token function">startNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> node<span class="token punctuation">)</span> 
+	node<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这是关于geth启动流程的代码，我们后续再分析。在init中还定义了app.Before用于初始化工作：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">app<span class="token punctuation">.</span>Before <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+		logdir <span class="token operator">:=</span> <span class="token string">""</span>
+		<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalBool</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>DashboardEnabledFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			logdir <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">&amp;</span>node<span class="token punctuation">.</span>Config<span class="token punctuation">&#123;</span>DataDir<span class="token punctuation">:</span> utils<span class="token punctuation">.</span><span class="token function">MakeDataDir</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ResolvePath</span><span class="token punctuation">(</span><span class="token string">"logs"</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> debug<span class="token punctuation">.</span><span class="token function">Setup</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> logdir<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> <span class="token comment">//见\go-ethereum\internal\debug\flags.go</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+		<span class="token comment">// Cap the cache allowance and tune the garbage collector</span>
+		<span class="token keyword">var</span> mem gosigar<span class="token punctuation">.</span>Mem <span class="token comment">//见\go-ethereum\vendor\github.com\elastic\gosigar\sigar_interface.go</span>
+		<span class="token comment">//获取系统内存信息</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> mem<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> <span class="token comment">//配置缓存</span>
+			allowance <span class="token operator">:=</span> <span class="token function">int</span><span class="token punctuation">(</span>mem<span class="token punctuation">.</span>Total <span class="token operator">/</span> <span class="token number">1024</span> <span class="token operator">/</span> <span class="token number">1024</span> <span class="token operator">/</span> <span class="token number">3</span><span class="token punctuation">)</span>
+			<span class="token keyword">if</span> cache <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalInt</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>CacheFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span><span class="token punctuation">;</span> cache <span class="token operator">></span> allowance <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Sanitizing cache to Go's GC limits"</span><span class="token punctuation">,</span> <span class="token string">"provided"</span><span class="token punctuation">,</span> cache<span class="token punctuation">,</span> <span class="token string">"updated"</span><span class="token punctuation">,</span> allowance<span class="token punctuation">)</span>
+				ctx<span class="token punctuation">.</span><span class="token function">GlobalSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>CacheFlag<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> strconv<span class="token punctuation">.</span><span class="token function">Itoa</span><span class="token punctuation">(</span>allowance<span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token comment">// Ensure Go's GC ignores the database cache for trigger percentage</span>
+		cache <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalInt</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>CacheFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+		gogc <span class="token operator">:=</span> math<span class="token punctuation">.</span><span class="token function">Max</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">,</span> math<span class="token punctuation">.</span><span class="token function">Min</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">,</span> <span class="token number">100</span><span class="token operator">/</span><span class="token punctuation">(</span><span class="token function">float64</span><span class="token punctuation">(</span>cache<span class="token punctuation">)</span><span class="token operator">/</span><span class="token number">1024</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+		log<span class="token punctuation">.</span><span class="token function">Debug</span><span class="token punctuation">(</span><span class="token string">"Sanitizing Go's GC trigger"</span><span class="token punctuation">,</span> <span class="token string">"percent"</span><span class="token punctuation">,</span> <span class="token function">int</span><span class="token punctuation">(</span>gogc<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		godebug<span class="token punctuation">.</span><span class="token function">SetGCPercent</span><span class="token punctuation">(</span><span class="token function">int</span><span class="token punctuation">(</span>gogc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">//设置垃圾收集目标百分比</span>
+
+		<span class="token comment">// Start metrics export if enabled</span>
+		utils<span class="token punctuation">.</span><span class="token function">SetupMetrics</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span> <span class="token comment">//默认是关闭的，开关在\go-ethereum\metrics\metrics.go</span>
+
+		<span class="token comment">// Start system runtime metrics collection</span>
+		<span class="token keyword">go</span> metrics<span class="token punctuation">.</span><span class="token function">CollectProcessMetrics</span><span class="token punctuation">(</span><span class="token number">3</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">)</span> <span class="token comment">//默认不会启动</span>
+
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>随后也定义了app.After逻辑</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">app<span class="token punctuation">.</span>After <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+		debug<span class="token punctuation">.</span><span class="token function">Exit</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		console<span class="token punctuation">.</span>Stdin<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 重置终端模式</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>接下来进入main函数</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> app<span class="token punctuation">.</span><span class="token function">Run</span><span class="token punctuation">(</span>os<span class="token punctuation">.</span>Args<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> <span class="token comment">//运行处理程序</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Fprintln</span><span class="token punctuation">(</span>os<span class="token punctuation">.</span>Stderr<span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		os<span class="token punctuation">.</span><span class="token function">Exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>到这里，geth大致轮廓就看完了，随后会根据用户输入的命令执行相应的逻辑。</p>
+<h1 id="init"><a href="#init" class="headerlink" title="init"></a>init</h1><p>这是初始化函数。源码中描述如下</p>
+<blockquote>
+<p>The init command initializes a new genesis block and definition for the network.<br>This is a destructive action and changes the network in which you will be<br>participating.<br>It expects the genesis file as argument.</p>
+</blockquote>
+<p>一般使用如下</p>
+<pre class="line-numbers language-none"><code class="language-none">geth init gen.json --datadir .&#x2F;mychain&#x2F;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>需要指定一个json文件，可选择指定数据存储路径。在源码定义如下：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\cmd\geth\chaincmd.go</span>
+initCommand <span class="token operator">=</span> cli<span class="token punctuation">.</span>Command<span class="token punctuation">&#123;</span>
+		Action<span class="token punctuation">:</span>    utils<span class="token punctuation">.</span><span class="token function">MigrateFlags</span><span class="token punctuation">(</span>initGenesis<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Name<span class="token punctuation">:</span>      <span class="token string">"init"</span><span class="token punctuation">,</span>
+		Usage<span class="token punctuation">:</span>     <span class="token string">"Bootstrap and initialize a new genesis block"</span><span class="token punctuation">,</span>
+		ArgsUsage<span class="token punctuation">:</span> <span class="token string">"&lt;genesisPath>"</span><span class="token punctuation">,</span>
+		Flags<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Flag<span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span>DataDirFlag<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		Category<span class="token punctuation">:</span> <span class="token string">"BLOCKCHAIN COMMANDS"</span><span class="token punctuation">,</span>
+		Description<span class="token punctuation">:</span> <span class="token string">`.....`</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可见子命令名就是init，没有别名，只有一个flag，定义如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\cmd\utils\flags.go</span>
+DataDirFlag <span class="token operator">=</span> DirectoryFlag<span class="token punctuation">&#123;</span>
+		Name<span class="token punctuation">:</span>  <span class="token string">"datadir"</span><span class="token punctuation">,</span>
+		Usage<span class="token punctuation">:</span> <span class="token string">"Data directory for the databases and keystore"</span><span class="token punctuation">,</span>
+		Value<span class="token punctuation">:</span> DirectoryString<span class="token punctuation">&#123;</span>node<span class="token punctuation">.</span><span class="token function">DefaultDataDir</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token comment">//获取默认目录，见go-ethereum\node\defaults.go</span>
+		<span class="token comment">//linux下为/home/&lt;user>/.ethereum</span>
+	<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>DirectoryString定义如下</p>
+<pre class="line-numbers language-none"><code class="language-none">&#x2F;&#x2F; go-ethereum\cmd\utils\customflags.go
+type DirectoryString struct &#123;
+	Value string
+&#125;
+
+func (self *DirectoryString) String() string &#123;
+	return self.Value
+&#125;
+
+func (self *DirectoryString) Set(value string) error &#123;
+	self.Value &#x3D; expandPath(value)
+	return nil
+&#125;
+func expandPath(p string) string &#123;
+	if strings.HasPrefix(p, &quot;~&#x2F;&quot;) || strings.HasPrefix(p, &quot;~\\&quot;) &#123;
+		if home :&#x3D; homeDir(); home !&#x3D; &quot;&quot; &#123;
+			p &#x3D; home + p[1:]
+		&#125;
+	&#125;
+	return path.Clean(os.ExpandEnv(p))
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>DataDirFlag作用主要就是定义初始化生成数据的存储路径，之后我们看initCommand的action，这个是关键：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">Action<span class="token punctuation">:</span>    utils<span class="token punctuation">.</span><span class="token function">MigrateFlags</span><span class="token punctuation">(</span>initGenesis<span class="token punctuation">)</span><span class="token punctuation">,</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>调用了utils.MigrateFlags，定义如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// \go-ethereum\cmd\utils\flags.go</span>
+<span class="token keyword">func</span> <span class="token function">MigrateFlags</span><span class="token punctuation">(</span>action <span class="token keyword">func</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token keyword">func</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> name <span class="token operator">:=</span> <span class="token keyword">range</span> ctx<span class="token punctuation">.</span><span class="token function">FlagNames</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">IsSet</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				ctx<span class="token punctuation">.</span><span class="token function">GlobalSet</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> ctx<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> <span class="token function">action</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个方法并没有什么实际意义，只是将所有用户指定的flag以GlobalSet的形式存了起来，主要逻辑在传递进来的action，我们这里传递的action如下：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\cmd\geth\chaincmd.go</span>
+<span class="token keyword">func</span> <span class="token function">initGenesis</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	genesisPath <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">Args</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">First</span><span class="token punctuation">(</span><span class="token punctuation">)</span> 
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>genesisPath<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Must supply path to genesis JSON file"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	file<span class="token punctuation">,</span> err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span>genesisPath<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to read genesis file: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	genesis <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>core<span class="token punctuation">.</span>Genesis<span class="token punctuation">)</span> 
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">NewDecoder</span><span class="token punctuation">(</span>file<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Decode</span><span class="token punctuation">(</span>genesis<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> 
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"invalid genesis file: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	stack <span class="token operator">:=</span> <span class="token function">makeFullNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span> 
+	<span class="token keyword">defer</span> stack<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> name <span class="token operator">:=</span> <span class="token keyword">range</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span><span class="token string">"chaindata"</span><span class="token punctuation">,</span> <span class="token string">"lightchaindata"</span><span class="token punctuation">&#125;</span> <span class="token punctuation">&#123;</span>
+		chaindb<span class="token punctuation">,</span> err <span class="token operator">:=</span> stack<span class="token punctuation">.</span><span class="token function">OpenDatabase</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> 
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to open database: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token boolean">_</span><span class="token punctuation">,</span> hash<span class="token punctuation">,</span> err <span class="token operator">:=</span> core<span class="token punctuation">.</span><span class="token function">SetupGenesisBlock</span><span class="token punctuation">(</span>chaindb<span class="token punctuation">,</span> genesis<span class="token punctuation">)</span> 
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to write genesis block: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Successfully wrote genesis state"</span><span class="token punctuation">,</span> <span class="token string">"database"</span><span class="token punctuation">,</span> name<span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> hash<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一行获取我们传入的json文件路径，然后代开这个文件，并解析成一个创世区块对象，中间有一步出错就返回。到这里已经根据我们的json文件创建了一个创世区块对象genesis。接着使用makeFullNode创建了一个节点，这个在分析geth启动流程时详细分析，这里只用知道他给我们返回一个node对象，代表一个节点。</p>
+<p>接着遍历了一个字符串数组，为的是创建数据库目录，用的是OpenDatabase方法，最终创建的两个数据库默认情况分别在datadir/geth/chaindata，datadir/geth/lightchaindata。之后调用SetupGenesisBlock方法写入创世区块，这个方法在我们F分析创世区块时分析过，就是把我们定义的创世区块内如写入数据库，最后打印log。</p>
+<h1 id="account"><a href="#account" class="headerlink" title="account"></a>account</h1><p>这是账户相关的自命令，定义如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">accountCommand <span class="token operator">=</span> cli<span class="token punctuation">.</span>Command<span class="token punctuation">&#123;</span>
+		Name<span class="token punctuation">:</span>     <span class="token string">"account"</span><span class="token punctuation">,</span>
+		Usage<span class="token punctuation">:</span>    <span class="token string">"Manage accounts"</span><span class="token punctuation">,</span>
+		Category<span class="token punctuation">:</span> <span class="token string">"ACCOUNT COMMANDS"</span><span class="token punctuation">,</span>
+		Description<span class="token punctuation">:</span> <span class="token string">``</span><span class="token punctuation">,</span>
+		Subcommands<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Command<span class="token punctuation">&#123;</span>
+			<span class="token punctuation">&#123;</span>
+				Name<span class="token punctuation">:</span>   <span class="token string">"list"</span><span class="token punctuation">,</span>
+				Usage<span class="token punctuation">:</span>  <span class="token string">"Print summary of existing accounts"</span><span class="token punctuation">,</span>
+				Action<span class="token punctuation">:</span> utils<span class="token punctuation">.</span><span class="token function">MigrateFlags</span><span class="token punctuation">(</span>accountList<span class="token punctuation">)</span><span class="token punctuation">,</span>
+				Flags<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Flag<span class="token punctuation">&#123;</span>
+					utils<span class="token punctuation">.</span>DataDirFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>KeyStoreDirFlag<span class="token punctuation">,</span>
+				<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+				Description<span class="token punctuation">:</span> <span class="token string">`...`</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#123;</span>
+				Name<span class="token punctuation">:</span>   <span class="token string">"new"</span><span class="token punctuation">,</span>
+				Usage<span class="token punctuation">:</span>  <span class="token string">"Create a new account"</span><span class="token punctuation">,</span>
+				Action<span class="token punctuation">:</span> utils<span class="token punctuation">.</span><span class="token function">MigrateFlags</span><span class="token punctuation">(</span>accountCreate<span class="token punctuation">)</span><span class="token punctuation">,</span>
+				Flags<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Flag<span class="token punctuation">&#123;</span>
+					utils<span class="token punctuation">.</span>DataDirFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>KeyStoreDirFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>PasswordFileFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>LightKDFFlag<span class="token punctuation">,</span>
+				<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+				Description<span class="token punctuation">:</span> <span class="token string">`...`</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#123;</span>
+				Name<span class="token punctuation">:</span>      <span class="token string">"update"</span><span class="token punctuation">,</span>
+				Usage<span class="token punctuation">:</span>     <span class="token string">"Update an existing account"</span><span class="token punctuation">,</span>
+				Action<span class="token punctuation">:</span>    utils<span class="token punctuation">.</span><span class="token function">MigrateFlags</span><span class="token punctuation">(</span>accountUpdate<span class="token punctuation">)</span><span class="token punctuation">,</span>
+				ArgsUsage<span class="token punctuation">:</span> <span class="token string">"&lt;address>"</span><span class="token punctuation">,</span>
+				Flags<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Flag<span class="token punctuation">&#123;</span>
+					utils<span class="token punctuation">.</span>DataDirFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>KeyStoreDirFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>LightKDFFlag<span class="token punctuation">,</span>
+				<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+				Description<span class="token punctuation">:</span> <span class="token string">`...`</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#123;</span>
+				Name<span class="token punctuation">:</span>   <span class="token string">"import"</span><span class="token punctuation">,</span>
+				Usage<span class="token punctuation">:</span>  <span class="token string">"Import a private key into a new account"</span><span class="token punctuation">,</span>
+				Action<span class="token punctuation">:</span> utils<span class="token punctuation">.</span><span class="token function">MigrateFlags</span><span class="token punctuation">(</span>accountImport<span class="token punctuation">)</span><span class="token punctuation">,</span>
+				Flags<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Flag<span class="token punctuation">&#123;</span>
+					utils<span class="token punctuation">.</span>DataDirFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>KeyStoreDirFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>PasswordFileFlag<span class="token punctuation">,</span>
+					utils<span class="token punctuation">.</span>LightKDFFlag<span class="token punctuation">,</span>
+				<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+				ArgsUsage<span class="token punctuation">:</span> <span class="token string">"&lt;keyFile>"</span><span class="token punctuation">,</span>
+				Description<span class="token punctuation">:</span> <span class="token string">`...`</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个命令的名称就是account，没有别名也没有直接的flag，但是有几个二级命令</p>
+<h2 id="list"><a href="#list" class="headerlink" title="list"></a>list</h2><p>这个命令的作用是列出所有的账户，有两个flag。DataDirFlag用来指定节点目录，使用–datadir指定；KeyStoreDirFlag用来指定秘钥存储路径，使用–keystoreh指定。改名了的动作如下，注意还是MigrateFlags包裹一个方法的形式，直接看动作</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">accountList</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	stack<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> <span class="token function">makeConfigNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	<span class="token keyword">var</span> index <span class="token builtin">int</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> wallet <span class="token operator">:=</span> <span class="token keyword">range</span> stack<span class="token punctuation">.</span><span class="token function">AccountManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Wallets</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> account <span class="token operator">:=</span> <span class="token keyword">range</span> wallet<span class="token punctuation">.</span><span class="token function">Accounts</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"Account #%d: &#123;%x&#125; %s\n"</span><span class="token punctuation">,</span> index<span class="token punctuation">,</span> account<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> <span class="token operator">&amp;</span>account<span class="token punctuation">.</span>URL<span class="token punctuation">)</span>
+			index<span class="token operator">++</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>很简单就是首先使用makeConfigNode构造一个节点，这里之所以不用makeFullNode是因为不必注册服务。之后获取节点的账户管理者，再获取所有钱包，遍历每个钱包的账户打印出来即可。</p>
+<h2 id="new"><a href="#new" class="headerlink" title="new"></a>new</h2><p>这是新建一个账户的命令，命令名就是new，有四个flag。前两个和list的一样。后面的，PasswordFileFlag是用来指定账户密码的文件，使用–password指定，默认为空。LightKDFFlag是表示是否要降低秘钥生成时cpu和ram的用量，是一个布尔类型，需要的话使用–lightkdf开启。我们接着看主要逻辑</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">accountCreate</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	cfg <span class="token operator">:=</span> gethConfig<span class="token punctuation">&#123;</span>Node<span class="token punctuation">:</span> <span class="token function">defaultNodeConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> file <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalString</span><span class="token punctuation">(</span>configFileFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span><span class="token punctuation">;</span> file <span class="token operator">!=</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> <span class="token function">loadConfig</span><span class="token punctuation">(</span>file<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"%v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	utils<span class="token punctuation">.</span><span class="token function">SetNodeConfig</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Node<span class="token punctuation">)</span>
+	scryptN<span class="token punctuation">,</span> scryptP<span class="token punctuation">,</span> keydir<span class="token punctuation">,</span> err <span class="token operator">:=</span> cfg<span class="token punctuation">.</span>Node<span class="token punctuation">.</span><span class="token function">AccountConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to read configuration: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	password <span class="token operator">:=</span> <span class="token function">getPassPhrase</span><span class="token punctuation">(</span><span class="token string">"Your new account is locked with a password. Please give a password. Do not forget this password."</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> utils<span class="token punctuation">.</span><span class="token function">MakePasswordList</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	address<span class="token punctuation">,</span> err <span class="token operator">:=</span> keystore<span class="token punctuation">.</span><span class="token function">StoreKey</span><span class="token punctuation">(</span>keydir<span class="token punctuation">,</span> password<span class="token punctuation">,</span> scryptN<span class="token punctuation">,</span> scryptP<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to create account: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"Address: &#123;%x&#125;\n"</span><span class="token punctuation">,</span> address<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>开始时施加在默认及用户配置，然后设置配置，接着调用AccountConfig获取了几个变量，分别是scrypt算法的N参数scryptN，scrypt算法的P参数scryptP，秘钥存储目录及错误。没有错误的话，调用getPassPhrase获取密码</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">getPassPhrase</span><span class="token punctuation">(</span>prompt <span class="token builtin">string</span><span class="token punctuation">,</span> confirmation <span class="token builtin">bool</span><span class="token punctuation">,</span> i <span class="token builtin">int</span><span class="token punctuation">,</span> passwords <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">string</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>passwords<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> i <span class="token operator">&lt;</span> <span class="token function">len</span><span class="token punctuation">(</span>passwords<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> passwords<span class="token punctuation">[</span>i<span class="token punctuation">]</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> passwords<span class="token punctuation">[</span><span class="token function">len</span><span class="token punctuation">(</span>passwords<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> prompt <span class="token operator">!=</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>prompt<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	password<span class="token punctuation">,</span> err <span class="token operator">:=</span> console<span class="token punctuation">.</span>Stdin<span class="token punctuation">.</span><span class="token function">PromptPassword</span><span class="token punctuation">(</span><span class="token string">"Passphrase: "</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to read passphrase: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> confirmation <span class="token punctuation">&#123;</span>
+		confirm<span class="token punctuation">,</span> err <span class="token operator">:=</span> console<span class="token punctuation">.</span>Stdin<span class="token punctuation">.</span><span class="token function">PromptPassword</span><span class="token punctuation">(</span><span class="token string">"Repeat passphrase: "</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to read passphrase confirmation: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> password <span class="token operator">!=</span> confirm <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Passphrases do not match"</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> password
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">MakePasswordList</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span> <span class="token punctuation">&#123;</span>
+	path <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalString</span><span class="token punctuation">(</span>PasswordFileFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> path <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	text<span class="token punctuation">,</span> err <span class="token operator">:=</span> ioutil<span class="token punctuation">.</span><span class="token function">ReadFile</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to read password file: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	lines <span class="token operator">:=</span> strings<span class="token punctuation">.</span><span class="token function">Split</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>text<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"\n"</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token keyword">range</span> lines <span class="token punctuation">&#123;</span>
+		lines<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> strings<span class="token punctuation">.</span><span class="token function">TrimRight</span><span class="token punctuation">(</span>lines<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"\r"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> lines
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>MakePasswordList方法是从我们用–password指定的文件中读取密码，该文件每一行表示一个密码。在getPassPhrase中，刚才读取的密码个数大于0，则取第一个作为密码。否则进入一个交互环境，让用户输入密码，用的是PromptPassword方法，之后还要输入第二遍进行验证。回到accountCreate中，取到密码后使用StoreKey生产账户</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">StoreKey</span><span class="token punctuation">(</span>dir<span class="token punctuation">,</span> auth <span class="token builtin">string</span><span class="token punctuation">,</span> scryptN<span class="token punctuation">,</span> scryptP <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token boolean">_</span><span class="token punctuation">,</span> a<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">storeNewKey</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>keyStorePassphrase<span class="token punctuation">&#123;</span>dir<span class="token punctuation">,</span> scryptN<span class="token punctuation">,</span> scryptP<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> rand<span class="token punctuation">.</span>Reader<span class="token punctuation">,</span> auth<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> a<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">storeNewKey</span><span class="token punctuation">(</span>ks keyStore<span class="token punctuation">,</span> rand io<span class="token punctuation">.</span>Reader<span class="token punctuation">,</span> auth <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>Key<span class="token punctuation">,</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	key<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">newKey</span><span class="token punctuation">(</span>rand<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	a <span class="token operator">:=</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span>
+		Address<span class="token punctuation">:</span> key<span class="token punctuation">.</span>Address<span class="token punctuation">,</span>
+		URL<span class="token punctuation">:</span>     accounts<span class="token punctuation">.</span>URL<span class="token punctuation">&#123;</span>Scheme<span class="token punctuation">:</span> KeyStoreScheme<span class="token punctuation">,</span> Path<span class="token punctuation">:</span> ks<span class="token punctuation">.</span><span class="token function">JoinPath</span><span class="token punctuation">(</span><span class="token function">keyFileName</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>Address<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> ks<span class="token punctuation">.</span><span class="token function">StoreKey</span><span class="token punctuation">(</span>a<span class="token punctuation">.</span>URL<span class="token punctuation">.</span>Path<span class="token punctuation">,</span> key<span class="token punctuation">,</span> auth<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">zeroKey</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> a<span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> key<span class="token punctuation">,</span> a<span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>直接调用的是storeNewKey方法，不要过创建了一个keyStorePassphrase对象，他实现了keyStore接口。storeNewKey方法先调用了newKey方法生成椭圆曲线加密的私钥，并转为Key对象</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">newKey</span><span class="token punctuation">(</span>rand io<span class="token punctuation">.</span>Reader<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>Key<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	privateKeyECDSA<span class="token punctuation">,</span> err <span class="token operator">:=</span> ecdsa<span class="token punctuation">.</span><span class="token function">GenerateKey</span><span class="token punctuation">(</span>crypto<span class="token punctuation">.</span><span class="token function">S256</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> rand<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token function">newKeyFromECDSA</span><span class="token punctuation">(</span>privateKeyECDSA<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">newKeyFromECDSA</span><span class="token punctuation">(</span>privateKeyECDSA <span class="token operator">*</span>ecdsa<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">)</span> <span class="token operator">*</span>Key <span class="token punctuation">&#123;</span>
+	id <span class="token operator">:=</span> uuid<span class="token punctuation">.</span><span class="token function">NewRandom</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	key <span class="token operator">:=</span> <span class="token operator">&amp;</span>Key<span class="token punctuation">&#123;</span>
+		Id<span class="token punctuation">:</span>         id<span class="token punctuation">,</span>
+		Address<span class="token punctuation">:</span>    crypto<span class="token punctuation">.</span><span class="token function">PubkeyToAddress</span><span class="token punctuation">(</span>privateKeyECDSA<span class="token punctuation">.</span>PublicKey<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		PrivateKey<span class="token punctuation">:</span> privateKeyECDSA<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> key
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>注意这里实际上也就是生成了账户地址，就是私钥对应的公钥，不过要简单处理一下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">PubkeyToAddress</span><span class="token punctuation">(</span>p ecdsa<span class="token punctuation">.</span>PublicKey<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Address <span class="token punctuation">&#123;</span>
+	pubBytes <span class="token operator">:=</span> <span class="token function">FromECDSAPub</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>p<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> common<span class="token punctuation">.</span><span class="token function">BytesToAddress</span><span class="token punctuation">(</span><span class="token function">Keccak256</span><span class="token punctuation">(</span>pubBytes<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">12</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">FromECDSAPub</span><span class="token punctuation">(</span>pub <span class="token operator">*</span>ecdsa<span class="token punctuation">.</span>PublicKey<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> pub <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token operator">||</span> pub<span class="token punctuation">.</span>X <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token operator">||</span> pub<span class="token punctuation">.</span>Y <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> elliptic<span class="token punctuation">.</span><span class="token function">Marshal</span><span class="token punctuation">(</span><span class="token function">S256</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> pub<span class="token punctuation">.</span>X<span class="token punctuation">,</span> pub<span class="token punctuation">.</span>Y<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先将公钥的的曲线方程、基点等参数以字节数组形式表示，然后将这个数组舍弃第一个字节后做一次Keccak256哈希运算，然后取后20个字节作为账户地址。</p>
+<p>newKeyFromECDSA最后返回的是一个Key对象，还包含一个16字节的随机编号。回到storeNewKey中，此时组建一个account对象，表示一个账户，包含该账户的地址以及url，格式是<code>keystore://文件名</code>。文件名如下生成</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">keyFileName</span><span class="token punctuation">(</span>keyAddr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token builtin">string</span> <span class="token punctuation">&#123;</span>
+	ts <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">UTC</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"UTC--%s--%s"</span><span class="token punctuation">,</span> <span class="token function">toISO8601</span><span class="token punctuation">(</span>ts<span class="token punctuation">)</span><span class="token punctuation">,</span> hex<span class="token punctuation">.</span><span class="token function">EncodeToString</span><span class="token punctuation">(</span>keyAddr<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>有两部分组成，第一部分是创建时间，第二部分是地址的16进制表示。接着调用StoreKey方法存储秘钥，这是keyStorePassphrase的方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>ks keyStorePassphrase<span class="token punctuation">)</span> <span class="token function">StoreKey</span><span class="token punctuation">(</span>filename <span class="token builtin">string</span><span class="token punctuation">,</span> key <span class="token operator">*</span>Key<span class="token punctuation">,</span> auth <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	keyjson<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">EncryptKey</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> auth<span class="token punctuation">,</span> ks<span class="token punctuation">.</span>scryptN<span class="token punctuation">,</span> ks<span class="token punctuation">.</span>scryptP<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// Write into temporary file</span>
+	tmpName<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">writeTemporaryKeyFile</span><span class="token punctuation">(</span>filename<span class="token punctuation">,</span> keyjson<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token operator">!</span>ks<span class="token punctuation">.</span>skipKeyFileVerification <span class="token punctuation">&#123;</span>
+		<span class="token comment">// Verify that we can decrypt the file with the given password.</span>
+		<span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">=</span> ks<span class="token punctuation">.</span><span class="token function">GetKey</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> tmpName<span class="token punctuation">,</span> auth<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			msg <span class="token operator">:=</span> <span class="token string">"An error was encountered when saving and verifying the keystore file. \n"</span> <span class="token operator">+</span>
+				<span class="token string">"This indicates that the keystore is corrupted. \n"</span> <span class="token operator">+</span>
+				<span class="token string">"The corrupted file is stored at \n%v\n"</span> <span class="token operator">+</span>
+				<span class="token string">"Please file a ticket at:\n\n"</span> <span class="token operator">+</span>
+				<span class="token string">"https://github.com/ethereum/go-ethereum/issues."</span> <span class="token operator">+</span>
+				<span class="token string">"The error was : %s"</span>
+			<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> tmpName<span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> os<span class="token punctuation">.</span><span class="token function">Rename</span><span class="token punctuation">(</span>tmpName<span class="token punctuation">,</span> filename<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一步加密秘钥，</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">EncryptKey</span><span class="token punctuation">(</span>key <span class="token operator">*</span>Key<span class="token punctuation">,</span> auth <span class="token builtin">string</span><span class="token punctuation">,</span> scryptN<span class="token punctuation">,</span> scryptP <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	keyBytes <span class="token operator">:=</span> math<span class="token punctuation">.</span><span class="token function">PaddedBigBytes</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">.</span>D<span class="token punctuation">,</span> <span class="token number">32</span><span class="token punctuation">)</span>
+	cryptoStruct<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">EncryptDataV3</span><span class="token punctuation">(</span>keyBytes<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span>auth<span class="token punctuation">)</span><span class="token punctuation">,</span> scryptN<span class="token punctuation">,</span> scryptP<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	encryptedKeyJSONV3 <span class="token operator">:=</span> encryptedKeyJSONV3<span class="token punctuation">&#123;</span>
+		hex<span class="token punctuation">.</span><span class="token function">EncodeToString</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>Address<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		cryptoStruct<span class="token punctuation">,</span>
+		key<span class="token punctuation">.</span>Id<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		version<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> json<span class="token punctuation">.</span><span class="token function">Marshal</span><span class="token punctuation">(</span>encryptedKeyJSONV3<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>PaddedBigBytes方法是将椭圆加密的私钥中D参数以大端形式表示成一个字节数组。然后加密数据，使用我们给账户指定的密码加密椭圆曲线的私钥中的D参数</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">EncryptDataV3</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> auth <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> scryptN<span class="token punctuation">,</span> scryptP <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>CryptoJSON<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+	salt <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token number">32</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> io<span class="token punctuation">.</span><span class="token function">ReadFull</span><span class="token punctuation">(</span>rand<span class="token punctuation">.</span>Reader<span class="token punctuation">,</span> salt<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">panic</span><span class="token punctuation">(</span><span class="token string">"reading from crypto/rand failed: "</span> <span class="token operator">+</span> err<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	derivedKey<span class="token punctuation">,</span> err <span class="token operator">:=</span> scrypt<span class="token punctuation">.</span><span class="token function">Key</span><span class="token punctuation">(</span>auth<span class="token punctuation">,</span> salt<span class="token punctuation">,</span> scryptN<span class="token punctuation">,</span> scryptR<span class="token punctuation">,</span> scryptP<span class="token punctuation">,</span> scryptDKLen<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> CryptoJSON<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	encryptKey <span class="token operator">:=</span> derivedKey<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">16</span><span class="token punctuation">]</span>
+
+	iv <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> aes<span class="token punctuation">.</span>BlockSize<span class="token punctuation">)</span> <span class="token comment">// 16</span>
+	<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> io<span class="token punctuation">.</span><span class="token function">ReadFull</span><span class="token punctuation">(</span>rand<span class="token punctuation">.</span>Reader<span class="token punctuation">,</span> iv<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">panic</span><span class="token punctuation">(</span><span class="token string">"reading from crypto/rand failed: "</span> <span class="token operator">+</span> err<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	cipherText<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">aesCTRXOR</span><span class="token punctuation">(</span>encryptKey<span class="token punctuation">,</span> data<span class="token punctuation">,</span> iv<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> CryptoJSON<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	mac <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">Keccak256</span><span class="token punctuation">(</span>derivedKey<span class="token punctuation">[</span><span class="token number">16</span><span class="token punctuation">:</span><span class="token number">32</span><span class="token punctuation">]</span><span class="token punctuation">,</span> cipherText<span class="token punctuation">)</span>
+
+	scryptParamsJSON <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span>
+	scryptParamsJSON<span class="token punctuation">[</span><span class="token string">"n"</span><span class="token punctuation">]</span> <span class="token operator">=</span> scryptN
+	scryptParamsJSON<span class="token punctuation">[</span><span class="token string">"r"</span><span class="token punctuation">]</span> <span class="token operator">=</span> scryptR
+	scryptParamsJSON<span class="token punctuation">[</span><span class="token string">"p"</span><span class="token punctuation">]</span> <span class="token operator">=</span> scryptP
+	scryptParamsJSON<span class="token punctuation">[</span><span class="token string">"dklen"</span><span class="token punctuation">]</span> <span class="token operator">=</span> scryptDKLen
+	scryptParamsJSON<span class="token punctuation">[</span><span class="token string">"salt"</span><span class="token punctuation">]</span> <span class="token operator">=</span> hex<span class="token punctuation">.</span><span class="token function">EncodeToString</span><span class="token punctuation">(</span>salt<span class="token punctuation">)</span>
+	cipherParamsJSON <span class="token operator">:=</span> cipherparamsJSON<span class="token punctuation">&#123;</span>
+		IV<span class="token punctuation">:</span> hex<span class="token punctuation">.</span><span class="token function">EncodeToString</span><span class="token punctuation">(</span>iv<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+
+	cryptoStruct <span class="token operator">:=</span> CryptoJSON<span class="token punctuation">&#123;</span>
+		Cipher<span class="token punctuation">:</span>       <span class="token string">"aes-128-ctr"</span><span class="token punctuation">,</span>
+		CipherText<span class="token punctuation">:</span>   hex<span class="token punctuation">.</span><span class="token function">EncodeToString</span><span class="token punctuation">(</span>cipherText<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		CipherParams<span class="token punctuation">:</span> cipherParamsJSON<span class="token punctuation">,</span>
+		KDF<span class="token punctuation">:</span>          keyHeaderKDF<span class="token punctuation">,</span>
+		KDFParams<span class="token punctuation">:</span>    scryptParamsJSON<span class="token punctuation">,</span>
+		MAC<span class="token punctuation">:</span>          hex<span class="token punctuation">.</span><span class="token function">EncodeToString</span><span class="token punctuation">(</span>mac<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> cryptoStruct<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这一段逻辑是这样的，首先生成一个salt，然后利用scrypt算法生成一个导出秘钥，scrypt算法是可以抗暴力破解的，我们利用得到的导出秘钥的前16位作为真正的加密秘钥encryptKey，然后使用CTR模式的AES加密算法，用encryptKey加密私钥的餐数D，最后得到密文。为了能正确解密，我们需要记录一些内容，如scrypt算法的参数N、R、P，导出秘钥的长度dklen，随机变量salt，CTR模式的初始化向量IV（实际是空数组），加密算法，密文，秘钥导出算法名称，最后还有一个mac用来验证数据完整及正确性，它是用导出秘钥的第16到第32字节以及密文经过Keccak256运算后的结果。</p>
+<p>最后返回一个cryptoStruct对象，他没有包含我们设定的密码。获得最后私钥的关键是获得导出秘钥，若没有密码，只能暴力破解，但是scrypt算法是可以抵抗暴力破解的，所以是比较安全的保存私钥方法。</p>
+<p>回到EncryptKey中，我们最后构建一个encryptedKeyJSONV3对象，他除了包含我们刚才与加密有关的cryptoStruct对象，还包含账户地址，ID以及版本号。最后将encryptedKeyJSONV3序列化位Json数据。</p>
+<p>回到StoreKey，经过EncryptKey方法我们已经得到了json数据，此时现将其写入一个临时文件中，然后根据需求进行解密测试</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>ks keyStorePassphrase<span class="token punctuation">)</span> <span class="token function">GetKey</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> filename<span class="token punctuation">,</span> auth <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>Key<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	keyjson<span class="token punctuation">,</span> err <span class="token operator">:=</span> ioutil<span class="token punctuation">.</span><span class="token function">ReadFile</span><span class="token punctuation">(</span>filename<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	key<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">DecryptKey</span><span class="token punctuation">(</span>keyjson<span class="token punctuation">,</span> auth<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> key<span class="token punctuation">.</span>Address <span class="token operator">!=</span> addr <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"key content mismatch: have account %x, want %x"</span><span class="token punctuation">,</span> key<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> addr<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> key<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">DecryptKey</span><span class="token punctuation">(</span>keyjson <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> auth <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>Key<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	m <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">Unmarshal</span><span class="token punctuation">(</span>keyjson<span class="token punctuation">,</span> <span class="token operator">&amp;</span>m<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">var</span> <span class="token punctuation">(</span>
+		keyBytes<span class="token punctuation">,</span> keyId <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+		err             <span class="token builtin">error</span>
+	<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> version<span class="token punctuation">,</span> ok <span class="token operator">:=</span> m<span class="token punctuation">[</span><span class="token string">"version"</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token builtin">string</span><span class="token punctuation">)</span><span class="token punctuation">;</span> ok <span class="token operator">&amp;&amp;</span> version <span class="token operator">==</span> <span class="token string">"1"</span> <span class="token punctuation">&#123;</span>
+		k <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>encryptedKeyJSONV1<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">Unmarshal</span><span class="token punctuation">(</span>keyjson<span class="token punctuation">,</span> k<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+		<span class="token punctuation">&#125;</span>
+		keyBytes<span class="token punctuation">,</span> keyId<span class="token punctuation">,</span> err <span class="token operator">=</span> <span class="token function">decryptKeyV1</span><span class="token punctuation">(</span>k<span class="token punctuation">,</span> auth<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		k <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>encryptedKeyJSONV3<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">Unmarshal</span><span class="token punctuation">(</span>keyjson<span class="token punctuation">,</span> k<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+		<span class="token punctuation">&#125;</span>
+		keyBytes<span class="token punctuation">,</span> keyId<span class="token punctuation">,</span> err <span class="token operator">=</span> <span class="token function">decryptKeyV3</span><span class="token punctuation">(</span>k<span class="token punctuation">,</span> auth<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	key <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">ToECDSAUnsafe</span><span class="token punctuation">(</span>keyBytes<span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>Key<span class="token punctuation">&#123;</span>
+		Id<span class="token punctuation">:</span>         uuid<span class="token punctuation">.</span><span class="token function">UUID</span><span class="token punctuation">(</span>keyId<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Address<span class="token punctuation">:</span>    crypto<span class="token punctuation">.</span><span class="token function">PubkeyToAddress</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>PublicKey<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		PrivateKey<span class="token punctuation">:</span> key<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">decryptKeyV3</span><span class="token punctuation">(</span>keyProtected <span class="token operator">*</span>encryptedKeyJSONV3<span class="token punctuation">,</span> auth <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>keyBytes <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> keyId <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> keyProtected<span class="token punctuation">.</span>Version <span class="token operator">!=</span> version <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Version not supported: %v"</span><span class="token punctuation">,</span> keyProtected<span class="token punctuation">.</span>Version<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	keyId <span class="token operator">=</span> uuid<span class="token punctuation">.</span><span class="token function">Parse</span><span class="token punctuation">(</span>keyProtected<span class="token punctuation">.</span>Id<span class="token punctuation">)</span>
+	plainText<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">DecryptDataV3</span><span class="token punctuation">(</span>keyProtected<span class="token punctuation">.</span>Crypto<span class="token punctuation">,</span> auth<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> plainText<span class="token punctuation">,</span> keyId<span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">DecryptDataV3</span><span class="token punctuation">(</span>cryptoJson CryptoJSON<span class="token punctuation">,</span> auth <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> cryptoJson<span class="token punctuation">.</span>Cipher <span class="token operator">!=</span> <span class="token string">"aes-128-ctr"</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Cipher not supported: %v"</span><span class="token punctuation">,</span> cryptoJson<span class="token punctuation">.</span>Cipher<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	mac<span class="token punctuation">,</span> err <span class="token operator">:=</span> hex<span class="token punctuation">.</span><span class="token function">DecodeString</span><span class="token punctuation">(</span>cryptoJson<span class="token punctuation">.</span>MAC<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	iv<span class="token punctuation">,</span> err <span class="token operator">:=</span> hex<span class="token punctuation">.</span><span class="token function">DecodeString</span><span class="token punctuation">(</span>cryptoJson<span class="token punctuation">.</span>CipherParams<span class="token punctuation">.</span>IV<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	cipherText<span class="token punctuation">,</span> err <span class="token operator">:=</span> hex<span class="token punctuation">.</span><span class="token function">DecodeString</span><span class="token punctuation">(</span>cryptoJson<span class="token punctuation">.</span>CipherText<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	derivedKey<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">getKDFKey</span><span class="token punctuation">(</span>cryptoJson<span class="token punctuation">,</span> auth<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	calculatedMAC <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">Keccak256</span><span class="token punctuation">(</span>derivedKey<span class="token punctuation">[</span><span class="token number">16</span><span class="token punctuation">:</span><span class="token number">32</span><span class="token punctuation">]</span><span class="token punctuation">,</span> cipherText<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token operator">!</span>bytes<span class="token punctuation">.</span><span class="token function">Equal</span><span class="token punctuation">(</span>calculatedMAC<span class="token punctuation">,</span> mac<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> ErrDecrypt
+	<span class="token punctuation">&#125;</span>
+
+	plainText<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">aesCTRXOR</span><span class="token punctuation">(</span>derivedKey<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">16</span><span class="token punctuation">]</span><span class="token punctuation">,</span> cipherText<span class="token punctuation">,</span> iv<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> plainText<span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>实际上就是加密的逆过程，先读取json数据，然后先根据版本号执行不同的解密算法，我们只看V3版本的。在decryptKeyV3中，先验证版本号，然后解析出ID，之后利用DecryptDataV3解密，解密过程是先判断加密方法是否正确，然后解析出mac、iv和密文。先利用getKDFKey方法获取导出秘钥，只有提供的密码正确才能得到正确结果，然后验证mac，在进行解密获得明文。根据明文获得秘钥，再根据秘钥获得公钥，最后组装一个Key对象。然后回到GetKey中，比较提供的地址和我们解密计算出的地址是否一样，一样的话返回key，没有错误表示解密验证成功。</p>
+<p>最后回到StoreKey将临时文件重命名为正式文件。这样新建一个账户的工作完成。回顾一下，实际上主要是随机生成了一对椭圆曲线秘钥，然后将私钥用我们提供的密码加密并保存成文件，生成秘钥的时候生成了地址。</p>
+<p>回到accountCreate中，StoreKey方法返回了账户地址，最后打印出来即可。</p>
+<h2 id="update"><a href="#update" class="headerlink" title="update"></a>update</h2><p>这是用来更新一个账户，所谓的更新是用新版本的存储为新版本的加密文件。有三个flag，分别是DataDirFlag，KeyStoreDirFlag以及LightKDFFlag，前面都介绍过了，注意该命令还要指定地址。使用格式如下：<code>geth account update [options] &lt;address&gt;</code>,我们看他的action</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">accountUpdate</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>ctx<span class="token punctuation">.</span><span class="token function">Args</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"No accounts specified to update"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	stack<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> <span class="token function">makeConfigNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	ks <span class="token operator">:=</span> stack<span class="token punctuation">.</span><span class="token function">AccountManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Backends</span><span class="token punctuation">(</span>keystore<span class="token punctuation">.</span>KeyStoreType<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>keystore<span class="token punctuation">.</span>KeyStore<span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> addr <span class="token operator">:=</span> <span class="token keyword">range</span> ctx<span class="token punctuation">.</span><span class="token function">Args</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		account<span class="token punctuation">,</span> oldPassword <span class="token operator">:=</span> <span class="token function">unlockAccount</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> ks<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+		newPassword <span class="token operator">:=</span> <span class="token function">getPassPhrase</span><span class="token punctuation">(</span><span class="token string">"Please give a new password. Do not forget this password."</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> ks<span class="token punctuation">.</span><span class="token function">Update</span><span class="token punctuation">(</span>account<span class="token punctuation">,</span> oldPassword<span class="token punctuation">,</span> newPassword<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Could not update the account: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先判断我们是否制定了地址参数，没有的话报错，接着获取了一个节点，然后从节点的账户管理者那里获取了一个keystore类型的backend。有可能我们指定了多个地址，所以遍历所有地址，首先对每个地址执行解锁操作</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">unlockAccount</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> ks <span class="token operator">*</span>keystore<span class="token punctuation">.</span>KeyStore<span class="token punctuation">,</span> address <span class="token builtin">string</span><span class="token punctuation">,</span> i <span class="token builtin">int</span><span class="token punctuation">,</span> passwords <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	account<span class="token punctuation">,</span> err <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">MakeAddress</span><span class="token punctuation">(</span>ks<span class="token punctuation">,</span> address<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Could not list accounts: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">for</span> trials <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> trials <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span> trials<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+		prompt <span class="token operator">:=</span> fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"Unlocking account %s | Attempt %d/%d"</span><span class="token punctuation">,</span> address<span class="token punctuation">,</span> trials<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">)</span>
+		password <span class="token operator">:=</span> <span class="token function">getPassPhrase</span><span class="token punctuation">(</span>prompt<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> i<span class="token punctuation">,</span> passwords<span class="token punctuation">)</span>
+		err <span class="token operator">=</span> ks<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span>account<span class="token punctuation">,</span> password<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Unlocked account"</span><span class="token punctuation">,</span> <span class="token string">"address"</span><span class="token punctuation">,</span> account<span class="token punctuation">.</span>Address<span class="token punctuation">.</span><span class="token function">Hex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token keyword">return</span> account<span class="token punctuation">,</span> password
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> err<span class="token punctuation">,</span> ok <span class="token operator">:=</span> err<span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>keystore<span class="token punctuation">.</span>AmbiguousAddrError<span class="token punctuation">)</span><span class="token punctuation">;</span> ok <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Unlocked account"</span><span class="token punctuation">,</span> <span class="token string">"address"</span><span class="token punctuation">,</span> account<span class="token punctuation">.</span>Address<span class="token punctuation">.</span><span class="token function">Hex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token keyword">return</span> <span class="token function">ambiguousAddrRecovery</span><span class="token punctuation">(</span>ks<span class="token punctuation">,</span> err<span class="token punctuation">,</span> password<span class="token punctuation">)</span><span class="token punctuation">,</span> password
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> keystore<span class="token punctuation">.</span>ErrDecrypt <span class="token punctuation">&#123;</span>
+			<span class="token keyword">break</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to unlock account %s (%v)"</span><span class="token punctuation">,</span> address<span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token string">""</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一步通过给定的字符串地址获取一个账户对象。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">MakeAddress</span><span class="token punctuation">(</span>ks <span class="token operator">*</span>keystore<span class="token punctuation">.</span>KeyStore<span class="token punctuation">,</span> account <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> common<span class="token punctuation">.</span><span class="token function">IsHexAddress</span><span class="token punctuation">(</span>account<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span>Address<span class="token punctuation">:</span> common<span class="token punctuation">.</span><span class="token function">HexToAddress</span><span class="token punctuation">(</span>account<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// Otherwise try to interpret the account as a keystore index</span>
+	index<span class="token punctuation">,</span> err <span class="token operator">:=</span> strconv<span class="token punctuation">.</span><span class="token function">Atoi</span><span class="token punctuation">(</span>account<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">||</span> index <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"invalid account address or index %q"</span><span class="token punctuation">,</span> account<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"-------------------------------------------------------------------"</span><span class="token punctuation">)</span>
+	log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Referring to accounts by order in the keystore folder is dangerous!"</span><span class="token punctuation">)</span>
+	log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"This functionality is deprecated and will be removed in the future!"</span><span class="token punctuation">)</span>
+	log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Please use explicit addresses! (can search via `geth account list`)"</span><span class="token punctuation">)</span>
+	log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"-------------------------------------------------------------------"</span><span class="token punctuation">)</span>
+
+	accs <span class="token operator">:=</span> ks<span class="token punctuation">.</span><span class="token function">Accounts</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>accs<span class="token punctuation">)</span> <span class="token operator">&lt;=</span> index <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"index %d higher than number of accounts %d"</span><span class="token punctuation">,</span> index<span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>accs<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> accs<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先判断是否是16进制格式，是的话直接构造一个Account对象返回。否则的话我们指定的地址可能是地址的索引，所以先尝试转为整数，然后获取所有账户，取对应索引的账户返回即可。</p>
+<p>回到unlockAccount中，接下来进行至多三次尝试，每次都是先利用getPassPhrase获取我们指定的密码，这个方法在前面创建新账户时提过。然后调用Unlock解锁账户。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>ks <span class="token operator">*</span>KeyStore<span class="token punctuation">)</span> <span class="token function">Unlock</span><span class="token punctuation">(</span>a accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> passphrase <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> ks<span class="token punctuation">.</span><span class="token function">TimedUnlock</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> passphrase<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ks <span class="token operator">*</span>KeyStore<span class="token punctuation">)</span> <span class="token function">TimedUnlock</span><span class="token punctuation">(</span>a accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> passphrase <span class="token builtin">string</span><span class="token punctuation">,</span> timeout time<span class="token punctuation">.</span>Duration<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	a<span class="token punctuation">,</span> key<span class="token punctuation">,</span> err <span class="token operator">:=</span> ks<span class="token punctuation">.</span><span class="token function">getDecryptedKey</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> passphrase<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	ks<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> ks<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	u<span class="token punctuation">,</span> found <span class="token operator">:=</span> ks<span class="token punctuation">.</span>unlocked<span class="token punctuation">[</span>a<span class="token punctuation">.</span>Address<span class="token punctuation">]</span>
+	<span class="token keyword">if</span> found <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> u<span class="token punctuation">.</span>abort <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">zeroKey</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">)</span>
+			<span class="token keyword">return</span> <span class="token boolean">nil</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>u<span class="token punctuation">.</span>abort<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> timeout <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		u <span class="token operator">=</span> <span class="token operator">&amp;</span>unlocked<span class="token punctuation">&#123;</span>Key<span class="token punctuation">:</span> key<span class="token punctuation">,</span> abort<span class="token punctuation">:</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span>
+		<span class="token keyword">go</span> ks<span class="token punctuation">.</span><span class="token function">expire</span><span class="token punctuation">(</span>a<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> u<span class="token punctuation">,</span> timeout<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		u <span class="token operator">=</span> <span class="token operator">&amp;</span>unlocked<span class="token punctuation">&#123;</span>Key<span class="token punctuation">:</span> key<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	ks<span class="token punctuation">.</span>unlocked<span class="token punctuation">[</span>a<span class="token punctuation">.</span>Address<span class="token punctuation">]</span> <span class="token operator">=</span> u
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>相关代码上面已经给出，Unlock中直接调用TimedUnlock方法，TimedUnlock中先用getDecryptedKey方法获取Key，这个在前面介绍新建账户是提到过，这里会得到一个Key对象，其中包含账户的地址及私钥。接着从unlocked中查找是否已解锁，unlocked中键就是账户地址，值是一个unlocked对象，其中存着账户的key。如果能从unlocked中找到对应地址的unlocked对象，则先判断unlocked对象的abort变量是否为空，是的话将私钥置为0，然后返回，否则关闭abort通道。如果找不到的话，先看参数中是否设置了timeout，是的话构造一个unlocked对象，之后执行expire，没有设置timeout时也只是简单构造一个unlocked对象，但不初始化其中的abort变量。最后将新建的unlocked对象放入unlocked中。expire的作用是设定一个定时器，在一段时间后将对应地址的unlocked对象从unlocked中删除，表示账户重新进入锁定状态。</p>
+<p>回到unlockAccount中，如果解锁成功，则返回账户对象和密码。回到accountUpdate中，这时要求提供一个新密码，然后执行update方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>ks <span class="token operator">*</span>KeyStore<span class="token punctuation">)</span> <span class="token function">Update</span><span class="token punctuation">(</span>a accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> passphrase<span class="token punctuation">,</span> newPassphrase <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	a<span class="token punctuation">,</span> key<span class="token punctuation">,</span> err <span class="token operator">:=</span> ks<span class="token punctuation">.</span><span class="token function">getDecryptedKey</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> passphrase<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> ks<span class="token punctuation">.</span>storage<span class="token punctuation">.</span><span class="token function">StoreKey</span><span class="token punctuation">(</span>a<span class="token punctuation">.</span>URL<span class="token punctuation">.</span>Path<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newPassphrase<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>相关逻辑都以分析过，只是先获取旧的Key然后用新的Key加密并保存密钥。</p>
+<h2 id="import"><a href="#import" class="headerlink" title="import"></a>import</h2><p>这个方法是导入一个密钥从而生成一个账户，他有4个flag前面都介绍过，这里不再介绍，他需要指定keyfile路径，执行的逻辑如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">accountImport</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	keyfile <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">Args</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">First</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>keyfile<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"keyfile must be given as argument"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	key<span class="token punctuation">,</span> err <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">LoadECDSA</span><span class="token punctuation">(</span>keyfile<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to load the private key: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	stack<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> <span class="token function">makeConfigNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	passphrase <span class="token operator">:=</span> <span class="token function">getPassPhrase</span><span class="token punctuation">(</span><span class="token string">"Your new account is locked with a password. Please give a password. Do not forget this password."</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> utils<span class="token punctuation">.</span><span class="token function">MakePasswordList</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	ks <span class="token operator">:=</span> stack<span class="token punctuation">.</span><span class="token function">AccountManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Backends</span><span class="token punctuation">(</span>keystore<span class="token punctuation">.</span>KeyStoreType<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>keystore<span class="token punctuation">.</span>KeyStore<span class="token punctuation">)</span>
+	acct<span class="token punctuation">,</span> err <span class="token operator">:=</span> ks<span class="token punctuation">.</span><span class="token function">ImportECDSA</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> passphrase<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Could not create the account: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"Address: &#123;%x&#125;\n"</span><span class="token punctuation">,</span> acct<span class="token punctuation">.</span>Address<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先从我们提供的文件中读取椭圆加密的私钥信息，然后构建一个节点，并取得我们给的密码，然后执行ImportECDSA</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>ks <span class="token operator">*</span>KeyStore<span class="token punctuation">)</span> <span class="token function">ImportECDSA</span><span class="token punctuation">(</span>priv <span class="token operator">*</span>ecdsa<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">,</span> passphrase <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	key <span class="token operator">:=</span> <span class="token function">newKeyFromECDSA</span><span class="token punctuation">(</span>priv<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> ks<span class="token punctuation">.</span>cache<span class="token punctuation">.</span><span class="token function">hasAddress</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"account already exists"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> ks<span class="token punctuation">.</span><span class="token function">importKey</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> passphrase<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">newKeyFromECDSA</span><span class="token punctuation">(</span>privateKeyECDSA <span class="token operator">*</span>ecdsa<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">)</span> <span class="token operator">*</span>Key <span class="token punctuation">&#123;</span>
+	id <span class="token operator">:=</span> uuid<span class="token punctuation">.</span><span class="token function">NewRandom</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	key <span class="token operator">:=</span> <span class="token operator">&amp;</span>Key<span class="token punctuation">&#123;</span>
+		Id<span class="token punctuation">:</span>         id<span class="token punctuation">,</span>
+		Address<span class="token punctuation">:</span>    crypto<span class="token punctuation">.</span><span class="token function">PubkeyToAddress</span><span class="token punctuation">(</span>privateKeyECDSA<span class="token punctuation">.</span>PublicKey<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		PrivateKey<span class="token punctuation">:</span> privateKeyECDSA<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> key
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ks <span class="token operator">*</span>KeyStore<span class="token punctuation">)</span> <span class="token function">importKey</span><span class="token punctuation">(</span>key <span class="token operator">*</span>Key<span class="token punctuation">,</span> passphrase <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	a <span class="token operator">:=</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span>Address<span class="token punctuation">:</span> key<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> URL<span class="token punctuation">:</span> accounts<span class="token punctuation">.</span>URL<span class="token punctuation">&#123;</span>Scheme<span class="token punctuation">:</span> KeyStoreScheme<span class="token punctuation">,</span> Path<span class="token punctuation">:</span> ks<span class="token punctuation">.</span>storage<span class="token punctuation">.</span><span class="token function">JoinPath</span><span class="token punctuation">(</span><span class="token function">keyFileName</span><span class="token punctuation">(</span>key<span class="token punctuation">.</span>Address<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> ks<span class="token punctuation">.</span>storage<span class="token punctuation">.</span><span class="token function">StoreKey</span><span class="token punctuation">(</span>a<span class="token punctuation">.</span>URL<span class="token punctuation">.</span>Path<span class="token punctuation">,</span> key<span class="token punctuation">,</span> passphrase<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	ks<span class="token punctuation">.</span>cache<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span>
+	ks<span class="token punctuation">.</span><span class="token function">refreshWallets</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> a<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>获得私钥后先构建一个key，这里自然也就生成了地址。先检查该地址是否已存在，是的话报错，否则执行importKey。importKey就是直接创建一个账户对象然后保存密钥文件。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/lu5uhEAy2lI">https://unsplash.com/photos/lu5uhEAy2lI</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/06/08/go-ethereum%E4%B8%ADgeth%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/" rel="prev" title="go-ethereum中geth启动流程分析">
+                  <i class="fa fa-chevron-left"></i> go-ethereum中geth启动流程分析
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/06/10/go-ethereum%E4%BA%A4%E6%98%93%E5%8F%91%E9%80%81%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="next" title="go-ethereum交易发送流程源码分析">
+                  go-ethereum交易发送流程源码分析 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

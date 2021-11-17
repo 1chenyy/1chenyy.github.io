@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="go-ethereum中Processor源码学习">
+<meta property="og:url" content="http://example.com/2019/06/08/go-ethereum%E4%B8%ADProcessor%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/lance-asper-346206-unsplash.jpg">
+<meta property="article:published_time" content="2019-06-08T07:57:23.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.488Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/lance-asper-346206-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/06/08/go-ethereum%E4%B8%ADProcessor%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/06/08/go-ethereum%E4%B8%ADProcessor%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/","path":"2019/06/08/go-ethereum中Processor源码学习/","title":"go-ethereum中Processor源码学习"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>go-ethereum中Processor源码学习 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#NewStateProcessor"><span class="nav-number">1.</span> <span class="nav-text">NewStateProcessor</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Process"><span class="nav-number">2.</span> <span class="nav-text">Process</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ApplyTransaction"><span class="nav-number">3.</span> <span class="nav-text">ApplyTransaction</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ApplyMessage"><span class="nav-number">4.</span> <span class="nav-text">ApplyMessage</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/06/08/go-ethereum%E4%B8%ADProcessor%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go-ethereum中Processor源码学习
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-08 15:57:23" itemprop="dateCreated datePublished" datetime="2019-06-08T15:57:23+08:00">2019-06-08</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go-ethereum%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">go-ethereum源码学习</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>6.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>6 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/lance-asper-346206-unsplash.jpg"></p>
+<span id="more"></span>
+<p>这是对交易进行处理的地方</p>
+<h1 id="NewStateProcessor"><a href="#NewStateProcessor" class="headerlink" title="NewStateProcessor"></a>NewStateProcessor</h1><p>先从BlockChain的构造方法中开始看，在创建了验证器之后，就创建了Processor</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">bc<span class="token punctuation">.</span><span class="token function">SetProcessor</span><span class="token punctuation">(</span><span class="token function">NewStateProcessor</span><span class="token punctuation">(</span>chainConfig<span class="token punctuation">,</span> bc<span class="token punctuation">,</span> engine<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">NewStateProcessor</span><span class="token punctuation">(</span>config <span class="token operator">*</span>params<span class="token punctuation">.</span>ChainConfig<span class="token punctuation">,</span> bc <span class="token operator">*</span>BlockChain<span class="token punctuation">,</span> engine consensus<span class="token punctuation">.</span>Engine<span class="token punctuation">)</span> <span class="token operator">*</span>StateProcessor <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>StateProcessor<span class="token punctuation">&#123;</span>
+		config<span class="token punctuation">:</span> config<span class="token punctuation">,</span>
+		bc<span class="token punctuation">:</span>     bc<span class="token punctuation">,</span>
+		engine<span class="token punctuation">:</span> engine<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可见直接创建了一个StateProcessor并返回，StateProcessor实现了Processor接口，这个接口只有一个方法：Process</p>
+<h1 id="Process"><a href="#Process" class="headerlink" title="Process"></a>Process</h1><p>在插入区块时，对每个要插入的区块都执行了该方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>p <span class="token operator">*</span>StateProcessor<span class="token punctuation">)</span> <span class="token function">Process</span><span class="token punctuation">(</span>block <span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">,</span> statedb <span class="token operator">*</span>state<span class="token punctuation">.</span>StateDB<span class="token punctuation">,</span> cfg vm<span class="token punctuation">.</span>Config<span class="token punctuation">)</span> <span class="token punctuation">(</span>types<span class="token punctuation">.</span>Receipts<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log<span class="token punctuation">,</span> <span class="token builtin">uint64</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">var</span> <span class="token punctuation">(</span>
+		receipts types<span class="token punctuation">.</span>Receipts
+		usedGas  <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span><span class="token builtin">uint64</span><span class="token punctuation">)</span>
+		header   <span class="token operator">=</span> block<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		allLogs  <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log
+		gp       <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>GasPool<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">AddGas</span><span class="token punctuation">(</span>block<span class="token punctuation">.</span><span class="token function">GasLimit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> p<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DAOForkSupport <span class="token operator">&amp;&amp;</span> p<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DAOForkBlock <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> p<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DAOForkBlock<span class="token punctuation">.</span><span class="token function">Cmp</span><span class="token punctuation">(</span>block<span class="token punctuation">.</span><span class="token function">Number</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		misc<span class="token punctuation">.</span><span class="token function">ApplyDAOHardFork</span><span class="token punctuation">(</span>statedb<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">for</span> i<span class="token punctuation">,</span> tx <span class="token operator">:=</span> <span class="token keyword">range</span> block<span class="token punctuation">.</span><span class="token function">Transactions</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		statedb<span class="token punctuation">.</span><span class="token function">Prepare</span><span class="token punctuation">(</span>tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> i<span class="token punctuation">)</span>
+		receipt<span class="token punctuation">,</span> <span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">ApplyTransaction</span><span class="token punctuation">(</span>p<span class="token punctuation">.</span>config<span class="token punctuation">,</span> p<span class="token punctuation">.</span>bc<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> gp<span class="token punctuation">,</span> statedb<span class="token punctuation">,</span> header<span class="token punctuation">,</span> tx<span class="token punctuation">,</span> usedGas<span class="token punctuation">,</span> cfg<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> err
+		<span class="token punctuation">&#125;</span>
+		receipts <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>receipts<span class="token punctuation">,</span> receipt<span class="token punctuation">)</span>
+		allLogs <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>allLogs<span class="token punctuation">,</span> receipt<span class="token punctuation">.</span>Logs<span class="token operator">...</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	p<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token function">Finalize</span><span class="token punctuation">(</span>p<span class="token punctuation">.</span>bc<span class="token punctuation">,</span> header<span class="token punctuation">,</span> statedb<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Transactions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Uncles</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> receipts<span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> receipts<span class="token punctuation">,</span> allLogs<span class="token punctuation">,</span> <span class="token operator">*</span>usedGas<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先初始化了一系列的变量，其中比较特殊的是gp，它是一个GasPool对象，用于追踪交易执行过程中gas的使用，实际上是一个uint64类型，封装了一些加减方法，初始值时区块的最大gas量。</p>
+<p>接着对DAO分叉进行了特殊处理，然后遍历区块中的每个交易，对于每个交易，先执行statedb的Prepare方法，表示准备处理交易，主要是存入交易hash和区块hash以及交易编号。接着调用ApplyTransaction处理交易，最后返回收据。并将每一个交易处理完之后的数据和日志收集起来在最后返回。处理完所有交易后调用engine的Finalize方法发放奖励。</p>
+<h1 id="ApplyTransaction"><a href="#ApplyTransaction" class="headerlink" title="ApplyTransaction"></a>ApplyTransaction</h1><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">ApplyTransaction</span><span class="token punctuation">(</span>config <span class="token operator">*</span>params<span class="token punctuation">.</span>ChainConfig<span class="token punctuation">,</span> bc ChainContext<span class="token punctuation">,</span> author <span class="token operator">*</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> gp <span class="token operator">*</span>GasPool<span class="token punctuation">,</span> statedb <span class="token operator">*</span>state<span class="token punctuation">.</span>StateDB<span class="token punctuation">,</span> header <span class="token operator">*</span>types<span class="token punctuation">.</span>Header<span class="token punctuation">,</span> tx <span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">,</span> usedGas <span class="token operator">*</span><span class="token builtin">uint64</span><span class="token punctuation">,</span> cfg vm<span class="token punctuation">.</span>Config<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Receipt<span class="token punctuation">,</span> <span class="token builtin">uint64</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	msg<span class="token punctuation">,</span> err <span class="token operator">:=</span> tx<span class="token punctuation">.</span><span class="token function">AsMessage</span><span class="token punctuation">(</span>types<span class="token punctuation">.</span><span class="token function">MakeSigner</span><span class="token punctuation">(</span>config<span class="token punctuation">,</span> header<span class="token punctuation">.</span>Number<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	context <span class="token operator">:=</span> <span class="token function">NewEVMContext</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> header<span class="token punctuation">,</span> bc<span class="token punctuation">,</span> author<span class="token punctuation">)</span>
+
+	vmenv <span class="token operator">:=</span> vm<span class="token punctuation">.</span><span class="token function">NewEVM</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> statedb<span class="token punctuation">,</span> config<span class="token punctuation">,</span> cfg<span class="token punctuation">)</span>
+
+	<span class="token boolean">_</span><span class="token punctuation">,</span> gas<span class="token punctuation">,</span> failed<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">ApplyMessage</span><span class="token punctuation">(</span>vmenv<span class="token punctuation">,</span> msg<span class="token punctuation">,</span> gp<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">var</span> root <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+	<span class="token keyword">if</span> config<span class="token punctuation">.</span><span class="token function">IsByzantium</span><span class="token punctuation">(</span>header<span class="token punctuation">.</span>Number<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		statedb<span class="token punctuation">.</span><span class="token function">Finalise</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		root <span class="token operator">=</span> statedb<span class="token punctuation">.</span><span class="token function">IntermediateRoot</span><span class="token punctuation">(</span>config<span class="token punctuation">.</span><span class="token function">IsEIP158</span><span class="token punctuation">(</span>header<span class="token punctuation">.</span>Number<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token operator">*</span>usedGas <span class="token operator">+=</span> gas
+
+	receipt <span class="token operator">:=</span> types<span class="token punctuation">.</span><span class="token function">NewReceipt</span><span class="token punctuation">(</span>root<span class="token punctuation">,</span> failed<span class="token punctuation">,</span> <span class="token operator">*</span>usedGas<span class="token punctuation">)</span>
+	receipt<span class="token punctuation">.</span>TxHash <span class="token operator">=</span> tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	receipt<span class="token punctuation">.</span>GasUsed <span class="token operator">=</span> gas
+
+	<span class="token keyword">if</span> msg<span class="token punctuation">.</span><span class="token function">To</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		receipt<span class="token punctuation">.</span>ContractAddress <span class="token operator">=</span> crypto<span class="token punctuation">.</span><span class="token function">CreateAddress</span><span class="token punctuation">(</span>vmenv<span class="token punctuation">.</span>Context<span class="token punctuation">.</span>Origin<span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">Nonce</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	receipt<span class="token punctuation">.</span>Logs <span class="token operator">=</span> statedb<span class="token punctuation">.</span><span class="token function">GetLogs</span><span class="token punctuation">(</span>tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	receipt<span class="token punctuation">.</span>Bloom <span class="token operator">=</span> types<span class="token punctuation">.</span><span class="token function">CreateBloom</span><span class="token punctuation">(</span>types<span class="token punctuation">.</span>Receipts<span class="token punctuation">&#123;</span>receipt<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> receipt<span class="token punctuation">,</span> gas<span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一行调用了transaction的AsMessage方法。这是将一个交易以message的形式表示。接着构建了EVM上下文环境和EVM。然后调用了ApplyMessage方法，这是真正执行交易的地方，详见后文，执行完成后返回了gas的使用数量以及成功与否。如果没有错误，表示交易执行完毕。接着更新了状态树，然后创建了一个收据，存储着状态树中间状态的根值，使用的gas，交易hash，另外如果是创建合约的交易还存储合约地址等信息。</p>
+<h1 id="ApplyMessage"><a href="#ApplyMessage" class="headerlink" title="ApplyMessage"></a>ApplyMessage</h1><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">ApplyMessage</span><span class="token punctuation">(</span>evm <span class="token operator">*</span>vm<span class="token punctuation">.</span>EVM<span class="token punctuation">,</span> msg Message<span class="token punctuation">,</span> gp <span class="token operator">*</span>GasPool<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">uint64</span><span class="token punctuation">,</span> <span class="token builtin">bool</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">NewStateTransition</span><span class="token punctuation">(</span>evm<span class="token punctuation">,</span> msg<span class="token punctuation">,</span> gp<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">TransitionDb</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>这里先利用NewStateTransition构造了StateTransition对象</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">NewStateTransition</span><span class="token punctuation">(</span>evm <span class="token operator">*</span>vm<span class="token punctuation">.</span>EVM<span class="token punctuation">,</span> msg Message<span class="token punctuation">,</span> gp <span class="token operator">*</span>GasPool<span class="token punctuation">)</span> <span class="token operator">*</span>StateTransition <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>StateTransition<span class="token punctuation">&#123;</span>
+		gp<span class="token punctuation">:</span>       gp<span class="token punctuation">,</span>
+		evm<span class="token punctuation">:</span>      evm<span class="token punctuation">,</span>
+		msg<span class="token punctuation">:</span>      msg<span class="token punctuation">,</span>
+		gasPrice<span class="token punctuation">:</span> msg<span class="token punctuation">.</span><span class="token function">GasPrice</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		value<span class="token punctuation">:</span>    msg<span class="token punctuation">.</span><span class="token function">Value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		data<span class="token punctuation">:</span>     msg<span class="token punctuation">.</span><span class="token function">Data</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		state<span class="token punctuation">:</span>    evm<span class="token punctuation">.</span>StateDB<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>然后调用了TransitionDb方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>st <span class="token operator">*</span>StateTransition<span class="token punctuation">)</span> <span class="token function">TransitionDb</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>ret <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> usedGas <span class="token builtin">uint64</span><span class="token punctuation">,</span> failed <span class="token builtin">bool</span><span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> err <span class="token operator">=</span> st<span class="token punctuation">.</span><span class="token function">preCheck</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	msg <span class="token operator">:=</span> st<span class="token punctuation">.</span>msg
+	sender <span class="token operator">:=</span> vm<span class="token punctuation">.</span><span class="token function">AccountRef</span><span class="token punctuation">(</span>msg<span class="token punctuation">.</span><span class="token function">From</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	homestead <span class="token operator">:=</span> st<span class="token punctuation">.</span>evm<span class="token punctuation">.</span><span class="token function">ChainConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">IsHomestead</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>evm<span class="token punctuation">.</span>BlockNumber<span class="token punctuation">)</span>
+	contractCreation <span class="token operator">:=</span> msg<span class="token punctuation">.</span><span class="token function">To</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token boolean">nil</span>
+
+	gas<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">IntrinsicGas</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>data<span class="token punctuation">,</span> contractCreation<span class="token punctuation">,</span> homestead<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">=</span> st<span class="token punctuation">.</span><span class="token function">useGas</span><span class="token punctuation">(</span>gas<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">var</span> <span class="token punctuation">(</span>
+		evm <span class="token operator">=</span> st<span class="token punctuation">.</span>evm
+		vmerr <span class="token builtin">error</span>
+	<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> contractCreation <span class="token punctuation">&#123;</span>
+		ret<span class="token punctuation">,</span> <span class="token boolean">_</span><span class="token punctuation">,</span> st<span class="token punctuation">.</span>gas<span class="token punctuation">,</span> vmerr <span class="token operator">=</span> evm<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span>sender<span class="token punctuation">,</span> st<span class="token punctuation">.</span>data<span class="token punctuation">,</span> st<span class="token punctuation">.</span>gas<span class="token punctuation">,</span> st<span class="token punctuation">.</span>value<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">SetNonce</span><span class="token punctuation">(</span>msg<span class="token punctuation">.</span><span class="token function">From</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">GetNonce</span><span class="token punctuation">(</span>sender<span class="token punctuation">.</span><span class="token function">Address</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span>
+		ret<span class="token punctuation">,</span> st<span class="token punctuation">.</span>gas<span class="token punctuation">,</span> vmerr <span class="token operator">=</span> evm<span class="token punctuation">.</span><span class="token function">Call</span><span class="token punctuation">(</span>sender<span class="token punctuation">,</span> st<span class="token punctuation">.</span><span class="token function">to</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> st<span class="token punctuation">.</span>data<span class="token punctuation">,</span> st<span class="token punctuation">.</span>gas<span class="token punctuation">,</span> st<span class="token punctuation">.</span>value<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> vmerr <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Debug</span><span class="token punctuation">(</span><span class="token string">"VM returned with error"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> vmerr<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> vmerr <span class="token operator">==</span> vm<span class="token punctuation">.</span>ErrInsufficientBalance <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> vmerr
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	st<span class="token punctuation">.</span><span class="token function">refundGas</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">AddBalance</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>evm<span class="token punctuation">.</span>Coinbase<span class="token punctuation">,</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Mul</span><span class="token punctuation">(</span><span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetUint64</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span><span class="token function">gasUsed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> st<span class="token punctuation">.</span>gasPrice<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> ret<span class="token punctuation">,</span> st<span class="token punctuation">.</span><span class="token function">gasUsed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> vmerr <span class="token operator">!=</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一步进行的预检查：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>st <span class="token operator">*</span>StateTransition<span class="token punctuation">)</span> <span class="token function">preCheck</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">CheckNonce</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		nonce <span class="token operator">:=</span> st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">GetNonce</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">From</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> nonce <span class="token operator">&lt;</span> st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">Nonce</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> ErrNonceTooHigh
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> nonce <span class="token operator">></span> st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">Nonce</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> ErrNonceTooLow
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> st<span class="token punctuation">.</span><span class="token function">buyGas</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>st <span class="token operator">*</span>StateTransition<span class="token punctuation">)</span> <span class="token function">buyGas</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	mgval <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Mul</span><span class="token punctuation">(</span><span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetUint64</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">Gas</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> st<span class="token punctuation">.</span>gasPrice<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">GetBalance</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">From</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Cmp</span><span class="token punctuation">(</span>mgval<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> errInsufficientBalanceForGas
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> st<span class="token punctuation">.</span>gp<span class="token punctuation">.</span><span class="token function">SubGas</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">Gas</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	st<span class="token punctuation">.</span>gas <span class="token operator">+=</span> st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">Gas</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	st<span class="token punctuation">.</span>initialGas <span class="token operator">=</span> st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">Gas</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">SubBalance</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">From</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> mgval<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里主要是检查nonce。然后利用buyGas购买了gas，这里首先计算总共的金额，然后判断账户金额是否足够，然后在gp中记录所用的gas，并更新StateTransition的gas和initialGas字段，最后从账户中减去对应的金额。这里的gas是指gasLimit，也就是需要保证账户中至少有gasLimit*gasPrice余额，才能继续交易。之后在StateTransition的gas字段记录最大gas量</p>
+<p>接下来记录了交易的发送者，并根据接受者是否为空判断是否是合约创建交易。接着计算需要消耗的gas</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">IntrinsicGas</span><span class="token punctuation">(</span>data <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> contractCreation<span class="token punctuation">,</span> homestead <span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">uint64</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> contractCreation <span class="token operator">&amp;&amp;</span> homestead <span class="token punctuation">&#123;</span>
+		gas <span class="token operator">=</span> params<span class="token punctuation">.</span>TxGasContractCreation
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		gas <span class="token operator">=</span> params<span class="token punctuation">.</span>TxGas
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">// Zero and non-zero bytes are priced differently</span>
+		<span class="token keyword">var</span> nz <span class="token builtin">uint64</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> byt <span class="token operator">:=</span> <span class="token keyword">range</span> data <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> byt <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+				nz<span class="token operator">++</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>math<span class="token punctuation">.</span>MaxUint64<span class="token operator">-</span>gas<span class="token punctuation">)</span><span class="token operator">/</span>params<span class="token punctuation">.</span>TxDataNonZeroGas <span class="token operator">&lt;</span> nz <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">,</span> vm<span class="token punctuation">.</span>ErrOutOfGas
+		<span class="token punctuation">&#125;</span>
+		gas <span class="token operator">+=</span> nz <span class="token operator">*</span> params<span class="token punctuation">.</span>TxDataNonZeroGas
+
+		z <span class="token operator">:=</span> <span class="token function">uint64</span><span class="token punctuation">(</span><span class="token function">len</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">-</span> nz
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>math<span class="token punctuation">.</span>MaxUint64<span class="token operator">-</span>gas<span class="token punctuation">)</span><span class="token operator">/</span>params<span class="token punctuation">.</span>TxDataZeroGas <span class="token operator">&lt;</span> z <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">,</span> vm<span class="token punctuation">.</span>ErrOutOfGas
+		<span class="token punctuation">&#125;</span>
+		gas <span class="token operator">+=</span> z <span class="token operator">*</span> params<span class="token punctuation">.</span>TxDataZeroGas
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> gas<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>接着，如果是创建合约的交易并且是家园版本，基础费用为53000gas，否则基础费用是21000。往下再计算交易中附带数据所消耗的gas，遍历所有字节数组，对于非0的数据，每字节支付68gas，为0的数据每字节支付4gas。最后计算出总gas。关于这个固有费用的计算是按照黄皮书6.2节的说明实现的。</p>
+<p>回到TransitionDb，计算完需要的gas后，使用useGas方法减去对应的gas数，这里主要是用StateTransition的gas字段减去刚才的固有gas量。</p>
+<p>接着，如果是创建合约的话调用evm的create方法创建合约。否则的话就是一般交易，这时将发送者的nonce递增一，然后调用call方法对账户转账或调用合约。接着，如果有错误的而且是金额不足的错误则返回错误。否则调用refundGas退回gas</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>st <span class="token operator">*</span>StateTransition<span class="token punctuation">)</span> <span class="token function">refundGas</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	refund <span class="token operator">:=</span> st<span class="token punctuation">.</span><span class="token function">gasUsed</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token number">2</span>
+	<span class="token keyword">if</span> refund <span class="token operator">></span> st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">GetRefund</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		refund <span class="token operator">=</span> st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">GetRefund</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	st<span class="token punctuation">.</span>gas <span class="token operator">+=</span> refund
+
+	remaining <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Mul</span><span class="token punctuation">(</span><span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetUint64</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>gas<span class="token punctuation">)</span><span class="token punctuation">,</span> st<span class="token punctuation">.</span>gasPrice<span class="token punctuation">)</span>
+	st<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">AddBalance</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>msg<span class="token punctuation">.</span><span class="token function">From</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> remaining<span class="token punctuation">)</span>
+
+	st<span class="token punctuation">.</span>gp<span class="token punctuation">.</span><span class="token function">AddGas</span><span class="token punctuation">(</span>st<span class="token punctuation">.</span>gas<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>st <span class="token operator">*</span>StateTransition<span class="token punctuation">)</span> <span class="token function">gasUsed</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">uint64</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> st<span class="token punctuation">.</span>initialGas <span class="token operator">-</span> st<span class="token punctuation">.</span>gas
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先计算已用的gas，gasUsed中initialGas是初始的gas，也就是交易允许的最大gas数，而gas是剩余的gas，在交易执行中会一直变化。二者相减就是已用的gas。先设refund的值为已用gas的一般，然后将其和statedb的refund相比，若比他大，则以statedb的refund为标准。然后将gas加上refund的值，这样在计算出实际需要退换的余额。注意这里的逻辑是花费的金额要小于实际金额。</p>
+<p>回到TransitionDb最后，退款完毕后，将所用的gas费用发送给Coinbase，也就是矿工，当做奖励。这样一个交易执行完毕。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/3P3NHLZGCp8">https://unsplash.com/photos/3P3NHLZGCp8</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/06/08/go-ethereum%E4%B8%ADevm%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="prev" title="go-ethereum中evm源码学习">
+                  <i class="fa fa-chevron-left"></i> go-ethereum中evm源码学习
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/06/08/go-ethereum%E4%B8%ADtxpool%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="next" title="go-ethereum中txpool源码学习">
+                  go-ethereum中txpool源码学习 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="go-ethereum中core-state源码学习">
+<meta property="og:url" content="http://example.com/2019/05/17/go-ethereum%E4%B8%ADcore-state%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/v2osk-116514-unsplash.jpg">
+<meta property="article:published_time" content="2019-05-17T05:24:12.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.489Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/v2osk-116514-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/05/17/go-ethereum%E4%B8%ADcore-state%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/05/17/go-ethereum%E4%B8%ADcore-state%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/","path":"2019/05/17/go-ethereum中core-state源码学习/","title":"go-ethereum中core-state源码学习"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>go-ethereum中core-state源码学习 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#datebase-go"><span class="nav-number">1.</span> <span class="nav-text">datebase.go</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#new"><span class="nav-number">1.1.</span> <span class="nav-text">new</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OpenTrie"><span class="nav-number">1.2.</span> <span class="nav-text">OpenTrie</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OpenStorageTrie"><span class="nav-number">1.3.</span> <span class="nav-text">OpenStorageTrie</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ContractCode-amp-ContractCodeSize"><span class="nav-number">1.4.</span> <span class="nav-text">ContractCode &amp; ContractCodeSize</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Commit"><span class="nav-number">1.5.</span> <span class="nav-text">Commit</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#journal-go"><span class="nav-number">2.</span> <span class="nav-text">journal.go</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#state-object-go"><span class="nav-number">3.</span> <span class="nav-text">state_object.go</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#new-1"><span class="nav-number">3.1.</span> <span class="nav-text">new</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SetState"><span class="nav-number">3.2.</span> <span class="nav-text">SetState</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SetBalance"><span class="nav-number">3.3.</span> <span class="nav-text">SetBalance</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SetCode"><span class="nav-number">3.4.</span> <span class="nav-text">SetCode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SetNonce"><span class="nav-number">3.5.</span> <span class="nav-text">SetNonce</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CommitTrie"><span class="nav-number">3.6.</span> <span class="nav-text">CommitTrie</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#statedb-go"><span class="nav-number">4.</span> <span class="nav-text">statedb.go</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#new-2"><span class="nav-number">4.1.</span> <span class="nav-text">new</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AddLog"><span class="nav-number">4.2.</span> <span class="nav-text">AddLog</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GetXxx-amp-SetXxx"><span class="nav-number">4.3.</span> <span class="nav-text">GetXxx &amp; SetXxx</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%93%8D%E4%BD%9CStateObject"><span class="nav-number">4.4.</span> <span class="nav-text">操作StateObject</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E7%85%A7"><span class="nav-number">4.5.</span> <span class="nav-text">快照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#commit"><span class="nav-number">4.6.</span> <span class="nav-text">commit</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/05/17/go-ethereum%E4%B8%ADcore-state%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go-ethereum中core-state源码学习
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-05-17 13:24:12" itemprop="dateCreated datePublished" datetime="2019-05-17T13:24:12+08:00">2019-05-17</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go-ethereum%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">go-ethereum源码学习</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>21k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>19 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/v2osk-116514-unsplash.jpg"></p>
+<span id="more"></span>
+<p>core里的state包提供了账户状态的管理，包括状态转换以及回滚等操作。</p>
+<h1 id="datebase-go"><a href="#datebase-go" class="headerlink" title="datebase.go"></a>datebase.go</h1><p>首先提供了数据库的抽象，定义了一个接口：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Database <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+	<span class="token function">OpenTrie</span><span class="token punctuation">(</span>root common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">(</span>Trie<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+
+	<span class="token function">OpenStorageTrie</span><span class="token punctuation">(</span>addrHash<span class="token punctuation">,</span> root common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">(</span>Trie<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+
+	<span class="token function">CopyTrie</span><span class="token punctuation">(</span>Trie<span class="token punctuation">)</span> Trie
+
+	<span class="token function">ContractCode</span><span class="token punctuation">(</span>addrHash<span class="token punctuation">,</span> codeHash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+
+	<span class="token function">ContractCodeSize</span><span class="token punctuation">(</span>addrHash<span class="token punctuation">,</span> codeHash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+
+	<span class="token function">TrieDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>trie<span class="token punctuation">.</span>Database
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>OpenTrie是打开主账号的树，OpenStorageTrie是打开某个账号的数，CopyTrie就是复制，ContractCode是访问合约代码，ContractCodeSize获取合约大小，TrieDB访问底层数据库</p>
+<h2 id="new"><a href="#new" class="headerlink" title="new"></a>new</h2><p>提供了两个创建该数据库的方法，NewDatabase和NewDatabaseWithCache就是一个带缓冲一个不带缓冲</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">NewDatabase</span><span class="token punctuation">(</span>db ethdb<span class="token punctuation">.</span>Database<span class="token punctuation">)</span> Database <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">NewDatabaseWithCache</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">NewDatabaseWithCache</span><span class="token punctuation">(</span>db ethdb<span class="token punctuation">.</span>Database<span class="token punctuation">,</span> cache <span class="token builtin">int</span><span class="token punctuation">)</span> Database <span class="token punctuation">&#123;</span>
+	csc<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> lru<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span>codeSizeCacheSize<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>cachingDB<span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">:</span>trie<span class="token punctuation">.</span><span class="token function">NewDatabaseWithCache</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> cache<span class="token punctuation">)</span><span class="token punctuation">,</span> 
+		codeSizeCache<span class="token punctuation">:</span> csc<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>构建了一个cachingDB对象，其中有一个实际的数据库用的是trie的NewDatabaseWithCache方法创建的</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\trie\database.go</span>
+<span class="token keyword">func</span> <span class="token function">NewDatabaseWithCache</span><span class="token punctuation">(</span>diskdb ethdb<span class="token punctuation">.</span>Database<span class="token punctuation">,</span> cache <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token operator">*</span>Database <span class="token punctuation">&#123;</span>
+	<span class="token keyword">var</span> cleans <span class="token operator">*</span>bigcache<span class="token punctuation">.</span>BigCache
+	<span class="token keyword">if</span> cache <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		cleans<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">=</span> bigcache<span class="token punctuation">.</span><span class="token function">NewBigCache</span><span class="token punctuation">(</span>bigcache<span class="token punctuation">.</span>Config<span class="token punctuation">&#123;</span>
+			Shards<span class="token punctuation">:</span>             <span class="token number">1024</span><span class="token punctuation">,</span>
+			LifeWindow<span class="token punctuation">:</span>         time<span class="token punctuation">.</span>Hour<span class="token punctuation">,</span>
+			MaxEntriesInWindow<span class="token punctuation">:</span> cache <span class="token operator">*</span> <span class="token number">1024</span><span class="token punctuation">,</span>
+			MaxEntrySize<span class="token punctuation">:</span>       <span class="token number">512</span><span class="token punctuation">,</span>
+			HardMaxCacheSize<span class="token punctuation">:</span>   cache<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>Database<span class="token punctuation">&#123;</span>
+		diskdb<span class="token punctuation">:</span>    diskdb<span class="token punctuation">,</span>
+		cleans<span class="token punctuation">:</span>    cleans<span class="token punctuation">,</span>
+		dirties<span class="token punctuation">:</span>   <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token operator">*</span>cachedNode<span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">:</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		preimages<span class="token punctuation">:</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="OpenTrie"><a href="#OpenTrie" class="headerlink" title="OpenTrie"></a>OpenTrie</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>cachingDB<span class="token punctuation">)</span> <span class="token function">OpenTrie</span><span class="token punctuation">(</span>root common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">(</span>Trie<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	db<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> db<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token function">len</span><span class="token punctuation">(</span>db<span class="token punctuation">.</span>pastTries<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">;</span> i<span class="token operator">--</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> db<span class="token punctuation">.</span>pastTries<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> root <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> cachedTrie<span class="token punctuation">&#123;</span>db<span class="token punctuation">.</span>pastTries<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">Copy</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> db<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	tr<span class="token punctuation">,</span> err <span class="token operator">:=</span> trie<span class="token punctuation">.</span><span class="token function">NewSecure</span><span class="token punctuation">(</span>root<span class="token punctuation">,</span> db<span class="token punctuation">.</span>db<span class="token punctuation">,</span> MaxTrieCacheGen<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> cachedTrie<span class="token punctuation">&#123;</span>tr<span class="token punctuation">,</span> db<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>前面说过这个方法是打开主账户的树，这里首先从pastTries中查找，有的话用一个cachedTrie对象包装后返回，没有的话调用NewSecure区创建一个，创建的是一个SecureTrie类型的数，前面我们分析trie源码时听到过，SecureTrie就是trie的包装。前面没有详细分析SecureTrie源码，这里来看一下：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">NewSecure</span><span class="token punctuation">(</span>root common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> db <span class="token operator">*</span>Database<span class="token punctuation">,</span> cachelimit <span class="token builtin">uint16</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>SecureTrie<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> db <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">panic</span><span class="token punctuation">(</span><span class="token string">"trie.NewSecure called without a database"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	trie<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">New</span><span class="token punctuation">(</span>root<span class="token punctuation">,</span> db<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	trie<span class="token punctuation">.</span><span class="token function">SetCacheLimit</span><span class="token punctuation">(</span>cachelimit<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>SecureTrie<span class="token punctuation">&#123;</span>trie<span class="token punctuation">:</span> <span class="token operator">*</span>trie<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>创建很简单，就是用New方法创建一个普通的树，然后构造出一个SecureTrie对象。OpenTrie方法最后返回的是一个cachedTrie对象，里面包装了SecureTrie和cachingDB。</p>
+<h2 id="OpenStorageTrie"><a href="#OpenStorageTrie" class="headerlink" title="OpenStorageTrie"></a>OpenStorageTrie</h2><p>这个很简单直接创建一个SecureTrie</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>cachingDB<span class="token punctuation">)</span> <span class="token function">OpenStorageTrie</span><span class="token punctuation">(</span>addrHash<span class="token punctuation">,</span> root common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">(</span>Trie<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> trie<span class="token punctuation">.</span><span class="token function">NewSecure</span><span class="token punctuation">(</span>root<span class="token punctuation">,</span> db<span class="token punctuation">.</span>db<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h2 id="ContractCode-amp-ContractCodeSize"><a href="#ContractCode-amp-ContractCodeSize" class="headerlink" title="ContractCode &amp; ContractCodeSize"></a>ContractCode &amp; ContractCodeSize</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>cachingDB<span class="token punctuation">)</span> <span class="token function">ContractCode</span><span class="token punctuation">(</span>addrHash<span class="token punctuation">,</span> codeHash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	code<span class="token punctuation">,</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Node</span><span class="token punctuation">(</span>codeHash<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">.</span>codeSizeCache<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>codeHash<span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>code<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> code<span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Node实际上就根据hash从数据库中取值，取值完成后我们会将其放入前面创建的缓存中，这是一个lru缓存，便于下次取。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>cachingDB<span class="token punctuation">)</span> <span class="token function">ContractCodeSize</span><span class="token punctuation">(</span>addrHash<span class="token punctuation">,</span> codeHash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> cached<span class="token punctuation">,</span> ok <span class="token operator">:=</span> db<span class="token punctuation">.</span>codeSizeCache<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span>codeHash<span class="token punctuation">)</span><span class="token punctuation">;</span> ok <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> cached<span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token builtin">int</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	code<span class="token punctuation">,</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">ContractCode</span><span class="token punctuation">(</span>addrHash<span class="token punctuation">,</span> codeHash<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token function">len</span><span class="token punctuation">(</span>code<span class="token punctuation">)</span><span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也是一个先取后计算长度的过程</p>
+<h2 id="Commit"><a href="#Commit" class="headerlink" title="Commit"></a>Commit</h2><p>Commit就是将树缓存起来</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>m cachedTrie<span class="token punctuation">)</span> <span class="token function">Commit</span><span class="token punctuation">(</span>onleaf trie<span class="token punctuation">.</span>LeafCallback<span class="token punctuation">)</span> <span class="token punctuation">(</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	root<span class="token punctuation">,</span> err <span class="token operator">:=</span> m<span class="token punctuation">.</span>SecureTrie<span class="token punctuation">.</span><span class="token function">Commit</span><span class="token punctuation">(</span>onleaf<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		m<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">pushTrie</span><span class="token punctuation">(</span>m<span class="token punctuation">.</span>SecureTrie<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> root<span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先调用了SecureTrie的Commit方法，检查源码实际上调用了其包装的trie的commit方法，之前分析过trie源码，Commit是序列化方法，是将一颗树存储到数据库中，返回的是树根的hash。在cachedTrie的Commit方法中，如果没有错首先将原来的树缓存到pastTries中，然后返回提交的结果。</p>
+<h1 id="journal-go"><a href="#journal-go" class="headerlink" title="journal.go"></a>journal.go</h1><p>先看数据结构</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> journal <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	entries <span class="token punctuation">[</span><span class="token punctuation">]</span>journalEntry         <span class="token comment">// Current changes tracked by the journal</span>
+	dirties <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">]</span><span class="token builtin">int</span> <span class="token comment">// Dirty accounts and the number of changes</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>包含了一个journalEntry数组和一个map，journalEntry相当于一条日志，dirties记录了某个账户改动次数。journalEntry是一个接口，如下定义</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> journalEntry <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+	<span class="token function">revert</span><span class="token punctuation">(</span><span class="token operator">*</span>StateDB<span class="token punctuation">)</span>
+
+	<span class="token function">dirtied</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>revert是用于撤销操作的，dirtied返回对应的账户地址。对应接口定义了大量的journalEntry类型对象</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> <span class="token punctuation">(</span>
+	createObjectChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		account <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+	<span class="token punctuation">&#125;</span>
+	resetObjectChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		prev <span class="token operator">*</span>stateObject
+	<span class="token punctuation">&#125;</span>
+	suicideChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		account     <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+		prev        <span class="token builtin">bool</span> <span class="token comment">// whether account had already suicided</span>
+		prevbalance <span class="token operator">*</span>big<span class="token punctuation">.</span>Int
+	<span class="token punctuation">&#125;</span>
+
+	balanceChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		account <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+		prev    <span class="token operator">*</span>big<span class="token punctuation">.</span>Int
+	<span class="token punctuation">&#125;</span>
+	nonceChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		account <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+		prev    <span class="token builtin">uint64</span>
+	<span class="token punctuation">&#125;</span>
+	storageChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		account       <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+		key<span class="token punctuation">,</span> prevalue common<span class="token punctuation">.</span>Hash
+	<span class="token punctuation">&#125;</span>
+	codeChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		account            <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+		prevcode<span class="token punctuation">,</span> prevhash <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+	<span class="token punctuation">&#125;</span>
+
+	refundChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		prev <span class="token builtin">uint64</span>
+	<span class="token punctuation">&#125;</span>
+	addLogChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		txhash common<span class="token punctuation">.</span>Hash
+	<span class="token punctuation">&#125;</span>
+	addPreimageChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		hash common<span class="token punctuation">.</span>Hash
+	<span class="token punctuation">&#125;</span>
+	touchChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+		account   <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+		prev      <span class="token builtin">bool</span>
+		prevDirty <span class="token builtin">bool</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>每种struct都对应了不同的事件日志。当然种都有revert和dirtied方法我们后面具体遇到了在分析。</p>
+<h1 id="state-object-go"><a href="#state-object-go" class="headerlink" title="state_object.go"></a>state_object.go</h1><p>stateObject代表了正在修改的以太坊账户，数据结构如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> stateObject <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	address  common<span class="token punctuation">.</span>Address
+	addrHash common<span class="token punctuation">.</span>Hash 
+	data     Account
+	db       <span class="token operator">*</span>StateDB
+
+	dbErr <span class="token builtin">error</span>
+
+	trie Trie 
+	code Code 
+
+	originStorage Storage 
+	dirtyStorage  Storage 
+
+
+	dirtyCode <span class="token builtin">bool</span> <span class="token comment">// true if the code was updated</span>
+	suicided  <span class="token builtin">bool</span>
+	deleted   <span class="token builtin">bool</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>根据源码注释，要想修改账户，需要首先获取stateObject，然后通过这个对象访问修改，最后提交进行持久化存储。</p>
+<h2 id="new-1"><a href="#new-1" class="headerlink" title="new"></a>new</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">newObject</span><span class="token punctuation">(</span>db <span class="token operator">*</span>StateDB<span class="token punctuation">,</span> address common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> data Account<span class="token punctuation">)</span> <span class="token operator">*</span>stateObject <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> data<span class="token punctuation">.</span>Balance <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		data<span class="token punctuation">.</span>Balance <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> data<span class="token punctuation">.</span>CodeHash <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		data<span class="token punctuation">.</span>CodeHash <span class="token operator">=</span> emptyCodeHash
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>stateObject<span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">:</span>            db<span class="token punctuation">,</span>
+		address<span class="token punctuation">:</span>       address<span class="token punctuation">,</span>
+		addrHash<span class="token punctuation">:</span>      crypto<span class="token punctuation">.</span><span class="token function">Keccak256Hash</span><span class="token punctuation">(</span>address<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		data<span class="token punctuation">:</span>          data<span class="token punctuation">,</span>
+		originStorage<span class="token punctuation">:</span> <span class="token function">make</span><span class="token punctuation">(</span>Storage<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		dirtyStorage<span class="token punctuation">:</span>  <span class="token function">make</span><span class="token punctuation">(</span>Storage<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>需要传入地址和账户的对象才能构造一个stateObject对象。</p>
+<h2 id="SetState"><a href="#SetState" class="headerlink" title="SetState"></a>SetState</h2><p>SetState是更新账户存储中的某个值</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">SetState</span><span class="token punctuation">(</span>db Database<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	prev <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">GetState</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> prev <span class="token operator">==</span> value <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	self<span class="token punctuation">.</span>db<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>storageChange<span class="token punctuation">&#123;</span>
+		account<span class="token punctuation">:</span>  <span class="token operator">&amp;</span>self<span class="token punctuation">.</span>address<span class="token punctuation">,</span>
+		key<span class="token punctuation">:</span>      key<span class="token punctuation">,</span>
+		prevalue<span class="token punctuation">:</span> prev<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">GetState</span><span class="token punctuation">(</span>db Database<span class="token punctuation">,</span> key common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Hash <span class="token punctuation">&#123;</span>
+	value<span class="token punctuation">,</span> dirty <span class="token operator">:=</span> self<span class="token punctuation">.</span>dirtyStorage<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+	<span class="token keyword">if</span> dirty <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> value
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> self<span class="token punctuation">.</span><span class="token function">GetCommittedState</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">GetCommittedState</span><span class="token punctuation">(</span>db Database<span class="token punctuation">,</span> key common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Hash <span class="token punctuation">&#123;</span>
+	value<span class="token punctuation">,</span> cached <span class="token operator">:=</span> self<span class="token punctuation">.</span>originStorage<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+	<span class="token keyword">if</span> cached <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> value
+	<span class="token punctuation">&#125;</span>
+	enc<span class="token punctuation">,</span> err <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getTrie</span><span class="token punctuation">(</span>db<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">TryGet</span><span class="token punctuation">(</span>key<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>enc<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token boolean">_</span><span class="token punctuation">,</span> content<span class="token punctuation">,</span> <span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">Split</span><span class="token punctuation">(</span>enc<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		value<span class="token punctuation">.</span><span class="token function">SetBytes</span><span class="token punctuation">(</span>content<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	self<span class="token punctuation">.</span>originStorage<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> value
+	<span class="token keyword">return</span> value
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>c <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">getTrie</span><span class="token punctuation">(</span>db Database<span class="token punctuation">)</span> Trie <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> c<span class="token punctuation">.</span>trie <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">var</span> err <span class="token builtin">error</span>
+		c<span class="token punctuation">.</span>trie<span class="token punctuation">,</span> err <span class="token operator">=</span> db<span class="token punctuation">.</span><span class="token function">OpenStorageTrie</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span>addrHash<span class="token punctuation">,</span> c<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Root<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			c<span class="token punctuation">.</span>trie<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">=</span> db<span class="token punctuation">.</span><span class="token function">OpenStorageTrie</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span>addrHash<span class="token punctuation">,</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+			c<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"can't create storage trie: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> c<span class="token punctuation">.</span>trie
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先用了GetState方法去取旧的值，GetState方法中先访问dirtyStorage，这也是一个缓存机制，取不到的话调用GetCommittedState，GetCommittedState也是先访问originStorage这个缓存，originStorage与dirtyStorage的区别是，originStorage是已经持久化过的，dirtyStorage而是未持久化的。还找不到的话就需要访问本地数据库了，调用getTrie获取树。GetCommittedState方法如果是从数据库取值的话就向originStorage从缓存一份。</p>
+<p>回到SetState中，如果旧值和新值一样，就直接返回，否则新建一个storageChange类型的journalEntry放入journal的entries中，最后调用setState方法，setState主要是向dirtyStorage中缓存。我们顺便看一下storageChange</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">storageChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	account       <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+	key<span class="token punctuation">,</span> prevalue common<span class="token punctuation">.</span>Hash
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch storageChange<span class="token punctuation">)</span> <span class="token function">revert</span><span class="token punctuation">(</span>s <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	s<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span><span class="token operator">*</span>ch<span class="token punctuation">.</span>account<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span>ch<span class="token punctuation">.</span>key<span class="token punctuation">,</span> ch<span class="token punctuation">.</span>prevalue<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch storageChange<span class="token punctuation">)</span> <span class="token function">dirtied</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>common<span class="token punctuation">.</span>Address <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> ch<span class="token punctuation">.</span>account
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>storageChange主要存储了状态改变前后的新旧值和对应地址。所以revert方法就是取对应状态恢复到旧值</p>
+<h2 id="SetBalance"><a href="#SetBalance" class="headerlink" title="SetBalance"></a>SetBalance</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">SetBalance</span><span class="token punctuation">(</span>amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>db<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>balanceChange<span class="token punctuation">&#123;</span>
+		account<span class="token punctuation">:</span> <span class="token operator">&amp;</span>self<span class="token punctuation">.</span>address<span class="token punctuation">,</span>
+		prev<span class="token punctuation">:</span>    <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Balance<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span><span class="token function">setBalance</span><span class="token punctuation">(</span>amount<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">setBalance</span><span class="token punctuation">(</span>amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Balance <span class="token operator">=</span> amount
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>就是修改账户的余额，给日志添加了balanceChange，还有两个加减方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>c <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">AddBalance</span><span class="token punctuation">(</span>amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> amount<span class="token punctuation">.</span><span class="token function">Sign</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> c<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			c<span class="token punctuation">.</span><span class="token function">touch</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	c<span class="token punctuation">.</span><span class="token function">SetBalance</span><span class="token punctuation">(</span><span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span><span class="token function">Balance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> amount<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>c <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">SubBalance</span><span class="token punctuation">(</span>amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> amount<span class="token punctuation">.</span><span class="token function">Sign</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	c<span class="token punctuation">.</span><span class="token function">SetBalance</span><span class="token punctuation">(</span><span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Sub</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span><span class="token function">Balance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> amount<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>都要首先判断加减值是否为0，对于加的情况，如果值为0而且账户也为空（即nonce为0，余额为0,，账户代码也为空）则调用touch方法，touch方法个日志添加了touchChange操作。</p>
+<p>下面我们先看一下balanceChange。touchChange没有实际操作</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">balanceChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	account <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+	prev    <span class="token operator">*</span>big<span class="token punctuation">.</span>Int
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch balanceChange<span class="token punctuation">)</span> <span class="token function">revert</span><span class="token punctuation">(</span>s <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	s<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span><span class="token operator">*</span>ch<span class="token punctuation">.</span>account<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setBalance</span><span class="token punctuation">(</span>ch<span class="token punctuation">.</span>prev<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch balanceChange<span class="token punctuation">)</span> <span class="token function">dirtied</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>common<span class="token punctuation">.</span>Address <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> ch<span class="token punctuation">.</span>account
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也很简单，就是存储了先前的值，然后回滚时设置余额为之前的值。</p>
+<h2 id="SetCode"><a href="#SetCode" class="headerlink" title="SetCode"></a>SetCode</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">SetCode</span><span class="token punctuation">(</span>codeHash common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> code <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	prevcode <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">Code</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>db<span class="token punctuation">.</span>db<span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span>db<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>codeChange<span class="token punctuation">&#123;</span>
+		account<span class="token punctuation">:</span>  <span class="token operator">&amp;</span>self<span class="token punctuation">.</span>address<span class="token punctuation">,</span>
+		prevhash<span class="token punctuation">:</span> self<span class="token punctuation">.</span><span class="token function">CodeHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		prevcode<span class="token punctuation">:</span> prevcode<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span>codeHash<span class="token punctuation">,</span> code<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">Code</span><span class="token punctuation">(</span>db Database<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> self<span class="token punctuation">.</span>code <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> self<span class="token punctuation">.</span>code
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> bytes<span class="token punctuation">.</span><span class="token function">Equal</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span><span class="token function">CodeHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> emptyCodeHash<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	code<span class="token punctuation">,</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">ContractCode</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>addrHash<span class="token punctuation">,</span> common<span class="token punctuation">.</span><span class="token function">BytesToHash</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span><span class="token function">CodeHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"can't load code hash %x: %v"</span><span class="token punctuation">,</span> self<span class="token punctuation">.</span><span class="token function">CodeHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	self<span class="token punctuation">.</span>code <span class="token operator">=</span> code
+	<span class="token keyword">return</span> code
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">setCode</span><span class="token punctuation">(</span>codeHash common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> code <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>code <span class="token operator">=</span> code
+	self<span class="token punctuation">.</span>data<span class="token punctuation">.</span>CodeHash <span class="token operator">=</span> codeHash<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span>
+	self<span class="token punctuation">.</span>dirtyCode <span class="token operator">=</span> <span class="token boolean">true</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先取之前的code，取得方法还是先从缓存取，取不到再去数据库取，有两集缓存，一级是stateObject的code字段，每次set都会更新，；另一级是Database的ContractCode取的时候会坚持codeSizeCache缓存，都没有再从数据库取。设置code时，也给日志添加了codeChange。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">codeChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	account            <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+	prevcode<span class="token punctuation">,</span> prevhash <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+<span class="token punctuation">&#125;</span>
+	
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch codeChange<span class="token punctuation">)</span> <span class="token function">revert</span><span class="token punctuation">(</span>s <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	s<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span><span class="token operator">*</span>ch<span class="token punctuation">.</span>account<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span>common<span class="token punctuation">.</span><span class="token function">BytesToHash</span><span class="token punctuation">(</span>ch<span class="token punctuation">.</span>prevhash<span class="token punctuation">)</span><span class="token punctuation">,</span> ch<span class="token punctuation">.</span>prevcode<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch codeChange<span class="token punctuation">)</span> <span class="token function">dirtied</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>common<span class="token punctuation">.</span>Address <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> ch<span class="token punctuation">.</span>account
+<span class="token punctuation">&#125;</span>	<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>和storageChange逻辑类似</p>
+<h2 id="SetNonce"><a href="#SetNonce" class="headerlink" title="SetNonce"></a>SetNonce</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">SetNonce</span><span class="token punctuation">(</span>nonce <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>db<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>nonceChange<span class="token punctuation">&#123;</span>
+		account<span class="token punctuation">:</span> <span class="token operator">&amp;</span>self<span class="token punctuation">.</span>address<span class="token punctuation">,</span>
+		prev<span class="token punctuation">:</span>    self<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Nonce<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span><span class="token function">setNonce</span><span class="token punctuation">(</span>nonce<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">setNonce</span><span class="token punctuation">(</span>nonce <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Nonce <span class="token operator">=</span> nonce
+<span class="token punctuation">&#125;</span>
+
+nonceChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	account <span class="token operator">*</span>common<span class="token punctuation">.</span>Address
+	prev    <span class="token builtin">uint64</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch nonceChange<span class="token punctuation">)</span> <span class="token function">revert</span><span class="token punctuation">(</span>s <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	s<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span><span class="token operator">*</span>ch<span class="token punctuation">.</span>account<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setNonce</span><span class="token punctuation">(</span>ch<span class="token punctuation">.</span>prev<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch nonceChange<span class="token punctuation">)</span> <span class="token function">dirtied</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>common<span class="token punctuation">.</span>Address <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> ch<span class="token punctuation">.</span>account
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>和balance一样的逻辑，不在多说</p>
+<h2 id="CommitTrie"><a href="#CommitTrie" class="headerlink" title="CommitTrie"></a>CommitTrie</h2><p>刚才的set方法都只是改变了stateObject的值，没有实际的持久化，要持久化需要这个方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">CommitTrie</span><span class="token punctuation">(</span>db Database<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span><span class="token function">updateTrie</span><span class="token punctuation">(</span>db<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> self<span class="token punctuation">.</span>dbErr <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> self<span class="token punctuation">.</span>dbErr
+	<span class="token punctuation">&#125;</span>
+	root<span class="token punctuation">,</span> err <span class="token operator">:=</span> self<span class="token punctuation">.</span>trie<span class="token punctuation">.</span><span class="token function">Commit</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		self<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Root <span class="token operator">=</span> root
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> err
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token function">updateTrie</span><span class="token punctuation">(</span>db Database<span class="token punctuation">)</span> Trie <span class="token punctuation">&#123;</span>
+	tr <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getTrie</span><span class="token punctuation">(</span>db<span class="token punctuation">)</span>
+	<span class="token keyword">for</span> key<span class="token punctuation">,</span> value <span class="token operator">:=</span> <span class="token keyword">range</span> self<span class="token punctuation">.</span>dirtyStorage <span class="token punctuation">&#123;</span>
+		<span class="token function">delete</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>dirtyStorage<span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+
+		<span class="token keyword">if</span> value <span class="token operator">==</span> self<span class="token punctuation">.</span>originStorage<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">continue</span>
+		<span class="token punctuation">&#125;</span>
+		self<span class="token punctuation">.</span>originStorage<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> value
+
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">==</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>tr<span class="token punctuation">.</span><span class="token function">TryDelete</span><span class="token punctuation">(</span>key<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token keyword">continue</span>
+		<span class="token punctuation">&#125;</span>
+		v<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">EncodeToBytes</span><span class="token punctuation">(</span>bytes<span class="token punctuation">.</span><span class="token function">TrimLeft</span><span class="token punctuation">(</span>value<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"\x00"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>tr<span class="token punctuation">.</span><span class="token function">TryUpdate</span><span class="token punctuation">(</span>key<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> v<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> tr
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先调用updateTrie更新树，updateTrie中现获取了树，随后遍历了dirtyStorage，前面说过这是未持久化的值，取出的每个值先和originStorage中的比较，一样的就不操作，随后对于空值记录一个错误，最后先rlp编码，最后调用TryUpdate更新，TryUpdate是SecureTrie中的方法：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>t <span class="token operator">*</span>SecureTrie<span class="token punctuation">)</span> <span class="token function">TryUpdate</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	hk <span class="token operator">:=</span> t<span class="token punctuation">.</span><span class="token function">hashKey</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+	err <span class="token operator">:=</span> t<span class="token punctuation">.</span>trie<span class="token punctuation">.</span><span class="token function">TryUpdate</span><span class="token punctuation">(</span>hk<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	t<span class="token punctuation">.</span><span class="token function">getSecKeyCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token function">string</span><span class="token punctuation">(</span>hk<span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> common<span class="token punctuation">.</span><span class="token function">CopyBytes</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>还是调用trie的TryUpdate方法，TryUpdate方法之前分析trie源码时没有将，不过也很简单</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>t <span class="token operator">*</span>Trie<span class="token punctuation">)</span> <span class="token function">TryUpdate</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	k <span class="token operator">:=</span> <span class="token function">keybytesToHex</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token boolean">_</span><span class="token punctuation">,</span> n<span class="token punctuation">,</span> err <span class="token operator">:=</span> t<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>t<span class="token punctuation">.</span>root<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> k<span class="token punctuation">,</span> <span class="token function">valueNode</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+		t<span class="token punctuation">.</span>root <span class="token operator">=</span> n
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		<span class="token boolean">_</span><span class="token punctuation">,</span> n<span class="token punctuation">,</span> err <span class="token operator">:=</span> t<span class="token punctuation">.</span><span class="token function">delete</span><span class="token punctuation">(</span>t<span class="token punctuation">.</span>root<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> k<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+		t<span class="token punctuation">.</span>root <span class="token operator">=</span> n
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先对于key长度不为0的话就进行插入来更新，否则执行删除逻辑。回到stateobject中，在更新完毕后，如果没错，就调用commit方法持久化存储。</p>
+<h1 id="statedb-go"><a href="#statedb-go" class="headerlink" title="statedb.go"></a>statedb.go</h1><p>StateDB负责缓存和存储嵌套状态。主要用于检索合约和账户。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> StateDB <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	db   Database
+	trie Trie
+
+	stateObjects      <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">]</span><span class="token operator">*</span>stateObject
+	stateObjectsDirty <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">]</span><span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+
+
+	dbErr <span class="token builtin">error</span>
+
+	refund <span class="token builtin">uint64</span>
+
+	thash<span class="token punctuation">,</span> bhash common<span class="token punctuation">.</span>Hash
+	txIndex      <span class="token builtin">int</span>
+	logs         <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log
+	logSize      <span class="token builtin">uint</span>
+
+	preimages <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+
+	journal        <span class="token operator">*</span>journal
+	validRevisions <span class="token punctuation">[</span><span class="token punctuation">]</span>revision
+	nextRevisionId <span class="token builtin">int</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>基本包含了前面分析的三种结构体。</p>
+<h2 id="new-2"><a href="#new-2" class="headerlink" title="new"></a>new</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">New</span><span class="token punctuation">(</span>root common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> db Database<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>StateDB<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	tr<span class="token punctuation">,</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">OpenTrie</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>StateDB<span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">:</span>                db<span class="token punctuation">,</span>
+		trie<span class="token punctuation">:</span>              tr<span class="token punctuation">,</span>
+		stateObjects<span class="token punctuation">:</span>      <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">]</span><span class="token operator">*</span>stateObject<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		stateObjectsDirty<span class="token punctuation">:</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">]</span><span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		logs<span class="token punctuation">:</span>              <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		preimages<span class="token punctuation">:</span>         <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		journal<span class="token punctuation">:</span>           <span class="token function">newJournal</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先调用了OpenTrie打开主账户的树，然后构造了StateDB对象。</p>
+<h2 id="AddLog"><a href="#AddLog" class="headerlink" title="AddLog"></a>AddLog</h2><p>这个log并不是程序log，它代表合约的log事件</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">AddLog</span><span class="token punctuation">(</span>log <span class="token operator">*</span>types<span class="token punctuation">.</span>Log<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>addLogChange<span class="token punctuation">&#123;</span>txhash<span class="token punctuation">:</span> self<span class="token punctuation">.</span>thash<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+	log<span class="token punctuation">.</span>TxHash <span class="token operator">=</span> self<span class="token punctuation">.</span>thash
+	log<span class="token punctuation">.</span>BlockHash <span class="token operator">=</span> self<span class="token punctuation">.</span>bhash
+	log<span class="token punctuation">.</span>TxIndex <span class="token operator">=</span> <span class="token function">uint</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>txIndex<span class="token punctuation">)</span>
+	log<span class="token punctuation">.</span>Index <span class="token operator">=</span> self<span class="token punctuation">.</span>logSize
+	self<span class="token punctuation">.</span>logs<span class="token punctuation">[</span>self<span class="token punctuation">.</span>thash<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>logs<span class="token punctuation">[</span>self<span class="token punctuation">.</span>thash<span class="token punctuation">]</span><span class="token punctuation">,</span> log<span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span>logSize<span class="token operator">++</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先补全log信息，然后按交易hash放到logs中，关于thash和bhash是在Prepare中设置的</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">Prepare</span><span class="token punctuation">(</span>thash<span class="token punctuation">,</span> bhash common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> ti <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>thash <span class="token operator">=</span> thash
+	self<span class="token punctuation">.</span>bhash <span class="token operator">=</span> bhash
+	self<span class="token punctuation">.</span>txIndex <span class="token operator">=</span> ti
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在AddLog开始的时候还向journal添加了addLogChange</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">addLogChange <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	txhash common<span class="token punctuation">.</span>Hash
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch addLogChange<span class="token punctuation">)</span> <span class="token function">revert</span><span class="token punctuation">(</span>s <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	logs <span class="token operator">:=</span> s<span class="token punctuation">.</span>logs<span class="token punctuation">[</span>ch<span class="token punctuation">.</span>txhash<span class="token punctuation">]</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>logs<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">1</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">delete</span><span class="token punctuation">(</span>s<span class="token punctuation">.</span>logs<span class="token punctuation">,</span> ch<span class="token punctuation">.</span>txhash<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		s<span class="token punctuation">.</span>logs<span class="token punctuation">[</span>ch<span class="token punctuation">.</span>txhash<span class="token punctuation">]</span> <span class="token operator">=</span> logs<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token function">len</span><span class="token punctuation">(</span>logs<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+	<span class="token punctuation">&#125;</span>
+	s<span class="token punctuation">.</span>logSize<span class="token operator">--</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ch addLogChange<span class="token punctuation">)</span> <span class="token function">dirtied</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>common<span class="token punctuation">.</span>Address <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>addLogChange只有一个字段，它的回滚就是将最后的log删除。此外关于log还有两个方法，都是取的</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetLogs</span><span class="token punctuation">(</span>hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> self<span class="token punctuation">.</span>logs<span class="token punctuation">[</span>hash<span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">Logs</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log <span class="token punctuation">&#123;</span>
+	<span class="token keyword">var</span> logs <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> lgs <span class="token operator">:=</span> <span class="token keyword">range</span> self<span class="token punctuation">.</span>logs <span class="token punctuation">&#123;</span>
+		logs <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>logs<span class="token punctuation">,</span> lgs<span class="token operator">...</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> logs
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="GetXxx-amp-SetXxx"><a href="#GetXxx-amp-SetXxx" class="headerlink" title="GetXxx &amp; SetXxx"></a>GetXxx &amp; SetXxx</h2><p>有一系列get和set方法，也就体现了statedb作为对外开放接口的作用</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetBalance</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> stateObject<span class="token punctuation">.</span><span class="token function">Balance</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> common<span class="token punctuation">.</span>Big0
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetNonce</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token builtin">uint64</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> stateObject<span class="token punctuation">.</span><span class="token function">Nonce</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span> <span class="token number">0</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetCode</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> stateObject<span class="token punctuation">.</span><span class="token function">Code</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>db<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetCodeSize</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token builtin">int</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token number">0</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> stateObject<span class="token punctuation">.</span>code <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token function">len</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">.</span>code<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	size<span class="token punctuation">,</span> err <span class="token operator">:=</span> self<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">ContractCodeSize</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">.</span>addrHash<span class="token punctuation">,</span> common<span class="token punctuation">.</span><span class="token function">BytesToHash</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">.</span><span class="token function">CodeHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> size
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetCodeHash</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Hash <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> common<span class="token punctuation">.</span><span class="token function">BytesToHash</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">.</span><span class="token function">CodeHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetState</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Hash <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> stateObject<span class="token punctuation">.</span><span class="token function">GetState</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>db<span class="token punctuation">,</span> hash<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetCommittedState</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Hash <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> stateObject<span class="token punctuation">.</span><span class="token function">GetCommittedState</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>db<span class="token punctuation">,</span> hash<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">StorageTrie</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> Trie <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	cpy <span class="token operator">:=</span> stateObject<span class="token punctuation">.</span><span class="token function">deepCopy</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> cpy<span class="token punctuation">.</span><span class="token function">updateTrie</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>db<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">HasSuicided</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> stateObject<span class="token punctuation">.</span>suicided
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">false</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>set类方法如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">AddBalance</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">GetOrNewStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		stateObject<span class="token punctuation">.</span><span class="token function">AddBalance</span><span class="token punctuation">(</span>amount<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">SubBalance</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">GetOrNewStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		stateObject<span class="token punctuation">.</span><span class="token function">SubBalance</span><span class="token punctuation">(</span>amount<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">SetBalance</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">GetOrNewStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		stateObject<span class="token punctuation">.</span><span class="token function">SetBalance</span><span class="token punctuation">(</span>amount<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">SetNonce</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> nonce <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">GetOrNewStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		stateObject<span class="token punctuation">.</span><span class="token function">SetNonce</span><span class="token punctuation">(</span>nonce<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">SetCode</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> code <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">GetOrNewStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		stateObject<span class="token punctuation">.</span><span class="token function">SetCode</span><span class="token punctuation">(</span>crypto<span class="token punctuation">.</span><span class="token function">Keccak256Hash</span><span class="token punctuation">(</span>code<span class="token punctuation">)</span><span class="token punctuation">,</span> code<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">SetState</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">GetOrNewStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		stateObject<span class="token punctuation">.</span><span class="token function">SetState</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>db<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">Suicide</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">false</span>
+	<span class="token punctuation">&#125;</span>
+	self<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>suicideChange<span class="token punctuation">&#123;</span>
+		account<span class="token punctuation">:</span>     <span class="token operator">&amp;</span>addr<span class="token punctuation">,</span>
+		prev<span class="token punctuation">:</span>        stateObject<span class="token punctuation">.</span>suicided<span class="token punctuation">,</span>
+		prevbalance<span class="token punctuation">:</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">.</span><span class="token function">Balance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	stateObject<span class="token punctuation">.</span><span class="token function">markSuicided</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	stateObject<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Balance <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> <span class="token boolean">true</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>基本上都是通过getStateObject先获取stateObject，前面说过stateObject代表正在修改的以太坊账户，通过他也就可以访问各项内容</p>
+<h2 id="操作StateObject"><a href="#操作StateObject" class="headerlink" title="操作StateObject"></a>操作StateObject</h2><p>get方法：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">getStateObject</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token punctuation">(</span>stateObject <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> obj <span class="token operator">:=</span> self<span class="token punctuation">.</span>stateObjects<span class="token punctuation">[</span>addr<span class="token punctuation">]</span><span class="token punctuation">;</span> obj <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> obj<span class="token punctuation">.</span>deleted <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">nil</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> obj
+	<span class="token punctuation">&#125;</span>
+
+	enc<span class="token punctuation">,</span> err <span class="token operator">:=</span> self<span class="token punctuation">.</span>trie<span class="token punctuation">.</span><span class="token function">TryGet</span><span class="token punctuation">(</span>addr<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>enc<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">var</span> data Account
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">DecodeBytes</span><span class="token punctuation">(</span>enc<span class="token punctuation">,</span> <span class="token operator">&amp;</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Failed to decode state object"</span><span class="token punctuation">,</span> <span class="token string">"addr"</span><span class="token punctuation">,</span> addr<span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	obj <span class="token operator">:=</span> <span class="token function">newObject</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> data<span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span><span class="token function">setStateObject</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> obj
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">deleteStateObject</span><span class="token punctuation">(</span>stateObject <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	stateObject<span class="token punctuation">.</span>deleted <span class="token operator">=</span> <span class="token boolean">true</span>
+	addr <span class="token operator">:=</span> stateObject<span class="token punctuation">.</span><span class="token function">Address</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>trie<span class="token punctuation">.</span><span class="token function">TryDelete</span><span class="token punctuation">(</span>addr<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">updateStateObject</span><span class="token punctuation">(</span>stateObject <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	addr <span class="token operator">:=</span> stateObject<span class="token punctuation">.</span><span class="token function">Address</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	data<span class="token punctuation">,</span> err <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">EncodeToBytes</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">panic</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"can't encode object at %x: %v"</span><span class="token punctuation">,</span> addr<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	self<span class="token punctuation">.</span><span class="token function">setError</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>trie<span class="token punctuation">.</span><span class="token function">TryUpdate</span><span class="token punctuation">(</span>addr<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> data<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">setStateObject</span><span class="token punctuation">(</span>object <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>stateObjects<span class="token punctuation">[</span>object<span class="token punctuation">.</span><span class="token function">Address</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> object
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">GetOrNewStateObject</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token operator">*</span>stateObject <span class="token punctuation">&#123;</span>
+	stateObject <span class="token operator">:=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> stateObject <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token operator">||</span> stateObject<span class="token punctuation">.</span>deleted <span class="token punctuation">&#123;</span>
+		stateObject<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">=</span> self<span class="token punctuation">.</span><span class="token function">createObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> stateObject
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">createObject</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token punctuation">(</span>newobj<span class="token punctuation">,</span> prev <span class="token operator">*</span>stateObject<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	prev <span class="token operator">=</span> self<span class="token punctuation">.</span><span class="token function">getStateObject</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+	newobj <span class="token operator">=</span> <span class="token function">newObject</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> Account<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	newobj<span class="token punctuation">.</span><span class="token function">setNonce</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token comment">// sets the object to dirty</span>
+	<span class="token keyword">if</span> prev <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		self<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>createObjectChange<span class="token punctuation">&#123;</span>account<span class="token punctuation">:</span> <span class="token operator">&amp;</span>addr<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		self<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>resetObjectChange<span class="token punctuation">&#123;</span>prev<span class="token punctuation">:</span> prev<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	self<span class="token punctuation">.</span><span class="token function">setStateObject</span><span class="token punctuation">(</span>newobj<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> newobj<span class="token punctuation">,</span> prev
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先尝试stateObjects回去，没有的话用newObject构造一个，同时存入setStateObject中。</p>
+<h2 id="快照"><a href="#快照" class="headerlink" title="快照"></a>快照</h2><p>Snapshot可以创建一个快照，然后通过RevertToSnapshot可以回滚到哪个状态，这个功能是通过journal来做到的。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">Snapshot</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">int</span> <span class="token punctuation">&#123;</span>
+	id <span class="token operator">:=</span> self<span class="token punctuation">.</span>nextRevisionId
+	self<span class="token punctuation">.</span>nextRevisionId<span class="token operator">++</span>
+	self<span class="token punctuation">.</span>validRevisions <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>validRevisions<span class="token punctuation">,</span> revision<span class="token punctuation">&#123;</span>id<span class="token punctuation">,</span> self<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> id
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">RevertToSnapshot</span><span class="token punctuation">(</span>revid <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	idx <span class="token operator">:=</span> sort<span class="token punctuation">.</span><span class="token function">Search</span><span class="token punctuation">(</span><span class="token function">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>validRevisions<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">func</span><span class="token punctuation">(</span>i <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> self<span class="token punctuation">.</span>validRevisions<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>id <span class="token operator">>=</span> revid
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> idx <span class="token operator">==</span> <span class="token function">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>validRevisions<span class="token punctuation">)</span> <span class="token operator">||</span> self<span class="token punctuation">.</span>validRevisions<span class="token punctuation">[</span>idx<span class="token punctuation">]</span><span class="token punctuation">.</span>id <span class="token operator">!=</span> revid <span class="token punctuation">&#123;</span>
+		<span class="token function">panic</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"revision id %v cannot be reverted"</span><span class="token punctuation">,</span> revid<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	snapshot <span class="token operator">:=</span> self<span class="token punctuation">.</span>validRevisions<span class="token punctuation">[</span>idx<span class="token punctuation">]</span><span class="token punctuation">.</span>journalIndex
+
+	self<span class="token punctuation">.</span>journal<span class="token punctuation">.</span><span class="token function">revert</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> snapshot<span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span>validRevisions <span class="token operator">=</span> self<span class="token punctuation">.</span>validRevisions<span class="token punctuation">[</span><span class="token punctuation">:</span>idx<span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>j <span class="token operator">*</span>journal<span class="token punctuation">)</span> <span class="token function">revert</span><span class="token punctuation">(</span>statedb <span class="token operator">*</span>StateDB<span class="token punctuation">,</span> snapshot <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token function">len</span><span class="token punctuation">(</span>j<span class="token punctuation">.</span>entries<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">>=</span> snapshot<span class="token punctuation">;</span> i<span class="token operator">--</span> <span class="token punctuation">&#123;</span>
+		j<span class="token punctuation">.</span>entries<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">revert</span><span class="token punctuation">(</span>statedb<span class="token punctuation">)</span>
+
+		<span class="token keyword">if</span> addr <span class="token operator">:=</span> j<span class="token punctuation">.</span>entries<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">dirtied</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> addr <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> j<span class="token punctuation">.</span>dirties<span class="token punctuation">[</span><span class="token operator">*</span>addr<span class="token punctuation">]</span><span class="token operator">--</span><span class="token punctuation">;</span> j<span class="token punctuation">.</span>dirties<span class="token punctuation">[</span><span class="token operator">*</span>addr<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+				<span class="token function">delete</span><span class="token punctuation">(</span>j<span class="token punctuation">.</span>dirties<span class="token punctuation">,</span> <span class="token operator">*</span>addr<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	j<span class="token punctuation">.</span>entries <span class="token operator">=</span> j<span class="token punctuation">.</span>entries<span class="token punctuation">[</span><span class="token punctuation">:</span>snapshot<span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可见创建快照是记录了RevisionId和journal中日志数量。恢复则是确定该位置的journal中日志数量snapshot，然后调用revert，将日志集合中snapshot之后的事件全部执行回滚。</p>
+<h2 id="commit"><a href="#commit" class="headerlink" title="commit"></a>commit</h2><p>commit用于提交更改</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>s <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">Commit</span><span class="token punctuation">(</span>deleteEmptyObjects <span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>root common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">defer</span> s<span class="token punctuation">.</span><span class="token function">clearJournalAndRefund</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> addr <span class="token operator">:=</span> <span class="token keyword">range</span> s<span class="token punctuation">.</span>journal<span class="token punctuation">.</span>dirties <span class="token punctuation">&#123;</span>
+		s<span class="token punctuation">.</span>stateObjectsDirty<span class="token punctuation">[</span>addr<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">for</span> addr<span class="token punctuation">,</span> stateObject <span class="token operator">:=</span> <span class="token keyword">range</span> s<span class="token punctuation">.</span>stateObjects <span class="token punctuation">&#123;</span>
+		<span class="token boolean">_</span><span class="token punctuation">,</span> isDirty <span class="token operator">:=</span> s<span class="token punctuation">.</span>stateObjectsDirty<span class="token punctuation">[</span>addr<span class="token punctuation">]</span>
+		<span class="token keyword">switch</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">case</span> stateObject<span class="token punctuation">.</span>suicided <span class="token operator">||</span> <span class="token punctuation">(</span>isDirty <span class="token operator">&amp;&amp;</span> deleteEmptyObjects <span class="token operator">&amp;&amp;</span> stateObject<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+			s<span class="token punctuation">.</span><span class="token function">deleteStateObject</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">)</span>
+		<span class="token keyword">case</span> isDirty<span class="token punctuation">:</span>
+			<span class="token keyword">if</span> stateObject<span class="token punctuation">.</span>code <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> stateObject<span class="token punctuation">.</span>dirtyCode <span class="token punctuation">&#123;</span>
+				s<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">TrieDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">InsertBlob</span><span class="token punctuation">(</span>common<span class="token punctuation">.</span><span class="token function">BytesToHash</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">.</span><span class="token function">CodeHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> stateObject<span class="token punctuation">.</span>code<span class="token punctuation">)</span>
+				stateObject<span class="token punctuation">.</span>dirtyCode <span class="token operator">=</span> <span class="token boolean">false</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">if</span> err <span class="token operator">:=</span> stateObject<span class="token punctuation">.</span><span class="token function">CommitTrie</span><span class="token punctuation">(</span>s<span class="token punctuation">.</span>db<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+			<span class="token punctuation">&#125;</span>
+			s<span class="token punctuation">.</span><span class="token function">updateStateObject</span><span class="token punctuation">(</span>stateObject<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token function">delete</span><span class="token punctuation">(</span>s<span class="token punctuation">.</span>stateObjectsDirty<span class="token punctuation">,</span> addr<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	root<span class="token punctuation">,</span> err <span class="token operator">=</span> s<span class="token punctuation">.</span>trie<span class="token punctuation">.</span><span class="token function">Commit</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span>leaf <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> parent common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">var</span> account Account
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">DecodeBytes</span><span class="token punctuation">(</span>leaf<span class="token punctuation">,</span> <span class="token operator">&amp;</span>account<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">nil</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> account<span class="token punctuation">.</span>Root <span class="token operator">!=</span> emptyState <span class="token punctuation">&#123;</span>
+			s<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">TrieDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Reference</span><span class="token punctuation">(</span>account<span class="token punctuation">.</span>Root<span class="token punctuation">,</span> parent<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		code <span class="token operator">:=</span> common<span class="token punctuation">.</span><span class="token function">BytesToHash</span><span class="token punctuation">(</span>account<span class="token punctuation">.</span>CodeHash<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> code <span class="token operator">!=</span> emptyCode <span class="token punctuation">&#123;</span>
+			s<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">TrieDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Reference</span><span class="token punctuation">(</span>code<span class="token punctuation">,</span> parent<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	log<span class="token punctuation">.</span><span class="token function">Debug</span><span class="token punctuation">(</span><span class="token string">"Trie cache stats after commit"</span><span class="token punctuation">,</span> <span class="token string">"misses"</span><span class="token punctuation">,</span> trie<span class="token punctuation">.</span><span class="token function">CacheMisses</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"unloads"</span><span class="token punctuation">,</span> trie<span class="token punctuation">.</span><span class="token function">CacheUnloads</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> root<span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>s <span class="token operator">*</span>StateDB<span class="token punctuation">)</span> <span class="token function">clearJournalAndRefund</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	s<span class="token punctuation">.</span>journal <span class="token operator">=</span> <span class="token function">newJournal</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	s<span class="token punctuation">.</span>validRevisions <span class="token operator">=</span> s<span class="token punctuation">.</span>validRevisions<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span>
+	s<span class="token punctuation">.</span>refund <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先遍历了journal.dirties，他存储着每个地址操作的次数，然后在stateObjectsDirty进行记录，表示相应地址有改动。随后遍历stateObjects，他保存着各个地址的stateObject。</p>
+<p>如果某个地址有过操作，首先处理code，如果code有更新则调用InsertBlob进行插入。随后调用stateObject的CommitTrie提交这个签名分析过，最终结果是将树写入数据库，之后更新了StateObject。注意前面只是提交各个stateObject的树，回顾stateObject源码，stateObject成员中的树是通过OpenStorageTrie获取的，其中的root参数是通过StateDB的树种获取的，而StateDB成员中的树是通过OpenTrie获取的。stateObject只是代表一个个以太坊账户，所以还要对StateDB的树进行提交。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/1Z2niiBPg5A">https://unsplash.com/photos/1Z2niiBPg5A</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/05/16/go-ethereum%E4%B8%ADeth-downloader%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A02/" rel="prev" title="go-ethereum中eth-downloader源码学习（二）">
+                  <i class="fa fa-chevron-left"></i> go-ethereum中eth-downloader源码学习（二）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/05/18/go-ethereum%E4%B8%ADcore-genesis%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="next" title="go-ethereum中core-genesis源码学习">
+                  go-ethereum中core-genesis源码学习 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

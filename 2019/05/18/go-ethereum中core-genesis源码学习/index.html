@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="go-ethereum中core-genesis源码学习">
+<meta property="og:url" content="http://example.com/2019/05/18/go-ethereum%E4%B8%ADcore-genesis%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/francesco-ungaro-1597436-unsplash.jpg">
+<meta property="article:published_time" content="2019-05-18T05:31:30.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.488Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/francesco-ungaro-1597436-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/05/18/go-ethereum%E4%B8%ADcore-genesis%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/05/18/go-ethereum%E4%B8%ADcore-genesis%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/","path":"2019/05/18/go-ethereum中core-genesis源码学习/","title":"go-ethereum中core-genesis源码学习"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>go-ethereum中core-genesis源码学习 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">数据结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SetupGenesisBlock"><span class="nav-number">2.</span> <span class="nav-text">SetupGenesisBlock</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%83%85%E5%86%B5%E4%B8%80%EF%BC%9A%E5%A4%96%E9%83%A8genesis%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%ADgenesis%E9%83%BD%E4%B8%BA%E7%A9%BA"><span class="nav-number">2.1.</span> <span class="nav-text">情况一：外部genesis与数据库中genesis都为空</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%83%85%E5%86%B5%E4%BA%8C%EF%BC%9A%E5%8F%AA%E6%9C%89%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%AD%E7%9A%84genesis%E4%B8%BA%E7%A9%BA"><span class="nav-number">2.2.</span> <span class="nav-text">情况二：只有数据库中的genesis为空</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%83%85%E5%86%B5%E4%B8%89%EF%BC%9A%E5%A4%96%E9%83%A8genesis%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%ADgenesis%E9%83%BD%E4%B8%8D%E4%B8%BA%E7%A9%BA"><span class="nav-number">2.3.</span> <span class="nav-text">情况三：外部genesis与数据库中genesis都不为空</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%83%85%E5%86%B5%E5%9B%9B%EF%BC%9A%E5%8F%AA%E6%9C%89%E5%A4%96%E9%83%A8%E7%9A%84genesis%E4%B8%BA%E7%A9%BA"><span class="nav-number">2.4.</span> <span class="nav-text">情况四：只有外部的genesis为空</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#configOrDefault"><span class="nav-number">2.5.</span> <span class="nav-text">configOrDefault</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#commit"><span class="nav-number">3.</span> <span class="nav-text">commit</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ToBlock"><span class="nav-number">3.1.</span> <span class="nav-text">ToBlock</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">3.2.</span> <span class="nav-text">写数据库</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/05/18/go-ethereum%E4%B8%ADcore-genesis%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go-ethereum中core-genesis源码学习
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-05-18 13:31:30" itemprop="dateCreated datePublished" datetime="2019-05-18T13:31:30+08:00">2019-05-18</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go-ethereum%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">go-ethereum源码学习</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>13k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>12 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/francesco-ungaro-1597436-unsplash.jpg"></p>
+<span id="more"></span>
+<p>genesis就是创世区块，我们在运行一个区块链节点时都要使用创世区块的配置文件对区块链进行初始化，不同的网络又不同的创世区块。</p>
+<h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Genesis <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Config     <span class="token operator">*</span>params<span class="token punctuation">.</span>ChainConfig <span class="token string">`json:"config"`</span>
+	Nonce      <span class="token builtin">uint64</span>              <span class="token string">`json:"nonce"`</span>
+	Timestamp  <span class="token builtin">uint64</span>              <span class="token string">`json:"timestamp"`</span>
+	ExtraData  <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>              <span class="token string">`json:"extraData"`</span>
+	GasLimit   <span class="token builtin">uint64</span>              <span class="token string">`json:"gasLimit"   gencodec:"required"`</span>
+	Difficulty <span class="token operator">*</span>big<span class="token punctuation">.</span>Int            <span class="token string">`json:"difficulty" gencodec:"required"`</span>
+	Mixhash    common<span class="token punctuation">.</span>Hash         <span class="token string">`json:"mixHash"`</span>
+	Coinbase   common<span class="token punctuation">.</span>Address      <span class="token string">`json:"coinbase"`</span>
+	Alloc      GenesisAlloc        <span class="token string">`json:"alloc"      gencodec:"required"`</span>
+
+	<span class="token comment">// These fields are used for consensus tests. Please don't use them</span>
+	<span class="token comment">// in actual genesis blocks.</span>
+	Number     <span class="token builtin">uint64</span>      <span class="token string">`json:"number"`</span>
+	GasUsed    <span class="token builtin">uint64</span>      <span class="token string">`json:"gasUsed"`</span>
+	ParentHash common<span class="token punctuation">.</span>Hash <span class="token string">`json:"parentHash"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> GenesisAlloc <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">]</span>GenesisAccount
+
+<span class="token keyword">type</span> GenesisAccount <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Code       <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>                      <span class="token string">`json:"code,omitempty"`</span>
+	Storage    <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span>common<span class="token punctuation">.</span>Hash <span class="token string">`json:"storage,omitempty"`</span>
+	Balance    <span class="token operator">*</span>big<span class="token punctuation">.</span>Int                    <span class="token string">`json:"balance" gencodec:"required"`</span>
+	Nonce      <span class="token builtin">uint64</span>                      <span class="token string">`json:"nonce,omitempty"`</span>
+	PrivateKey <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>                      <span class="token string">`json:"secretKey,omitempty"`</span> 
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> ChainConfig <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	ChainID <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"chainId"`</span> 
+
+	HomesteadBlock <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"homesteadBlock,omitempty"`</span> 
+
+	DAOForkBlock   <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"daoForkBlock,omitempty"`</span>   
+	DAOForkSupport <span class="token builtin">bool</span>     <span class="token string">`json:"daoForkSupport,omitempty"`</span> 
+
+
+	EIP150Block <span class="token operator">*</span>big<span class="token punctuation">.</span>Int    <span class="token string">`json:"eip150Block,omitempty"`</span> 
+	EIP150Hash  common<span class="token punctuation">.</span>Hash <span class="token string">`json:"eip150Hash,omitempty"`</span>  
+
+	EIP155Block <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"eip155Block,omitempty"`</span> 
+	EIP158Block <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"eip158Block,omitempty"`</span> 
+
+	ByzantiumBlock      <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"byzantiumBlock,omitempty"`</span>      
+	ConstantinopleBlock <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"constantinopleBlock,omitempty"`</span> 
+	PetersburgBlock     <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"petersburgBlock,omitempty"`</span>     
+	EWASMBlock          <span class="token operator">*</span>big<span class="token punctuation">.</span>Int <span class="token string">`json:"ewasmBlock,omitempty"`</span>          
+
+	Ethash <span class="token operator">*</span>EthashConfig <span class="token string">`json:"ethash,omitempty"`</span>
+	Clique <span class="token operator">*</span>CliqueConfig <span class="token string">`json:"clique,omitempty"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> EthashConfig <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> CliqueConfig <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Period <span class="token builtin">uint64</span> <span class="token string">`json:"period"`</span> 
+	Epoch  <span class="token builtin">uint64</span> <span class="token string">`json:"epoch"`</span>  
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面给出了创世区块的完整定义，每个字段后面都有json标签，说明可以进行json的序列化和反序列化操作，事实上我们在指定一个创世区块时就是通过json文件配置的，官网给出了一个创世区块json文件的例子</p>
+<pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+  <span class="token property">"config"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+        <span class="token property">"chainId"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"homesteadBlock"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"eip155Block"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"eip158Block"</span><span class="token operator">:</span> <span class="token number">0</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+  <span class="token property">"alloc"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+        <span class="token property">"0x0000000000000000000000000000000000000001"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span><span class="token property">"balance"</span><span class="token operator">:</span> <span class="token string">"111111111"</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+        <span class="token property">"0x0000000000000000000000000000000000000002"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span><span class="token property">"balance"</span><span class="token operator">:</span> <span class="token string">"222222222"</span><span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+  <span class="token property">"coinbase"</span>   <span class="token operator">:</span> <span class="token string">"0x0000000000000000000000000000000000000000"</span><span class="token punctuation">,</span>
+  <span class="token property">"difficulty"</span> <span class="token operator">:</span> <span class="token string">"0x20000"</span><span class="token punctuation">,</span>
+  <span class="token property">"extraData"</span>  <span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">,</span>
+  <span class="token property">"gasLimit"</span>   <span class="token operator">:</span> <span class="token string">"0x2fefd8"</span><span class="token punctuation">,</span>
+  <span class="token property">"nonce"</span>      <span class="token operator">:</span> <span class="token string">"0x0000000000000042"</span><span class="token punctuation">,</span>
+  <span class="token property">"mixhash"</span>    <span class="token operator">:</span> <span class="token string">"0x0000000000000000000000000000000000000000000000000000000000000000"</span><span class="token punctuation">,</span>
+  <span class="token property">"parentHash"</span> <span class="token operator">:</span> <span class="token string">"0x0000000000000000000000000000000000000000000000000000000000000000"</span><span class="token punctuation">,</span>
+  <span class="token property">"timestamp"</span>  <span class="token operator">:</span> <span class="token string">"0x00"</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中，config中的chainId是网络标识，注意1表示以太坊主网；homesteadBlock、eip155Block和eip158Block是表示几个版本升级时硬分叉的高度，为nil表示不分叉。剩余的基本就是区块中一些固定的内容。</p>
+<h1 id="SetupGenesisBlock"><a href="#SetupGenesisBlock" class="headerlink" title="SetupGenesisBlock"></a>SetupGenesisBlock</h1><p>在初始化区块链的时候就是调用这个方法来配置创世区块</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">SetupGenesisBlock</span><span class="token punctuation">(</span>db ethdb<span class="token punctuation">.</span>Database<span class="token punctuation">,</span> genesis <span class="token operator">*</span>Genesis<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>params<span class="token punctuation">.</span>ChainConfig<span class="token punctuation">,</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">SetupGenesisBlockWithOverride</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> genesis<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">SetupGenesisBlockWithOverride</span><span class="token punctuation">(</span>db ethdb<span class="token punctuation">.</span>Database<span class="token punctuation">,</span> genesis <span class="token operator">*</span>Genesis<span class="token punctuation">,</span> constantinopleOverride <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>params<span class="token punctuation">.</span>ChainConfig<span class="token punctuation">,</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> genesis <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> genesis<span class="token punctuation">.</span>Config <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> 
+		<span class="token keyword">return</span> params<span class="token punctuation">.</span>AllEthashProtocolChanges<span class="token punctuation">,</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> errGenesisNoConfig
+	<span class="token punctuation">&#125;</span>
+	
+	stored <span class="token operator">:=</span> rawdb<span class="token punctuation">.</span><span class="token function">ReadCanonicalHash</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> 
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>stored <span class="token operator">==</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> 
+		<span class="token keyword">if</span> genesis <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Writing default main-net genesis block"</span><span class="token punctuation">)</span>
+			genesis <span class="token operator">=</span> <span class="token function">DefaultGenesisBlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Writing custom genesis block"</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		block<span class="token punctuation">,</span> err <span class="token operator">:=</span> genesis<span class="token punctuation">.</span><span class="token function">Commit</span><span class="token punctuation">(</span>db<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> genesis<span class="token punctuation">.</span>Config<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> genesis <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		hash <span class="token operator">:=</span> genesis<span class="token punctuation">.</span><span class="token function">ToBlock</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> hash <span class="token operator">!=</span> stored <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> genesis<span class="token punctuation">.</span>Config<span class="token punctuation">,</span> hash<span class="token punctuation">,</span> <span class="token operator">&amp;</span>GenesisMismatchError<span class="token punctuation">&#123;</span>stored<span class="token punctuation">,</span> hash<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	newcfg <span class="token operator">:=</span> genesis<span class="token punctuation">.</span><span class="token function">configOrDefault</span><span class="token punctuation">(</span>stored<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> constantinopleOverride <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		newcfg<span class="token punctuation">.</span>ConstantinopleBlock <span class="token operator">=</span> constantinopleOverride
+		newcfg<span class="token punctuation">.</span>PetersburgBlock <span class="token operator">=</span> constantinopleOverride
+	<span class="token punctuation">&#125;</span>
+	storedcfg <span class="token operator">:=</span> rawdb<span class="token punctuation">.</span><span class="token function">ReadChainConfig</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> stored<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> storedcfg <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Found genesis block without chain config"</span><span class="token punctuation">)</span>
+		rawdb<span class="token punctuation">.</span><span class="token function">WriteChainConfig</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> stored<span class="token punctuation">,</span> newcfg<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> newcfg<span class="token punctuation">,</span> stored<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> genesis <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> stored <span class="token operator">!=</span> params<span class="token punctuation">.</span>MainnetGenesisHash <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> storedcfg<span class="token punctuation">,</span> stored<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+
+	height <span class="token operator">:=</span> rawdb<span class="token punctuation">.</span><span class="token function">ReadHeaderNumber</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> rawdb<span class="token punctuation">.</span><span class="token function">ReadHeadHeaderHash</span><span class="token punctuation">(</span>db<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> height <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> newcfg<span class="token punctuation">,</span> stored<span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"missing block number for head header hash"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	compatErr <span class="token operator">:=</span> storedcfg<span class="token punctuation">.</span><span class="token function">CheckCompatible</span><span class="token punctuation">(</span>newcfg<span class="token punctuation">,</span> <span class="token operator">*</span>height<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> compatErr <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">*</span>height <span class="token operator">!=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> compatErr<span class="token punctuation">.</span>RewindTo <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> newcfg<span class="token punctuation">,</span> stored<span class="token punctuation">,</span> compatErr
+	<span class="token punctuation">&#125;</span>
+	rawdb<span class="token punctuation">.</span><span class="token function">WriteChainConfig</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> stored<span class="token punctuation">,</span> newcfg<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> newcfg<span class="token punctuation">,</span> stored<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>传入的参数就是一个已经解析过的Genesis对象。首先判断config字段是否为空，因为这里面至少定义了一个网络ID。接下来调用了ReadCanonicalHash方法，ReadCanonicalHash实际上就是ethdb的get方法封装，这里读取了编号为0的区块hash，也就是尝试从数据库中读取创世区块。</p>
+<p>接下来分四种情况，在源码开头已经给出了：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">//                          genesis == nil       genesis != nil</span>
+<span class="token comment">//                       +------------------------------------------</span>
+<span class="token comment">//     db has no genesis |  main-net default  |  genesis</span>
+<span class="token comment">//     db has genesis    |  from DB           |  genesis (if compatible)</span>
+<span class="token comment">//</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="情况一：外部genesis与数据库中genesis都为空"><a href="#情况一：外部genesis与数据库中genesis都为空" class="headerlink" title="情况一：外部genesis与数据库中genesis都为空"></a>情况一：外部genesis与数据库中genesis都为空</h2><p>首先如果读取到的为空表示没有初始化过。接下来如果传入的genesis对象也为为空时，符合注释中的第一种情况，就调用DefaultGenesisBlock配置默认的创世区块，也就是主网下创世区块。这一般在默认连接主网时出现</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">DefaultGenesisBlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>Genesis <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>Genesis<span class="token punctuation">&#123;</span>
+		Config<span class="token punctuation">:</span>     params<span class="token punctuation">.</span>MainnetChainConfig<span class="token punctuation">,</span>
+		Nonce<span class="token punctuation">:</span>      <span class="token number">66</span><span class="token punctuation">,</span>
+		ExtraData<span class="token punctuation">:</span>  hexutil<span class="token punctuation">.</span><span class="token function">MustDecode</span><span class="token punctuation">(</span><span class="token string">"0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		GasLimit<span class="token punctuation">:</span>   <span class="token number">5000</span><span class="token punctuation">,</span>
+		Difficulty<span class="token punctuation">:</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">17179869184</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Alloc<span class="token punctuation">:</span>      <span class="token function">decodePrealloc</span><span class="token punctuation">(</span>mainnetAllocData<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+	MainnetChainConfig <span class="token operator">=</span> <span class="token operator">&amp;</span>ChainConfig<span class="token punctuation">&#123;</span>
+		ChainID<span class="token punctuation">:</span>             big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		HomesteadBlock<span class="token punctuation">:</span>      big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">1150000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		DAOForkBlock<span class="token punctuation">:</span>        big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">1920000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		DAOForkSupport<span class="token punctuation">:</span>      <span class="token boolean">true</span><span class="token punctuation">,</span>
+		EIP150Block<span class="token punctuation">:</span>         big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">2463000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		EIP150Hash<span class="token punctuation">:</span>          common<span class="token punctuation">.</span><span class="token function">HexToHash</span><span class="token punctuation">(</span><span class="token string">"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		EIP155Block<span class="token punctuation">:</span>         big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">2675000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		EIP158Block<span class="token punctuation">:</span>         big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">2675000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		ByzantiumBlock<span class="token punctuation">:</span>      big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">4370000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		ConstantinopleBlock<span class="token punctuation">:</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">7280000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		PetersburgBlock<span class="token punctuation">:</span>     big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">7280000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Ethash<span class="token punctuation">:</span>              <span class="token function">new</span><span class="token punctuation">(</span>EthashConfig<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>主网的创世区块配置中的Alloc字段是在core/genesis_alloc.go中写的。另外可以看到主网的ID是1，还有几次硬分叉的高度。</p>
+<h2 id="情况二：只有数据库中的genesis为空"><a href="#情况二：只有数据库中的genesis为空" class="headerlink" title="情况二：只有数据库中的genesis为空"></a>情况二：只有数据库中的genesis为空</h2><p>回到SetupGenesisBlock中，如果我们传来的创世区块不为空，但是本地数据库中没有存储过创世区块的话，这一般在指定配置文件时第一次初始化出现，则调用commit方法将我们指定的genesis提交到数据库，commit方法后面再介绍</p>
+<h2 id="情况三：外部genesis与数据库中genesis都不为空"><a href="#情况三：外部genesis与数据库中genesis都不为空" class="headerlink" title="情况三：外部genesis与数据库中genesis都不为空"></a>情况三：外部genesis与数据库中genesis都不为空</h2><p>如果本地数据库存的有genesis数据，外部指定的也有genesis数据，先对二者的区块进行比较，就是对hash比较，不一样的报错返回。只有在一样的情况下继续执行，这时先通过configOrDefault获取我们指定的配置信息，然后利用ReadChainConfig从数据库读取旧的配置信息，然后在获取区块链高度，之后进行兼容性判断，兼容的话利用WriteChainConfig把我们指定的配置信息写入数据库</p>
+<h2 id="情况四：只有外部的genesis为空"><a href="#情况四：只有外部的genesis为空" class="headerlink" title="情况四：只有外部的genesis为空"></a>情况四：只有外部的genesis为空</h2><p>对应这种情况，也是先通过configOrDefault根据本地存储的创世区块hash值获取某个预制的配置信息，在获取的配置信息不是主网配置信息的情况下不做任何改变，也就是说是其他配置信息的话就和有外部Genesis一样进行兼容性检测人后写入。</p>
+<h2 id="configOrDefault"><a href="#configOrDefault" class="headerlink" title="configOrDefault"></a>configOrDefault</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>g <span class="token operator">*</span>Genesis<span class="token punctuation">)</span> <span class="token function">configOrDefault</span><span class="token punctuation">(</span>ghash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token operator">*</span>params<span class="token punctuation">.</span>ChainConfig <span class="token punctuation">&#123;</span>
+	<span class="token keyword">switch</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">case</span> g <span class="token operator">!=</span> <span class="token boolean">nil</span><span class="token punctuation">:</span>
+		<span class="token keyword">return</span> g<span class="token punctuation">.</span>Config
+	<span class="token keyword">case</span> ghash <span class="token operator">==</span> params<span class="token punctuation">.</span>MainnetGenesisHash<span class="token punctuation">:</span>
+		<span class="token keyword">return</span> params<span class="token punctuation">.</span>MainnetChainConfig
+	<span class="token keyword">case</span> ghash <span class="token operator">==</span> params<span class="token punctuation">.</span>TestnetGenesisHash<span class="token punctuation">:</span>
+		<span class="token keyword">return</span> params<span class="token punctuation">.</span>TestnetChainConfig
+	<span class="token keyword">default</span><span class="token punctuation">:</span>
+		<span class="token keyword">return</span> params<span class="token punctuation">.</span>AllEthashProtocolChanges
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="commit"><a href="#commit" class="headerlink" title="commit"></a>commit</h1><p>commit方法是将我们指定的创世区块写入数据库</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>g <span class="token operator">*</span>Genesis<span class="token punctuation">)</span> <span class="token function">Commit</span><span class="token punctuation">(</span>db ethdb<span class="token punctuation">.</span>Database<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	block <span class="token operator">:=</span> g<span class="token punctuation">.</span><span class="token function">ToBlock</span><span class="token punctuation">(</span>db<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> block<span class="token punctuation">.</span><span class="token function">Number</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Sign</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"can't commit genesis block with number > 0"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	rawdb<span class="token punctuation">.</span><span class="token function">WriteTd</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> g<span class="token punctuation">.</span>Difficulty<span class="token punctuation">)</span>
+	rawdb<span class="token punctuation">.</span><span class="token function">WriteBlock</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">)</span>
+	rawdb<span class="token punctuation">.</span><span class="token function">WriteReceipts</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	rawdb<span class="token punctuation">.</span><span class="token function">WriteCanonicalHash</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	rawdb<span class="token punctuation">.</span><span class="token function">WriteHeadBlockHash</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	rawdb<span class="token punctuation">.</span><span class="token function">WriteHeadHeaderHash</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	config <span class="token operator">:=</span> g<span class="token punctuation">.</span>Config
+	<span class="token keyword">if</span> config <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		config <span class="token operator">=</span> params<span class="token punctuation">.</span>AllEthashProtocolChanges
+	<span class="token punctuation">&#125;</span>
+	rawdb<span class="token punctuation">.</span><span class="token function">WriteChainConfig</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> config<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> block<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="ToBlock"><a href="#ToBlock" class="headerlink" title="ToBlock"></a>ToBlock</h2><p>首先调用了ToBlock方法创建了一个区块</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>g <span class="token operator">*</span>Genesis<span class="token punctuation">)</span> <span class="token function">ToBlock</span><span class="token punctuation">(</span>db ethdb<span class="token punctuation">.</span>Database<span class="token punctuation">)</span> <span class="token operator">*</span>types<span class="token punctuation">.</span>Block <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> db <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> 
+		db <span class="token operator">=</span> ethdb<span class="token punctuation">.</span><span class="token function">NewMemDatabase</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	statedb<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> state<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> state<span class="token punctuation">.</span><span class="token function">NewDatabase</span><span class="token punctuation">(</span>db<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> addr<span class="token punctuation">,</span> account <span class="token operator">:=</span> <span class="token keyword">range</span> g<span class="token punctuation">.</span>Alloc <span class="token punctuation">&#123;</span> 
+		statedb<span class="token punctuation">.</span><span class="token function">AddBalance</span><span class="token punctuation">(</span>addr<span class="token punctuation">,</span> account<span class="token punctuation">.</span>Balance<span class="token punctuation">)</span>
+		statedb<span class="token punctuation">.</span><span class="token function">SetCode</span><span class="token punctuation">(</span>addr<span class="token punctuation">,</span> account<span class="token punctuation">.</span>Code<span class="token punctuation">)</span>
+		statedb<span class="token punctuation">.</span><span class="token function">SetNonce</span><span class="token punctuation">(</span>addr<span class="token punctuation">,</span> account<span class="token punctuation">.</span>Nonce<span class="token punctuation">)</span>
+		<span class="token keyword">for</span> key<span class="token punctuation">,</span> value <span class="token operator">:=</span> <span class="token keyword">range</span> account<span class="token punctuation">.</span>Storage <span class="token punctuation">&#123;</span>
+			statedb<span class="token punctuation">.</span><span class="token function">SetState</span><span class="token punctuation">(</span>addr<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	root <span class="token operator">:=</span> statedb<span class="token punctuation">.</span><span class="token function">IntermediateRoot</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span>
+	head <span class="token operator">:=</span> <span class="token operator">&amp;</span>types<span class="token punctuation">.</span>Header<span class="token punctuation">&#123;</span> 
+		Number<span class="token punctuation">:</span>     <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetUint64</span><span class="token punctuation">(</span>g<span class="token punctuation">.</span>Number<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Nonce<span class="token punctuation">:</span>      types<span class="token punctuation">.</span><span class="token function">EncodeNonce</span><span class="token punctuation">(</span>g<span class="token punctuation">.</span>Nonce<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Time<span class="token punctuation">:</span>       <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetUint64</span><span class="token punctuation">(</span>g<span class="token punctuation">.</span>Timestamp<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		ParentHash<span class="token punctuation">:</span> g<span class="token punctuation">.</span>ParentHash<span class="token punctuation">,</span>
+		Extra<span class="token punctuation">:</span>      g<span class="token punctuation">.</span>ExtraData<span class="token punctuation">,</span>
+		GasLimit<span class="token punctuation">:</span>   g<span class="token punctuation">.</span>GasLimit<span class="token punctuation">,</span>
+		GasUsed<span class="token punctuation">:</span>    g<span class="token punctuation">.</span>GasUsed<span class="token punctuation">,</span>
+		Difficulty<span class="token punctuation">:</span> g<span class="token punctuation">.</span>Difficulty<span class="token punctuation">,</span>
+		MixDigest<span class="token punctuation">:</span>  g<span class="token punctuation">.</span>Mixhash<span class="token punctuation">,</span>
+		Coinbase<span class="token punctuation">:</span>   g<span class="token punctuation">.</span>Coinbase<span class="token punctuation">,</span>
+		Root<span class="token punctuation">:</span>       root<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> g<span class="token punctuation">.</span>GasLimit <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		head<span class="token punctuation">.</span>GasLimit <span class="token operator">=</span> params<span class="token punctuation">.</span>GenesisGasLimit <span class="token comment">//默认为4712388  go-ethereum\params\protocol_params.go</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> g<span class="token punctuation">.</span>Difficulty <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		head<span class="token punctuation">.</span>Difficulty <span class="token operator">=</span> params<span class="token punctuation">.</span>GenesisDifficulty <span class="token comment">//默认为131072</span>
+	<span class="token punctuation">&#125;</span>
+	statedb<span class="token punctuation">.</span><span class="token function">Commit</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span>
+	statedb<span class="token punctuation">.</span><span class="token function">Database</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">TrieDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Commit</span><span class="token punctuation">(</span>root<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> types<span class="token punctuation">.</span><span class="token function">NewBlock</span><span class="token punctuation">(</span>head<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在ToBlock，如果传入的数据库对象为空，则建立一个内存数据库，这个我们在分析ethdb源码时分析过，随后调用了state.New方法，关于state见这篇<a target="_blank" rel="noopener" href="https://blog.grapefruit.tk/2019/05/17/go-ethereum%E4%B8%ADcore-state%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">文章</a>,这里返回的StateDB用于操作账户。随后遍历了alloc字段，这是预分配余额，对于每个账户都写入相应的余额、代码、随机数和存储的数据。之后调用IntermediateRoot获取临时的根hash，接着构建了区块头，填入了头部的各项信息，基本都是按照创世区块来的。随后调用statedb.Commit把前面statedb所做的变动进行提交，注意IntermediateRoot只是暂时算出当前状态树的根并没有持久化到数据库。</p>
+<p>接着又调用了statedb.Database().TrieDB().Commit(root, true)，我们一段一段分析，statedb.Database()是获取的StateDB的db对象，这个变量我们前面在创建statedb时通过state.NewDatabase方法构建，他返回一个cachingDB对象，而cachingDB的TrieDB返回它自己的db对象，这是一个trie包里的Database对象，这个对象保存了我们最初传入的ethdb.Database对象。它的Commit方法实际上就是将树最后写入数据库中，关于这一部分见前面tire源码分析</p>
+<p>回到ToBlock，最后调用NewBlock构建了一个区块对象</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">NewBlock</span><span class="token punctuation">(</span>header <span class="token operator">*</span>Header<span class="token punctuation">,</span> txs <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>Transaction<span class="token punctuation">,</span> uncles <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>Header<span class="token punctuation">,</span> receipts <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>Receipt<span class="token punctuation">)</span> <span class="token operator">*</span>Block <span class="token punctuation">&#123;</span>
+	b <span class="token operator">:=</span> <span class="token operator">&amp;</span>Block<span class="token punctuation">&#123;</span>header<span class="token punctuation">:</span> <span class="token function">CopyHeader</span><span class="token punctuation">(</span>header<span class="token punctuation">)</span><span class="token punctuation">,</span> td<span class="token punctuation">:</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>txs<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		b<span class="token punctuation">.</span>header<span class="token punctuation">.</span>TxHash <span class="token operator">=</span> EmptyRootHash
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		b<span class="token punctuation">.</span>header<span class="token punctuation">.</span>TxHash <span class="token operator">=</span> <span class="token function">DeriveSha</span><span class="token punctuation">(</span><span class="token function">Transactions</span><span class="token punctuation">(</span>txs<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		b<span class="token punctuation">.</span>transactions <span class="token operator">=</span> <span class="token function">make</span><span class="token punctuation">(</span>Transactions<span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>txs<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token function">copy</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>transactions<span class="token punctuation">,</span> txs<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>receipts<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		b<span class="token punctuation">.</span>header<span class="token punctuation">.</span>ReceiptHash <span class="token operator">=</span> EmptyRootHash
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		b<span class="token punctuation">.</span>header<span class="token punctuation">.</span>ReceiptHash <span class="token operator">=</span> <span class="token function">DeriveSha</span><span class="token punctuation">(</span><span class="token function">Receipts</span><span class="token punctuation">(</span>receipts<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		b<span class="token punctuation">.</span>header<span class="token punctuation">.</span>Bloom <span class="token operator">=</span> <span class="token function">CreateBloom</span><span class="token punctuation">(</span>receipts<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>uncles<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		b<span class="token punctuation">.</span>header<span class="token punctuation">.</span>UncleHash <span class="token operator">=</span> EmptyUncleHash
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		b<span class="token punctuation">.</span>header<span class="token punctuation">.</span>UncleHash <span class="token operator">=</span> <span class="token function">CalcUncleHash</span><span class="token punctuation">(</span>uncles<span class="token punctuation">)</span>
+		b<span class="token punctuation">.</span>uncles <span class="token operator">=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>Header<span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>uncles<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token keyword">range</span> uncles <span class="token punctuation">&#123;</span>
+			b<span class="token punctuation">.</span>uncles<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">CopyHeader</span><span class="token punctuation">(</span>uncles<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span> b
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>传入的参数有区块头，交易集合、叔块头和收据，我们在这里还要补全交易树和收据树的根，我们看一下根hash如何计算</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\core\types\derive_sha.go</span>
+<span class="token keyword">func</span> <span class="token function">DeriveSha</span><span class="token punctuation">(</span>list DerivableList<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Hash <span class="token punctuation">&#123;</span>
+	keybuf <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>bytes<span class="token punctuation">.</span>Buffer<span class="token punctuation">)</span>
+	trie <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>trie<span class="token punctuation">.</span>Trie<span class="token punctuation">)</span>
+	<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> list<span class="token punctuation">.</span><span class="token function">Len</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+		keybuf<span class="token punctuation">.</span><span class="token function">Reset</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		rlp<span class="token punctuation">.</span><span class="token function">Encode</span><span class="token punctuation">(</span>keybuf<span class="token punctuation">,</span> <span class="token function">uint</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		trie<span class="token punctuation">.</span><span class="token function">Update</span><span class="token punctuation">(</span>keybuf<span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> list<span class="token punctuation">.</span><span class="token function">GetRlp</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> trie<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>s Transactions<span class="token punctuation">)</span> <span class="token function">GetRlp</span><span class="token punctuation">(</span>i <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	enc<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">EncodeToBytes</span><span class="token punctuation">(</span>s<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> enc
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先新建一棵树，要插入的key就是其所在集合中的编号，值时经过rlp编码的数据，最后计算树的根hash即可。</p>
+<p>对于叔块的hash计算如下：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">CalcUncleHash</span><span class="token punctuation">(</span>uncles <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>Header<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Hash <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">rlpHash</span><span class="token punctuation">(</span>uncles<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">rlpHash</span><span class="token punctuation">(</span>x <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>h common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	hw <span class="token operator">:=</span> sha3<span class="token punctuation">.</span><span class="token function">NewLegacyKeccak256</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	rlp<span class="token punctuation">.</span><span class="token function">Encode</span><span class="token punctuation">(</span>hw<span class="token punctuation">,</span> x<span class="token punctuation">)</span>
+	hw<span class="token punctuation">.</span><span class="token function">Sum</span><span class="token punctuation">(</span>h<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> h
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先进行rlp编码然后计算sha3-256的值即可。</p>
+<h2 id="写数据库"><a href="#写数据库" class="headerlink" title="写数据库"></a>写数据库</h2><p>回到Genesis中，ToBlock返回了一个区块对象也就是创世区块，接下来调用了rawdb包中的许多方法，rawdb实际上就是一个包装类，封装了一些操作数据库的方法，底层还是使用ethdb的相关方法。首先写入了总难度</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">WriteTd</span><span class="token punctuation">(</span>db DatabaseWriter<span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> number <span class="token builtin">uint64</span><span class="token punctuation">,</span> td <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	data<span class="token punctuation">,</span> err <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">EncodeToBytes</span><span class="token punctuation">(</span>td<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span><span class="token string">"Failed to RLP encode block total difficulty"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span><span class="token function">headerTDKey</span><span class="token punctuation">(</span>number<span class="token punctuation">,</span> hash<span class="token punctuation">)</span><span class="token punctuation">,</span> data<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span><span class="token string">"Failed to store block total difficulty"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">headerTDKey</span><span class="token punctuation">(</span>number <span class="token builtin">uint64</span><span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">append</span><span class="token punctuation">(</span><span class="token function">headerKey</span><span class="token punctuation">(</span>number<span class="token punctuation">,</span> hash<span class="token punctuation">)</span><span class="token punctuation">,</span> headerTDSuffix<span class="token operator">...</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">headerKey</span><span class="token punctuation">(</span>number <span class="token builtin">uint64</span><span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">append</span><span class="token punctuation">(</span><span class="token function">append</span><span class="token punctuation">(</span>headerPrefix<span class="token punctuation">,</span> <span class="token function">encodeBlockNumber</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span><span class="token punctuation">,</span> hash<span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+headerPrefix  <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"h"</span><span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">encodeBlockNumber</span><span class="token punctuation">(</span>number <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	enc <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token number">8</span><span class="token punctuation">)</span>
+	binary<span class="token punctuation">.</span>BigEndian<span class="token punctuation">.</span><span class="token function">PutUint64</span><span class="token punctuation">(</span>enc<span class="token punctuation">,</span> number<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> enc
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>向数据库中写入总难度时，先对key进行了构造:</p>
+<pre class="line-numbers language-none"><code class="language-none">byte(&#39;h&#39;) + 区块编号的大端表示（长度8字节） + 区块hash + byte(&#39;t&#39;)<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>之后开始写入区块</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">WriteBlock</span><span class="token punctuation">(</span>db DatabaseWriter<span class="token punctuation">,</span> block <span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token function">WriteBody</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Body</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token function">WriteHeader</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>先写区块体</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Block<span class="token punctuation">)</span> <span class="token function">Body</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>Body <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> <span class="token operator">&amp;</span>Body<span class="token punctuation">&#123;</span>b<span class="token punctuation">.</span>transactions<span class="token punctuation">,</span> b<span class="token punctuation">.</span>uncles<span class="token punctuation">&#125;</span> <span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">WriteBody</span><span class="token punctuation">(</span>db DatabaseWriter<span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> number <span class="token builtin">uint64</span><span class="token punctuation">,</span> body <span class="token operator">*</span>types<span class="token punctuation">.</span>Body<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	data<span class="token punctuation">,</span> err <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">EncodeToBytes</span><span class="token punctuation">(</span>body<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span><span class="token string">"Failed to RLP encode body"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token function">WriteBodyRLP</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> hash<span class="token punctuation">,</span> number<span class="token punctuation">,</span> data<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">WriteBodyRLP</span><span class="token punctuation">(</span>db DatabaseWriter<span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> number <span class="token builtin">uint64</span><span class="token punctuation">,</span> rlp rlp<span class="token punctuation">.</span>RawValue<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span><span class="token function">blockBodyKey</span><span class="token punctuation">(</span>number<span class="token punctuation">,</span> hash<span class="token punctuation">)</span><span class="token punctuation">,</span> rlp<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span><span class="token string">"Failed to store block body"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">blockBodyKey</span><span class="token punctuation">(</span>number <span class="token builtin">uint64</span><span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">append</span><span class="token punctuation">(</span><span class="token function">append</span><span class="token punctuation">(</span>blockBodyPrefix<span class="token punctuation">,</span> <span class="token function">encodeBlockNumber</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span><span class="token punctuation">,</span> hash<span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+blockBodyPrefix     <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"b"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先所谓的区块体就是一个只包含交易和叔块头的结构体，存储时先对其进行rlp编码，然后存入数据库，存入的key如下构成</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">'b'</span><span class="token punctuation">)</span> <span class="token operator">+</span> 区块编号的大端表示（长度<span class="token number">8</span>字节） <span class="token operator">+</span> 区块hash<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>写入完区块体后写入区块头</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">WriteHeader</span><span class="token punctuation">(</span>db DatabaseWriter<span class="token punctuation">,</span> header <span class="token operator">*</span>types<span class="token punctuation">.</span>Header<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">var</span> <span class="token punctuation">(</span>
+		hash    <span class="token operator">=</span> header<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		number  <span class="token operator">=</span> header<span class="token punctuation">.</span>Number<span class="token punctuation">.</span><span class="token function">Uint64</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		encoded <span class="token operator">=</span> <span class="token function">encodeBlockNumber</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span>
+	<span class="token punctuation">)</span>
+	key <span class="token operator">:=</span> <span class="token function">headerNumberKey</span><span class="token punctuation">(</span>hash<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> encoded<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span><span class="token string">"Failed to store hash to number mapping"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	data<span class="token punctuation">,</span> err <span class="token operator">:=</span> rlp<span class="token punctuation">.</span><span class="token function">EncodeToBytes</span><span class="token punctuation">(</span>header<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span><span class="token string">"Failed to RLP encode header"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	key <span class="token operator">=</span> <span class="token function">headerKey</span><span class="token punctuation">(</span>number<span class="token punctuation">,</span> hash<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> data<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span><span class="token string">"Failed to store header"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">headerNumberKey</span><span class="token punctuation">(</span>hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">append</span><span class="token punctuation">(</span>headerNumberPrefix<span class="token punctuation">,</span> hash<span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+headerNumberPrefix <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"H"</span><span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">headerKey</span><span class="token punctuation">(</span>number <span class="token builtin">uint64</span><span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">append</span><span class="token punctuation">(</span><span class="token function">append</span><span class="token punctuation">(</span>headerPrefix<span class="token punctuation">,</span> <span class="token function">encodeBlockNumber</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span><span class="token punctuation">,</span> hash<span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里首先存储区块编号，构建的key结构如下</p>
+<pre class="line-numbers language-none"><code class="language-none">byte(&#39;H&#39;) + 区块头hash<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>之后再存储区块头，先进行rlp编码，再构建key，结构如下</p>
+<pre class="line-numbers language-none"><code class="language-none">byte(&#39;h&#39;) + 区块编号的大端表示（长度8字节） + 区块头hash <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>接着又存储了收据信息，区块hash，当前区块（区块头顶部区块）hash以及当前区块头hash。还要写入配置信息，不过如果配置为空则加载一个默认配置</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">AllEthashProtocolChanges <span class="token operator">=</span> <span class="token operator">&amp;</span>ChainConfig<span class="token punctuation">&#123;</span>big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">1337</span><span class="token punctuation">)</span><span class="token punctuation">,</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token function">new</span><span class="token punctuation">(</span>EthashConfig<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>最后commit方法返回开始创建的区块对象。回到SetupGenesisBlock中，此时创世区块配置完毕返回其配置和区块hash。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/_aASE0L1I1g">https://unsplash.com/photos/_aASE0L1I1g</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/05/17/go-ethereum%E4%B8%ADcore-state%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="prev" title="go-ethereum中core-state源码学习">
+                  <i class="fa fa-chevron-left"></i> go-ethereum中core-state源码学习
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/05/19/go-ethereum%E4%B8%ADcore-blockchain%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="next" title="go-ethereum中core-blockchain源码学习">
+                  go-ethereum中core-blockchain源码学习 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

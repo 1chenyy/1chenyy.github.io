@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="MD5算法与实现">
+<meta property="og:url" content="http://example.com/2019/04/02/MD5%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/md51.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/md52.png">
+<meta property="article:published_time" content="2019-04-02T05:33:45.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.484Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="密码学">
+<meta property="article:tag" content="java">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/md51.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/04/02/MD5%E7%AE%97%E6%B3%95/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/04/02/MD5%E7%AE%97%E6%B3%95/","path":"2019/04/02/MD5算法/","title":"MD5算法与实现"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>MD5算法与实现 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4"><span class="nav-number">2.</span> <span class="nav-text">详细步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A1%AB%E5%85%85"><span class="nav-number">2.1.</span> <span class="nav-text">填充</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E9%95%BF%E5%BA%A6"><span class="nav-number">2.2.</span> <span class="nav-text">添加长度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%9D%97"><span class="nav-number">2.3.</span> <span class="nav-text">分块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E9%93%BE%E6%8E%A5%E5%8F%98%E9%87%8F"><span class="nav-number">2.4.</span> <span class="nav-text">初始化链接变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E5%9D%97"><span class="nav-number">2.5.</span> <span class="nav-text">处理块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E5%88%B6"><span class="nav-number">2.5.1.</span> <span class="nav-text">复制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E8%A7%A3"><span class="nav-number">2.5.2.</span> <span class="nav-text">分解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%AE%E6%AC%A1%E8%BF%AD%E4%BB%A3"><span class="nav-number">2.5.3.</span> <span class="nav-text">轮次迭代</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BA%94%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">应用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.</span> <span class="nav-text">实现</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/04/02/MD5%E7%AE%97%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MD5算法与实现
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-04-02 13:33:45" itemprop="dateCreated datePublished" datetime="2019-04-02T13:33:45+08:00">2019-04-02</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%AF%86%E7%A0%81%E5%AD%A6/" itemprop="url" rel="index"><span itemprop="name">密码学</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>6.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>6 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/md51.jpg"></p>
+<span id="more"></span>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>MD5全称Message-Digest Algorithm，就是信息摘要算法。是一种被广泛使用的密码散列函数，可以产生出一个128位的散列值，它是由美国密码学家Ron Rivest开发的，于1992年公开。最开始算法是MD，很快出现MD2，不过算法很脆弱，又改为研究MD3，不过最终研发失败。接下来又出现MD4，但仍不理想，最后研发出MD5，成为一个全世界广泛使用的算法。</p>
+<p>如今，MD5被证实存在一系列弱点，可以被加以破解，同时也无法防止碰撞，所以已经不适合安全认证。但是，MD5算法因其普遍、稳定、快速的特点，仍广泛应用于普通数据的错误检查领域。</p>
+<p>作为一个经典算法，这里就详细梳理一下整个流程。<a target="_blank" rel="noopener" href="https://tools.ietf.org/html/rfc1321">MD5标准文档见这里</a></p>
+<h1 id="详细步骤"><a href="#详细步骤" class="headerlink" title="详细步骤"></a>详细步骤</h1><h2 id="填充"><a href="#填充" class="headerlink" title="填充"></a>填充</h2><p>第一步是在初始消息中填充信息，使其达到一个要求的长度，即比512位的倍数少64位。如原始消息是1000位，512*3=1536,1536-64=1472，所以要填充472位。填充的内容是1个1和多个0</p>
+<p>填充总是要进行的，即使消息长度已经比512的倍数少64位，仍要填充512位</p>
+<h2 id="添加长度"><a href="#添加长度" class="headerlink" title="添加长度"></a>添加长度</h2><p>计算源消息的长度，表示成64位填充到末尾。如果消息的长度大于2^64，则使用低64位填充，即len mod 2^64</p>
+<p>添加完之后，整体长度为512的倍数</p>
+<h2 id="分块"><a href="#分块" class="headerlink" title="分块"></a>分块</h2><p>将输入以512位一组分块</p>
+<h2 id="初始化链接变量"><a href="#初始化链接变量" class="headerlink" title="初始化链接变量"></a>初始化链接变量</h2><p>初始化4个32位数字，16进制表示如下</p>
+<pre class="line-numbers language-none"><code class="language-none">A &#x3D; 0x67452301
+B &#x3D; 0xEFCDAB89
+C &#x3D; 0x98BADCFE
+D &#x3D; 0x10325476<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="处理块"><a href="#处理块" class="headerlink" title="处理块"></a>处理块</h2><p>前面都是初始化操作，这里开始才是算法开始</p>
+<h3 id="复制"><a href="#复制" class="headerlink" title="复制"></a>复制</h3><p>将4个初始化变量复制到4个变量abcd中，这四个变量组成一个128位寄存器，用于表示中间结果和最终结果</p>
+<h3 id="分解"><a href="#分解" class="headerlink" title="分解"></a>分解</h3><p>将每块512位分解为16个子块，每个子块32位</p>
+<h3 id="轮次迭代"><a href="#轮次迭代" class="headerlink" title="轮次迭代"></a>轮次迭代</h3><p>主循环有4轮，每轮有16次操作。每次操作对abcd的其中三个做一次非线性运算P，然后将所得结果加上第四个变量、一个子块和一个常数。再将所得结果向左循环移位,最后加上abcd的其中给一个，最后用该结果取代abcd其中之一。如下图所示</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/md52.png"></p>
+<p>表示成数学表达式如下</p>
+<pre class="line-numbers language-none"><code class="language-none">a &#x3D; b + ((a + P(b,c,d) + M[i] + t[k])&lt;&lt;&lt;s)<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>P的每一轮操作如下：</p>
+<table>
+<thead>
+<tr>
+<th>轮次</th>
+<th>P</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>(b AND c) OR ((NOT b) AND b)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>(b AND d) OR (c AND (NOT d)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>b XOR c XOR d</td>
+</tr>
+<tr>
+<td>4</td>
+<td>C XOR (b OR (NOTd)</td>
+</tr>
+</tbody></table>
+<p>轮次操作中常量t[i] = 4294967296*abs(sin(i))的整数部分。下面我们给出每一步详细操作：</p>
+<pre class="line-numbers language-none"><code class="language-none">首先定义P的4种运算：
+F( X ,Y ,Z ) &#x3D; ( X &amp; Y ) | ( (~X) &amp; Z )
+G( X ,Y ,Z ) &#x3D; ( X &amp; Z ) | ( Y &amp; (~Z) )
+H( X ,Y ,Z ) &#x3D;X ^ Y ^ Z
+I( X ,Y ,Z ) &#x3D;Y ^ ( X | (~Z) )
+
+再定义4个函数：
+FF(a ,b ,c ,d ,Mj ,s ,ti ) ： a &#x3D; b + ( (a + F(b,c,d) + Mj + ti) &lt;&lt; s)
+GG(a ,b ,c ,d ,Mj ,s ,ti ) ： a &#x3D; b + ( (a + G(b,c,d) + Mj + ti) &lt;&lt; s)
+HH(a ,b ,c ,d ,Mj ,s ,ti ) ： a &#x3D; b + ( (a + H(b,c,d) + Mj + ti) &lt;&lt; s)
+II(a ,b ,c ,d ,Mj ,s ,ti ) ： a &#x3D; b + ( (a + I(b,c,d) + Mj + ti) &lt;&lt; s)
+
+这4轮64步分别如下：
+第一轮：
+FF(a ,b ,c ,d ,M0 ,7 ,0xd76aa478 )
+FF(d ,a ,b ,c ,M1 ,12 ,0xe8c7b756 )
+FF(c ,d ,a ,b ,M2 ,17 ,0x242070db )
+FF(b ,c ,d ,a ,M3 ,22 ,0xc1bdceee )
+FF(a ,b ,c ,d ,M4 ,7 ,0xf57c0faf )
+FF(d ,a ,b ,c ,M5 ,12 ,0x4787c62a )
+FF(c ,d ,a ,b ,M6 ,17 ,0xa8304613 )
+FF(b ,c ,d ,a ,M7 ,22 ,0xfd469501)
+FF(a ,b ,c ,d ,M8 ,7 ,0x698098d8 )
+FF(d ,a ,b ,c ,M9 ,12 ,0x8b44f7af )
+FF(c ,d ,a ,b ,M10 ,17 ,0xffff5bb1 )
+FF(b ,c ,d ,a ,M11 ,22 ,0x895cd7be )
+FF(a ,b ,c ,d ,M12 ,7 ,0x6b901122 )
+FF(d ,a ,b ,c ,M13 ,12 ,0xfd987193 )
+FF(c ,d ,a ,b ,M14 ,17 ,0xa679438e )
+FF(b ,c ,d ,a ,M15 ,22 ,0x49b40821 )
+第二轮
+GG(a ,b ,c ,d ,M1 ,5 ,0xf61e2562 )
+GG(d ,a ,b ,c ,M6 ,9 ,0xc040b340 )
+GG(c ,d ,a ,b ,M11 ,14 ,0x265e5a51 )
+GG(b ,c ,d ,a ,M0 ,20 ,0xe9b6c7aa )
+GG(a ,b ,c ,d ,M5 ,5 ,0xd62f105d )
+GG(d ,a ,b ,c ,M10 ,9 ,0x02441453 )
+GG(c ,d ,a ,b ,M15 ,14 ,0xd8a1e681 )
+GG(b ,c ,d ,a ,M4 ,20 ,0xe7d3fbc8 )
+GG(a ,b ,c ,d ,M9 ,5 ,0x21e1cde6 )
+GG(d ,a ,b ,c ,M14 ,9 ,0xc33707d6 )
+GG(c ,d ,a ,b ,M3 ,14 ,0xf4d50d87 )
+GG(b ,c ,d ,a ,M8 ,20 ,0x455a14ed )
+GG(a ,b ,c ,d ,M13 ,5 ,0xa9e3e905 )
+GG(d ,a ,b ,c ,M2 ,9 ,0xfcefa3f8 )
+GG(c ,d ,a ,b ,M7 ,14 ,0x676f02d9 )
+GG(b ,c ,d ,a ,M12 ,20 ,0x8d2a4c8a )
+第三轮
+HH(a ,b ,c ,d ,M5 ,4 ,0xfffa3942 )
+HH(d ,a ,b ,c ,M8 ,11 ,0x8771f681 )
+HH(c ,d ,a ,b ,M11 ,16 ,0x6d9d6122 )
+HH(b ,c ,d ,a ,M14 ,23 ,0xfde5380c )
+HH(a ,b ,c ,d ,M1 ,4 ,0xa4beea44 )
+HH(d ,a ,b ,c ,M4 ,11 ,0x4bdecfa9 )
+HH(c ,d ,a ,b ,M7 ,16 ,0xf6bb4b60 )
+HH(b ,c ,d ,a ,M10 ,23 ,0xbebfbc70 )
+HH(a ,b ,c ,d ,M13 ,4 ,0x289b7ec6 )
+HH(d ,a ,b ,c ,M0 ,11 ,0xeaa127fa )
+HH(c ,d ,a ,b ,M3 ,16 ,0xd4ef3085 )
+HH(b ,c ,d ,a ,M6 ,23 ,0x04881d05 )
+HH(a ,b ,c ,d ,M9 ,4 ,0xd9d4d039 )
+HH(d ,a ,b ,c ,M12 ,11 ,0xe6db99e5 )
+HH(c ,d ,a ,b ,M15 ,16 ,0x1fa27cf8 )
+HH(b ,c ,d ,a ,M2 ,23 ,0xc4ac5665 )
+第四轮
+II(a ,b ,c ,d ,M0 ,6 ,0xf4292244 )
+II(d ,a ,b ,c ,M7 ,10 ,0x432aff97 )
+II(c ,d ,a ,b ,M14 ,15 ,0xab9423a7 )
+II(b ,c ,d ,a ,M5 ,21 ,0xfc93a039 )
+II(a ,b ,c ,d ,M12 ,6 ,0x655b59c3 )
+II(d ,a ,b ,c ,M3 ,10 ,0x8f0ccc92 )
+II(c ,d ,a ,b ,M10 ,15 ,0xffeff47d )
+II(b ,c ,d ,a ,M1 ,21 ,0x85845dd1 )
+II(a ,b ,c ,d ,M8 ,6 ,0x6fa87e4f )
+II(d ,a ,b ,c ,M15 ,10 ,0xfe2ce6e0 )
+II(c ,d ,a ,b ,M6 ,15 ,0xa3014314 )
+II(b ,c ,d ,a ,M13 ,21 ,0x4e0811a1 )
+II(a ,b ,c ,d ,M4 ,6 ,0xf7537e82 )
+II(d ,a ,b ,c ,M11 ,10 ,0xbd3af235 )
+II(c ,d ,a ,b ,M2 ,15 ,0x2ad7d2bb )
+II(b ,c ,d ,a ,M9 ,21 ,0xeb86d391 )<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面是网上大多是文章给出的方法，就是生硬的给出64轮具体操作，但其实每一步都是可以推算的，下面来说一下简单的方法：</p>
+<pre class="line-numbers language-none"><code class="language-none">首先对于常数，可以通过公式计算，t[i] &#x3D; 4294967296*abs(sin(i))的整数部分，其中4294967296就是1&lt;&lt;32，即2^32
+对于这个长度建议是直接写成常量，不然每次都计算也比较耗时：
+private static final int T[] &#x3D; &#123; 
+            0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
+            0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501, 0x698098d8,
+            0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193,
+            0xa679438e, 0x49b40821, 0xf61e2562, 0xc040b340, 0x265e5a51,
+            0xe9b6c7aa, 0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
+            0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed, 0xa9e3e905,
+            0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a, 0xfffa3942, 0x8771f681,
+            0x6d9d6122, 0xfde5380c, 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60,
+            0xbebfbc70, 0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05,
+            0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665, 0xf4292244,
+            0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92,
+            0xffeff47d, 0x85845dd1, 0x6fa87e4f, 0xfe2ce6e0, 0xa3014314,
+            0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391 
+    &#125;;
+    
+对于每次取哪一小组明文，是根据轮次定的，定义j是小轮次，0 &lt;&#x3D; j &lt; 64：
+第一大轮就是按顺序取1~16小组 i &#x3D; j
+第二大轮的计算规则为 i &#x3D; (1+5*j)%16 即  (j*5+1)&amp;0x0f
+第三大轮的计算规则为 i &#x3D; (5+3*j)%16 即  (j*3+5)&amp;0x0F
+第四大轮的计算规则为 i &#x3D; (7*j)%16   即  (j*7)&amp;0x0F
+
+对于移位，也是根据轮次定的,定义j是小轮次，0 &lt;&#x3D; j &lt; 64：
+第一大轮 从[7, 12, 17, 22]取，j%4
+第一大轮 从[5, 9, 14, 20]取，j%4
+第一大轮 从[4, 11, 16, 23]取，j%4
+第一大轮 从[6, 10, 15, 21]取，j%4
+若写到一个数组中：
+public static final int S[] &#x3D; new int[]&#123;
+            7, 12, 17, 22, 5, 9, 14, 20, 4,
+            11, 16, 23, 6, 10, 15, 21
+    &#125;;
+可以通过如下公式取值：S[(pType &lt;&lt; 2) | (j &amp; 3)])  &#x2F;&#x2F;pType指第几大轮，j指第几小轮
+
+对于每次运算abcd数输入顺序：
+可以明显观察到，每一小轮之后，下一轮的输入相当于把abcd做循环右移一位，而P运算的输入固定位bcd，所以做如下交换
+a &#x3D; d;
+d &#x3D; c;
+c &#x3D; b;
+b &#x3D; temp;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<p>经过这64步之后，A=a，B=b，C=c，D=d，然后将ABCD作为处理下一明文块的输入</p>
+<h1 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h1><p>MD5已经广泛使用在为文件传输提供一定的可靠性方面。例如，服务器预先提供一个MD5校验和，用户下载完文件以后，用MD5算法计算下载文件的MD5校验和，然后通过检查这两个校验和是否一致，就能判断下载的文件是否出错。</p>
+<h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><p>下面来给出java版本的具体实现，关键步骤有注释，详细代码见<a target="_blank" rel="noopener" href="https://github.com/chenyaoyang/example/blob/master/code/crypto/MD5.java">这里</a></p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token class-name">String</span> <span class="token function">md5</span><span class="token punctuation">(</span><span class="token class-name">String</span> msg<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> msgBytes <span class="token operator">=</span> msg<span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> msgBytesLen <span class="token operator">=</span> msgBytes<span class="token punctuation">.</span>length<span class="token punctuation">;</span><span class="token comment">//原始信息长度，单位bit</span>
+    <span class="token keyword">int</span> numBlock <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>msgBytesLen <span class="token operator">+</span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token operator">>>></span><span class="token number">6</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span> <span class="token comment">//总块数=(原始长度+8bit)/64bit + 1</span>
+    <span class="token keyword">int</span> totalLen <span class="token operator">=</span> numBlock <span class="token operator">&lt;&lt;</span> <span class="token number">6</span><span class="token punctuation">;</span> <span class="token comment">//补全后的长度 = 块数 * 64bit</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> padBytes <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token keyword">byte</span><span class="token punctuation">[</span>totalLen <span class="token operator">-</span> msgBytesLen<span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">//需要补的bit数</span>
+    padBytes<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span> <span class="token number">0x80</span><span class="token punctuation">;</span> <span class="token comment">//补一个1和若干个0</span>
+    <span class="token keyword">long</span> msgLen <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">long</span><span class="token punctuation">)</span>msgBytesLen <span class="token operator">&lt;&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span> <span class="token comment">//计算出多少bit，长度*8</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>i<span class="token operator">&lt;</span><span class="token number">8</span><span class="token punctuation">;</span>i<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        padBytes<span class="token punctuation">[</span>padBytes<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">8</span> <span class="token operator">+</span> i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span> msgLen<span class="token punctuation">;</span><span class="token comment">//从低位开始写入长度</span>
+        msgLen <span class="token operator">>>>=</span> <span class="token number">8</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">int</span> a <span class="token operator">=</span> <span class="token class-name">A</span><span class="token punctuation">,</span>b <span class="token operator">=</span><span class="token class-name">B</span><span class="token punctuation">,</span>c <span class="token operator">=</span> <span class="token class-name">C</span><span class="token punctuation">,</span>d <span class="token operator">=</span> <span class="token class-name">D</span><span class="token punctuation">;</span> <span class="token comment">//赋值常量</span>
+    <span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span> buffer  <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token keyword">int</span><span class="token punctuation">[</span><span class="token number">16</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">//每块512位，16个int类型</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>i<span class="token operator">&lt;</span>numBlock<span class="token punctuation">;</span>i<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> index <span class="token operator">=</span> i <span class="token operator">&lt;&lt;</span> <span class="token number">6</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>j<span class="token operator">&lt;</span><span class="token number">64</span><span class="token punctuation">;</span>j<span class="token operator">++</span><span class="token punctuation">,</span>index<span class="token operator">++</span><span class="token punctuation">)</span>
+            <span class="token comment">//index是msg的游标，j是buffer的游标，一个int类型存4个byte类型</span>
+            <span class="token comment">//从低位开始存</span>
+            buffer<span class="token punctuation">[</span>j <span class="token operator">>>></span> <span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>index <span class="token operator">&lt;</span> msgBytesLen<span class="token punctuation">)</span> <span class="token operator">?</span> msgBytes<span class="token punctuation">[</span>index<span class="token punctuation">]</span>
+                    <span class="token operator">:</span> padBytes<span class="token punctuation">[</span>index <span class="token operator">-</span> msgBytesLen<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token number">24</span><span class="token punctuation">)</span>
+                    <span class="token operator">|</span> <span class="token punctuation">(</span>buffer<span class="token punctuation">[</span>j <span class="token operator">>>></span> <span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">>>></span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> tempa <span class="token operator">=</span> a<span class="token punctuation">;</span> <span class="token comment">//记录abcd的临时变量</span>
+        <span class="token keyword">int</span> tempb <span class="token operator">=</span> b<span class="token punctuation">;</span>
+        <span class="token keyword">int</span> tempc <span class="token operator">=</span> c<span class="token punctuation">;</span>
+        <span class="token keyword">int</span> tempd <span class="token operator">=</span> d<span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>j<span class="token operator">&lt;</span><span class="token number">64</span><span class="token punctuation">;</span>j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">//64小轮</span>
+            <span class="token keyword">int</span> pType <span class="token operator">=</span> j <span class="token operator">>>></span> <span class="token number">4</span><span class="token punctuation">;</span> <span class="token comment">//判断是第几大轮</span>
+            <span class="token keyword">int</span> f <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token comment">//P运算的值</span>
+            <span class="token keyword">int</span> bufferIndex <span class="token operator">=</span> j<span class="token punctuation">;</span> <span class="token comment">//buffer的游标</span>
+            <span class="token keyword">switch</span> <span class="token punctuation">(</span>pType<span class="token punctuation">)</span><span class="token punctuation">&#123;</span> <span class="token comment">//定义不同大轮的具体P运算</span>
+                <span class="token keyword">case</span> <span class="token number">0</span><span class="token operator">:</span>
+                    f <span class="token operator">=</span> <span class="token punctuation">(</span>b <span class="token operator">&amp;</span>c<span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token punctuation">(</span><span class="token operator">~</span>b <span class="token operator">&amp;</span> d<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token keyword">case</span> <span class="token number">1</span><span class="token operator">:</span>
+                    f <span class="token operator">=</span> <span class="token punctuation">(</span>b <span class="token operator">&amp;</span> d<span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token punctuation">(</span>c <span class="token operator">&amp;</span> <span class="token operator">~</span>d<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    bufferIndex <span class="token operator">=</span> <span class="token punctuation">(</span>bufferIndex<span class="token operator">*</span><span class="token number">5</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token operator">&amp;</span><span class="token number">0x0f</span><span class="token punctuation">;</span> <span class="token comment">//明文子组和轮数的关系</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token keyword">case</span> <span class="token number">2</span><span class="token operator">:</span>
+                    f <span class="token operator">=</span> b <span class="token operator">^</span> c <span class="token operator">^</span> d<span class="token punctuation">;</span>
+                    bufferIndex <span class="token operator">=</span> <span class="token punctuation">(</span>bufferIndex <span class="token operator">*</span> <span class="token number">3</span> <span class="token operator">+</span> <span class="token number">5</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0x0F</span><span class="token punctuation">;</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token keyword">case</span> <span class="token number">3</span><span class="token operator">:</span>
+                    f <span class="token operator">=</span> c <span class="token operator">^</span> <span class="token punctuation">(</span>b <span class="token operator">|</span> <span class="token operator">~</span>d<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    bufferIndex <span class="token operator">=</span> <span class="token punctuation">(</span>bufferIndex <span class="token operator">*</span> <span class="token number">7</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0x0F</span><span class="token punctuation">;</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token comment">//运算</span>
+            <span class="token keyword">int</span> temp <span class="token operator">=</span> b <span class="token operator">+</span> <span class="token class-name">Integer</span><span class="token punctuation">.</span><span class="token function">rotateLeft</span><span class="token punctuation">(</span>a <span class="token operator">+</span> f <span class="token operator">+</span> buffer<span class="token punctuation">[</span>bufferIndex<span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token class-name">T</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token class-name">S</span><span class="token punctuation">[</span><span class="token punctuation">(</span>pType <span class="token operator">&lt;&lt;</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token punctuation">(</span>j <span class="token operator">&amp;</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">//交换abcd</span>
+            a <span class="token operator">=</span> d<span class="token punctuation">;</span>
+            d <span class="token operator">=</span> c<span class="token punctuation">;</span>
+            c <span class="token operator">=</span> b<span class="token punctuation">;</span>
+            b <span class="token operator">=</span> temp<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">//分组处理完之后abcd各自累加</span>
+        a <span class="token operator">+=</span> tempa<span class="token punctuation">;</span>
+        b <span class="token operator">+=</span> tempb<span class="token punctuation">;</span>
+        c <span class="token operator">+=</span> tempc<span class="token punctuation">;</span>
+        d <span class="token operator">+=</span> tempd<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">//abcd写到16个byte中</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> out <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token number">16</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>i<span class="token operator">&lt;</span><span class="token number">4</span><span class="token punctuation">;</span>i<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> n <span class="token operator">=</span> <span class="token punctuation">(</span>i <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">?</span> a <span class="token operator">:</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>i <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">?</span> b <span class="token operator">:</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>i <span class="token operator">==</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">?</span> c <span class="token operator">:</span> d<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>j<span class="token operator">&lt;</span><span class="token number">4</span><span class="token punctuation">;</span>j<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            out<span class="token punctuation">[</span>count<span class="token operator">++</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span>n<span class="token punctuation">;</span>
+            n<span class="token operator">>>>=</span><span class="token number">8</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">//转为十六进制表示</span>
+    <span class="token class-name">StringBuffer</span> sb <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StringBuffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">byte</span> bout <span class="token operator">:</span> out<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        sb<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>HEX<span class="token punctuation">[</span><span class="token punctuation">(</span>bout<span class="token operator">>>></span><span class="token number">4</span><span class="token punctuation">)</span><span class="token operator">&amp;</span><span class="token number">0xf</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        sb<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>HEX<span class="token punctuation">[</span>bout<span class="token operator">&amp;</span><span class="token number">0xf</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> sb<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>简单测试后结果正确无误</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/HsEz1XZ1TO8">https://unsplash.com/photos/HsEz1XZ1TO8</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AF%86%E7%A0%81%E5%AD%A6/" rel="tag"><i class="fa fa-tag"></i> 密码学</a>
+              <a href="/tags/java/" rel="tag"><i class="fa fa-tag"></i> java</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/04/01/Kademlia%EF%BC%9A%E4%B8%80%E4%B8%AA%E5%9F%BA%E4%BA%8E%E5%BC%82%E6%88%96%E5%BA%A6%E9%87%8F%E7%9A%84P2P%E4%BF%A1%E6%81%AF%E7%B3%BB%E7%BB%9F/" rel="prev" title="Kademlia：一个基于异或度量的P2P信息系统">
+                  <i class="fa fa-chevron-left"></i> Kademlia：一个基于异或度量的P2P信息系统
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/04/02/SHA-1%E7%AE%97%E6%B3%95/" rel="next" title="SHA-1算法">
+                  SHA-1算法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

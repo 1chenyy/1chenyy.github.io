@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="go-ethereum中geth启动流程分析">
+<meta property="og:url" content="http://example.com/2019/06/08/go-ethereum%E4%B8%ADgeth%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/ian-dooley-407846-unsplash.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/5111131-c9d1092adc965601.png">
+<meta property="article:published_time" content="2019-06-08T08:04:59.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.494Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/ian-dooley-407846-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/06/08/go-ethereum%E4%B8%ADgeth%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/06/08/go-ethereum%E4%B8%ADgeth%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/","path":"2019/06/08/go-ethereum中geth启动流程分析/","title":"go-ethereum中geth启动流程分析"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>go-ethereum中geth启动流程分析 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#main-go"><span class="nav-number">1.</span> <span class="nav-text">main.go</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E8%8A%82%E7%82%B9"><span class="nav-number">2.</span> <span class="nav-text">创建节点</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#makeConfigNode"><span class="nav-number">2.1.</span> <span class="nav-text">makeConfigNode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#node-New"><span class="nav-number">2.2.</span> <span class="nav-text">node.New</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RegisterEthService"><span class="nav-number">2.3.</span> <span class="nav-text">RegisterEthService</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E8%8A%82%E7%82%B9"><span class="nav-number">3.</span> <span class="nav-text">启动节点</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#utils-StartNode"><span class="nav-number">3.1.</span> <span class="nav-text">utils.StartNode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Node-Start"><span class="nav-number">3.2.</span> <span class="nav-text">Node.Start()</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/06/08/go-ethereum%E4%B8%ADgeth%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go-ethereum中geth启动流程分析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-08 16:04:59" itemprop="dateCreated datePublished" datetime="2019-06-08T16:04:59+08:00">2019-06-08</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go-ethereum%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">go-ethereum源码学习</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>18k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>16 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/ian-dooley-407846-unsplash.jpg"></p>
+<span id="more"></span>
+<p>geth是go-ethereum的一个重要工具，根据<a target="_blank" rel="noopener" href="https://github.com/ethereum/go-ethereum">官方文档</a>的说明，他是进入Ethereum网络的入口，也就是Ethereum的一个节点程序。如果直接输入geth运行，则会默认启动一个全节点，并以fast模式同步数据。我们从这个命令入手，学习一下geth的启动流程。</p>
+<h1 id="main-go"><a href="#main-go" class="headerlink" title="main.go"></a>main.go</h1><p>通过对geth命令的分析，我们了解到geth是一个CLI程序，程序的定义主要在go-ethereum\cmd\geth\main.go里面，在init函数中定义了大量子命令，用于实现下图所示的功能：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/5111131-c9d1092adc965601.png" alt="geth子命令"></p>
+<p>但是如果我们不指定任何子命令，直接输入geth并运行，则会执行app.Action指定的内容：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\cmd\geth\main.go</span>
+app<span class="token punctuation">.</span>Action <span class="token operator">=</span> geth
+
+<span class="token keyword">func</span> <span class="token function">geth</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> args <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">Args</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">len</span><span class="token punctuation">(</span>args<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span> 
+		<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"invalid command: %q"</span><span class="token punctuation">,</span> args<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	node <span class="token operator">:=</span> <span class="token function">makeFullNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> node<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token function">startNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> node<span class="token punctuation">)</span>
+	node<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>geth的逻辑很简单，执行geth时不能有其他未解析的命令。之后调用makeFullNode创建一个全节点，然后启动节点，最后调用wait阻塞。</p>
+<h1 id="创建节点"><a href="#创建节点" class="headerlink" title="创建节点"></a>创建节点</h1><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\cmd\geth\config.go</span>
+<span class="token keyword">func</span> <span class="token function">makeFullNode</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token operator">*</span>node<span class="token punctuation">.</span>Node <span class="token punctuation">&#123;</span>
+	stack<span class="token punctuation">,</span> cfg <span class="token operator">:=</span> <span class="token function">makeConfigNode</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>ConstantinopleOverrideFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		cfg<span class="token punctuation">.</span>Eth<span class="token punctuation">.</span>ConstantinopleOverride <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetUint64</span><span class="token punctuation">(</span>ctx<span class="token punctuation">.</span><span class="token function">GlobalUint64</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>ConstantinopleOverrideFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	
+	utils<span class="token punctuation">.</span><span class="token function">RegisterEthService</span><span class="token punctuation">(</span>stack<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Eth<span class="token punctuation">)</span> 
+	
+	<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalBool</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>DashboardEnabledFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">RegisterDashboardService</span><span class="token punctuation">(</span>stack<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Dashboard<span class="token punctuation">,</span> gitCommit<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	
+	shhEnabled <span class="token operator">:=</span> <span class="token function">enableWhisper</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+
+	shhAutoEnabled <span class="token operator">:=</span> <span class="token operator">!</span>ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>WhisperEnabledFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>DeveloperFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> shhEnabled <span class="token operator">||</span> shhAutoEnabled <span class="token punctuation">&#123;</span>
+
+		<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>WhisperMaxMessageSizeFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			cfg<span class="token punctuation">.</span>Shh<span class="token punctuation">.</span>MaxMessageSize <span class="token operator">=</span> <span class="token function">uint32</span><span class="token punctuation">(</span>ctx<span class="token punctuation">.</span><span class="token function">Int</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>WhisperMaxMessageSizeFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>WhisperMinPOWFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			cfg<span class="token punctuation">.</span>Shh<span class="token punctuation">.</span>MinimumAcceptedPOW <span class="token operator">=</span> ctx<span class="token punctuation">.</span><span class="token function">Float64</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>WhisperMinPOWFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>WhisperRestrictConnectionBetweenLightClientsFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			cfg<span class="token punctuation">.</span>Shh<span class="token punctuation">.</span>RestrictConnectionBetweenLightClients <span class="token operator">=</span> <span class="token boolean">true</span>
+		<span class="token punctuation">&#125;</span>
+		utils<span class="token punctuation">.</span><span class="token function">RegisterShhService</span><span class="token punctuation">(</span>stack<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Shh<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>GraphQLEnabledFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> graphql<span class="token punctuation">.</span><span class="token function">RegisterGraphQLService</span><span class="token punctuation">(</span>stack<span class="token punctuation">,</span> cfg<span class="token punctuation">.</span>Node<span class="token punctuation">.</span><span class="token function">GraphQLEndpoint</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> cfg<span class="token punctuation">.</span>Node<span class="token punctuation">.</span>GraphQLCors<span class="token punctuation">,</span> cfg<span class="token punctuation">.</span>Node<span class="token punctuation">.</span>GraphQLVirtualHosts<span class="token punctuation">,</span> cfg<span class="token punctuation">.</span>Node<span class="token punctuation">.</span>HTTPTimeouts<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to register the Ethereum service: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> cfg<span class="token punctuation">.</span>Ethstats<span class="token punctuation">.</span>URL <span class="token operator">!=</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">RegisterEthStatsService</span><span class="token punctuation">(</span>stack<span class="token punctuation">,</span> cfg<span class="token punctuation">.</span>Ethstats<span class="token punctuation">.</span>URL<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> stack
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里首先调用了makeConfigNode方法配置出一个节点，详见后文。节点对象生成后，利用RegisterEthService方法注册eth服务。接着根据需要注册dashboard服务，一般情况不开启此服务，需要额外启动。再往下判断是否启动whisper，条件时使用shh、shh.maxmessagesize、shh.pow或shh.restrict-light任意一个选项，或者没有显式设置shh但是启用了开发者模式（使用了–dev选项），此时配置shh然后注册shh服务。在往下如果使用了–graphql选项，则注册GraphQL服务，随后如果需要注册ethstats服务。</p>
+<p>最后回顾可知makeFullNode主要做了这样几件事：加载配置，创建节点，注册服务。关于注册服务，默认只注册了eth服务。</p>
+<h2 id="makeConfigNode"><a href="#makeConfigNode" class="headerlink" title="makeConfigNode"></a>makeConfigNode</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">makeConfigNode</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>node<span class="token punctuation">.</span>Node<span class="token punctuation">,</span> gethConfig<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+	cfg <span class="token operator">:=</span> gethConfig<span class="token punctuation">&#123;</span>
+		Eth<span class="token punctuation">:</span> eth<span class="token punctuation">.</span>DefaultConfig<span class="token punctuation">,</span> 
+		Shh<span class="token punctuation">:</span>       whisper<span class="token punctuation">.</span>DefaultConfig<span class="token punctuation">,</span>   
+		Node<span class="token punctuation">:</span>      <span class="token function">defaultNodeConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>    
+		Dashboard<span class="token punctuation">:</span> dashboard<span class="token punctuation">.</span>DefaultConfig<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> file <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalString</span><span class="token punctuation">(</span>configFileFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span><span class="token punctuation">;</span> file <span class="token operator">!=</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> <span class="token function">loadConfig</span><span class="token punctuation">(</span>file<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"%v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	utils<span class="token punctuation">.</span><span class="token function">SetULC</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Eth<span class="token punctuation">)</span>  <span class="token keyword">go</span><span class="token operator">-</span>ethereum\cmd\utils\flags<span class="token punctuation">.</span><span class="token keyword">go</span>
+	utils<span class="token punctuation">.</span><span class="token function">SetNodeConfig</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Node<span class="token punctuation">)</span>
+	stack<span class="token punctuation">,</span> err <span class="token operator">:=</span> node<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Node<span class="token punctuation">)</span> 
+
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to create the protocol stack: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	utils<span class="token punctuation">.</span><span class="token function">SetEthConfig</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> stack<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Eth<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>EthStatsURLFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		cfg<span class="token punctuation">.</span>Ethstats<span class="token punctuation">.</span>URL <span class="token operator">=</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalString</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>EthStatsURLFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	utils<span class="token punctuation">.</span><span class="token function">SetShhConfig</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> stack<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Shh<span class="token punctuation">)</span>
+	utils<span class="token punctuation">.</span><span class="token function">SetDashboardConfig</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cfg<span class="token punctuation">.</span>Dashboard<span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> stack<span class="token punctuation">,</span> cfg
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一步加载默认配置，创建了一个gethConfig对象，包含了eth、shh（即whisper）、node和dashboard的配置。如下：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">//eth的默认配置如下</span>
+<span class="token keyword">var</span> DefaultConfig <span class="token operator">=</span> Config<span class="token punctuation">&#123;</span>
+	SyncMode<span class="token punctuation">:</span> downloader<span class="token punctuation">.</span>FastSync<span class="token punctuation">,</span> 
+	Ethash<span class="token punctuation">:</span> ethash<span class="token punctuation">.</span>Config<span class="token punctuation">&#123;</span> 
+		CacheDir<span class="token punctuation">:</span>       <span class="token string">"ethash"</span><span class="token punctuation">,</span>
+		CachesInMem<span class="token punctuation">:</span>    <span class="token number">2</span><span class="token punctuation">,</span>
+		CachesOnDisk<span class="token punctuation">:</span>   <span class="token number">3</span><span class="token punctuation">,</span>
+		DatasetsInMem<span class="token punctuation">:</span>  <span class="token number">1</span><span class="token punctuation">,</span>
+		DatasetsOnDisk<span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+	NetworkId<span class="token punctuation">:</span>      <span class="token number">1</span><span class="token punctuation">,</span>
+	LightPeers<span class="token punctuation">:</span>     <span class="token number">100</span><span class="token punctuation">,</span>
+	DatabaseCache<span class="token punctuation">:</span>  <span class="token number">512</span><span class="token punctuation">,</span>
+	TrieCleanCache<span class="token punctuation">:</span> <span class="token number">256</span><span class="token punctuation">,</span>
+	TrieDirtyCache<span class="token punctuation">:</span> <span class="token number">256</span><span class="token punctuation">,</span>
+	TrieTimeout<span class="token punctuation">:</span>    <span class="token number">60</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Minute<span class="token punctuation">,</span>
+	MinerGasFloor<span class="token punctuation">:</span>  <span class="token number">8000000</span><span class="token punctuation">,</span>
+	MinerGasCeil<span class="token punctuation">:</span>   <span class="token number">8000000</span><span class="token punctuation">,</span>
+	MinerGasPrice<span class="token punctuation">:</span>  big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span>params<span class="token punctuation">.</span>GWei<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	MinerRecommit<span class="token punctuation">:</span>  <span class="token number">3</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+
+	TxPool<span class="token punctuation">:</span> core<span class="token punctuation">.</span>DefaultTxPoolConfig<span class="token punctuation">,</span>
+	GPO<span class="token punctuation">:</span> gasprice<span class="token punctuation">.</span>Config<span class="token punctuation">&#123;</span>
+		Blocks<span class="token punctuation">:</span>     <span class="token number">20</span><span class="token punctuation">,</span>
+		Percentile<span class="token punctuation">:</span> <span class="token number">60</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">//shh配置</span>
+<span class="token keyword">var</span> DefaultConfig <span class="token operator">=</span> Config<span class="token punctuation">&#123;</span>
+	MaxMessageSize<span class="token punctuation">:</span>                        DefaultMaxMessageSize<span class="token punctuation">,</span>
+	MinimumAcceptedPOW<span class="token punctuation">:</span>                    DefaultMinimumPoW<span class="token punctuation">,</span>
+	RestrictConnectionBetweenLightClients<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">//node配置</span>
+<span class="token keyword">func</span> <span class="token function">defaultNodeConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span> node<span class="token punctuation">.</span>Config <span class="token punctuation">&#123;</span>
+	cfg <span class="token operator">:=</span> node<span class="token punctuation">.</span>DefaultConfig  <span class="token comment">//节点默认设置</span>
+
+	cfg<span class="token punctuation">.</span>Name <span class="token operator">=</span> clientIdentifier <span class="token comment">//节点名，"geth"</span>
+	cfg<span class="token punctuation">.</span>Version <span class="token operator">=</span> params<span class="token punctuation">.</span><span class="token function">VersionWithCommit</span><span class="token punctuation">(</span>gitCommit<span class="token punctuation">)</span> <span class="token comment">//节点版本号</span>
+	cfg<span class="token punctuation">.</span>HTTPModules <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>cfg<span class="token punctuation">.</span>HTTPModules<span class="token punctuation">,</span> <span class="token string">"eth"</span><span class="token punctuation">,</span> <span class="token string">"shh"</span><span class="token punctuation">)</span> <span class="token comment">//httprpc默认提供的接口</span>
+	cfg<span class="token punctuation">.</span>WSModules <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>cfg<span class="token punctuation">.</span>WSModules<span class="token punctuation">,</span> <span class="token string">"eth"</span><span class="token punctuation">,</span> <span class="token string">"shh"</span><span class="token punctuation">)</span>     <span class="token comment">//websocketrpc默认提供的接口</span>
+	cfg<span class="token punctuation">.</span>IPCPath <span class="token operator">=</span> <span class="token string">"geth.ipc"</span> <span class="token comment">//ipcrpc文件名</span>
+	<span class="token keyword">return</span> cfg
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">var</span> DefaultConfig <span class="token operator">=</span> Config<span class="token punctuation">&#123;</span>
+	DataDir<span class="token punctuation">:</span>          <span class="token function">DefaultDataDir</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token comment">//默认节点目录 /home/.ethereum</span>
+	HTTPPort<span class="token punctuation">:</span>         DefaultHTTPPort<span class="token punctuation">,</span> <span class="token comment">//httprpc默认端口 8545</span>
+	HTTPModules<span class="token punctuation">:</span>      <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span><span class="token string">"net"</span><span class="token punctuation">,</span> <span class="token string">"web3"</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">//httprpc默认提供的接口</span>
+	HTTPVirtualHosts<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span><span class="token string">"localhost"</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token comment">//httpcrpc默认服务地址</span>
+	HTTPTimeouts<span class="token punctuation">:</span>     rpc<span class="token punctuation">.</span>DefaultHTTPTimeouts<span class="token punctuation">,</span> <span class="token comment">//httprpc默认超时时间,读超时30秒，写超时30秒，空闲超时120秒</span>
+	WSPort<span class="token punctuation">:</span>           DefaultWSPort<span class="token punctuation">,</span> <span class="token comment">//wsrpc默认端口，8546</span>
+	WSModules<span class="token punctuation">:</span>        <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span><span class="token string">"net"</span><span class="token punctuation">,</span> <span class="token string">"web3"</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span><span class="token comment">//wscrpc默认服务地址</span>
+	P2P<span class="token punctuation">:</span> p2p<span class="token punctuation">.</span>Config<span class="token punctuation">&#123;</span>
+		ListenAddr<span class="token punctuation">:</span> <span class="token string">":30303"</span><span class="token punctuation">,</span> <span class="token comment">//p2p网络默认端口30303</span>
+		MaxPeers<span class="token punctuation">:</span>   <span class="token number">25</span><span class="token punctuation">,</span> <span class="token comment">//默认最大连接数 25</span>
+		NAT<span class="token punctuation">:</span>        nat<span class="token punctuation">.</span><span class="token function">Any</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token comment">//默认端口映射</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">//dashboard配置</span>
+<span class="token keyword">var</span> DefaultConfig <span class="token operator">=</span> Config<span class="token punctuation">&#123;</span>
+	Host<span class="token punctuation">:</span>    <span class="token string">"localhost"</span><span class="token punctuation">,</span>
+	Port<span class="token punctuation">:</span>    <span class="token number">8080</span><span class="token punctuation">,</span>
+	Refresh<span class="token punctuation">:</span> <span class="token number">5</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>加载完默认配置后，再加载外部配置文件，就是–config指定的文件，toml格式。</p>
+<p>接着就是架子我们给定配置。首先设置eth，之后设置node。这都是我们在执行geth命令时指定的选项，只与能设置那些值，<a target="_blank" rel="noopener" href="https://github.com/ethereum/go-ethereum/wiki/Command-Line-Options">详见这里</a>。</p>
+<p>再往下使用node的new方法创建了一个节点对象。如果没有错的话，利用了几个set方法进一步配置了配置信息。</p>
+<h2 id="node-New"><a href="#node-New" class="headerlink" title="node.New"></a>node.New</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">New</span><span class="token punctuation">(</span>conf <span class="token operator">*</span>Config<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>Node<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	confCopy <span class="token operator">:=</span> <span class="token operator">*</span>conf
+	conf <span class="token operator">=</span> <span class="token operator">&amp;</span>confCopy
+	<span class="token keyword">if</span> conf<span class="token punctuation">.</span>DataDir <span class="token operator">!=</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		absdatadir<span class="token punctuation">,</span> err <span class="token operator">:=</span> filepath<span class="token punctuation">.</span><span class="token function">Abs</span><span class="token punctuation">(</span>conf<span class="token punctuation">.</span>DataDir<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+		<span class="token punctuation">&#125;</span>
+		conf<span class="token punctuation">.</span>DataDir <span class="token operator">=</span> absdatadir
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> strings<span class="token punctuation">.</span><span class="token function">ContainsAny</span><span class="token punctuation">(</span>conf<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> <span class="token string">`/\`) &#123;
+		return nil, errors.New(`</span>Config<span class="token punctuation">.</span>Name must not contain <span class="token string">'/'</span> or '\'<span class="token string">`)
+	&#125;
+	if conf.Name == datadirDefaultKeyStore &#123; //"keystore"
+		return nil, errors.New(`</span>Config<span class="token punctuation">.</span>Name cannot be <span class="token string">"` + datadirDefaultKeyStore + `"</span><span class="token string">`)
+	&#125;
+	if strings.HasSuffix(conf.Name, ".ipc") &#123; //不含.ipc后缀
+		return nil, errors.New(`</span>Config<span class="token punctuation">.</span>Name cannot end in <span class="token string">".ipc"</span>`<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	am<span class="token punctuation">,</span> ephemeralKeystore<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">makeAccountManager</span><span class="token punctuation">(</span>conf<span class="token punctuation">)</span> 
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> conf<span class="token punctuation">.</span>Logger <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		conf<span class="token punctuation">.</span>Logger <span class="token operator">=</span> log<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>Node<span class="token punctuation">&#123;</span>
+		accman<span class="token punctuation">:</span>            am<span class="token punctuation">,</span>
+		ephemeralKeystore<span class="token punctuation">:</span> ephemeralKeystore<span class="token punctuation">,</span>
+		config<span class="token punctuation">:</span>            conf<span class="token punctuation">,</span>
+		serviceFuncs<span class="token punctuation">:</span>      <span class="token punctuation">[</span><span class="token punctuation">]</span>ServiceConstructor<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		ipcEndpoint<span class="token punctuation">:</span>       conf<span class="token punctuation">.</span><span class="token function">IPCEndpoint</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		httpEndpoint<span class="token punctuation">:</span>      conf<span class="token punctuation">.</span><span class="token function">HTTPEndpoint</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		wsEndpoint<span class="token punctuation">:</span>        conf<span class="token punctuation">.</span><span class="token function">WSEndpoint</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		eventmux<span class="token punctuation">:</span>          <span class="token function">new</span><span class="token punctuation">(</span>event<span class="token punctuation">.</span>TypeMux<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		log<span class="token punctuation">:</span>               conf<span class="token punctuation">.</span>Logger<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先得到节点目录的绝对路径。然后检查了节点名，确保节点名中不包含“/\”这些特殊符号，以及不能等于“keystore”（密钥存储路径），还有不能有.ipc后缀。接着创建了账户管理者。makeAccountManager方法主要是创建了密钥存储路径以及创建了accountmanager对象。接着配置了log对象，然后创建了Node对象。</p>
+<h2 id="RegisterEthService"><a href="#RegisterEthService" class="headerlink" title="RegisterEthService"></a>RegisterEthService</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">RegisterEthService</span><span class="token punctuation">(</span>stack <span class="token operator">*</span>node<span class="token punctuation">.</span>Node<span class="token punctuation">,</span> cfg <span class="token operator">*</span>eth<span class="token punctuation">.</span>Config<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">var</span> err <span class="token builtin">error</span>
+	<span class="token keyword">if</span> cfg<span class="token punctuation">.</span>SyncMode <span class="token operator">==</span> downloader<span class="token punctuation">.</span>LightSync <span class="token punctuation">&#123;</span>
+		err <span class="token operator">=</span> stack<span class="token punctuation">.</span><span class="token function">Register</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>node<span class="token punctuation">.</span>ServiceContext<span class="token punctuation">)</span> <span class="token punctuation">(</span>node<span class="token punctuation">.</span>Service<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> les<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> cfg<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		err <span class="token operator">=</span> stack<span class="token punctuation">.</span><span class="token function">Register</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>node<span class="token punctuation">.</span>ServiceContext<span class="token punctuation">)</span> <span class="token punctuation">(</span>node<span class="token punctuation">.</span>Service<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			fullNode<span class="token punctuation">,</span> err <span class="token operator">:=</span> eth<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> cfg<span class="token punctuation">)</span>
+			<span class="token keyword">if</span> fullNode <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> cfg<span class="token punctuation">.</span>LightServ <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+				ls<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> les<span class="token punctuation">.</span><span class="token function">NewLesServer</span><span class="token punctuation">(</span>fullNode<span class="token punctuation">,</span> cfg<span class="token punctuation">)</span>
+				fullNode<span class="token punctuation">.</span><span class="token function">AddLesServer</span><span class="token punctuation">(</span>ls<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">return</span> fullNode<span class="token punctuation">,</span> err
+		<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to register the Ethereum service: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里根据不同的同步模式创建不同的服务。如果是LightSync，创建Light Ethereum Subprotocol的服务；如果是其他模式则创建正常的eth服务。</p>
+<p>服务注册的逻辑都是调用节点的Register方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>n <span class="token operator">*</span>Node<span class="token punctuation">)</span> <span class="token function">Register</span><span class="token punctuation">(</span>constructor ServiceConstructor<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	n<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> 
+	<span class="token keyword">defer</span> n<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>server <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> ErrNodeRunning
+	<span class="token punctuation">&#125;</span>
+	n<span class="token punctuation">.</span>serviceFuncs <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>serviceFuncs<span class="token punctuation">,</span> constructor<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> ServiceConstructor <span class="token keyword">func</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>ServiceContext<span class="token punctuation">)</span> <span class="token punctuation">(</span>Service<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>该方法需要提供一个ServiceConstructor对象，他实际是一个方法，执行后返回一个Service对象，Register方法就是将ServiceConstructor添加到node的serviceFuncs数组。</p>
+<p>不管什么模式注册的服务方法都是简单的新建一个eth服务。</p>
+<h1 id="启动节点"><a href="#启动节点" class="headerlink" title="启动节点"></a>启动节点</h1><p>创建完节点后就开始启动了。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">startNode</span><span class="token punctuation">(</span>ctx <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> stack <span class="token operator">*</span>node<span class="token punctuation">.</span>Node<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	debug<span class="token punctuation">.</span>Memsize<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token string">"node"</span><span class="token punctuation">,</span> stack<span class="token punctuation">)</span>
+
+	utils<span class="token punctuation">.</span><span class="token function">StartNode</span><span class="token punctuation">(</span>stack<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> keystores <span class="token operator">:=</span> stack<span class="token punctuation">.</span><span class="token function">AccountManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Backends</span><span class="token punctuation">(</span>keystore<span class="token punctuation">.</span>KeyStoreType<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">len</span><span class="token punctuation">(</span>keystores<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		ks <span class="token operator">:=</span> keystores<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>keystore<span class="token punctuation">.</span>KeyStore<span class="token punctuation">)</span>
+		passwords <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">MakePasswordList</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+		unlocks <span class="token operator">:=</span> strings<span class="token punctuation">.</span><span class="token function">Split</span><span class="token punctuation">(</span>ctx<span class="token punctuation">.</span><span class="token function">GlobalString</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>UnlockedAccountFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">","</span><span class="token punctuation">)</span>
+		<span class="token keyword">for</span> i<span class="token punctuation">,</span> account <span class="token operator">:=</span> <span class="token keyword">range</span> unlocks <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> trimmed <span class="token operator">:=</span> strings<span class="token punctuation">.</span><span class="token function">TrimSpace</span><span class="token punctuation">(</span>account<span class="token punctuation">)</span><span class="token punctuation">;</span> trimmed <span class="token operator">!=</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+				<span class="token function">unlockAccount</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> ks<span class="token punctuation">,</span> trimmed<span class="token punctuation">,</span> i<span class="token punctuation">,</span> passwords<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	events <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> accounts<span class="token punctuation">.</span>WalletEvent<span class="token punctuation">,</span> <span class="token number">16</span><span class="token punctuation">)</span>
+	stack<span class="token punctuation">.</span><span class="token function">AccountManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>events<span class="token punctuation">)</span>
+
+	<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		rpcClient<span class="token punctuation">,</span> err <span class="token operator">:=</span> stack<span class="token punctuation">.</span><span class="token function">Attach</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to attach to self: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		stateReader <span class="token operator">:=</span> ethclient<span class="token punctuation">.</span><span class="token function">NewClient</span><span class="token punctuation">(</span>rpcClient<span class="token punctuation">)</span>
+
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> wallet <span class="token operator">:=</span> <span class="token keyword">range</span> stack<span class="token punctuation">.</span><span class="token function">AccountManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Wallets</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> err <span class="token operator">:=</span> wallet<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Failed to open wallet"</span><span class="token punctuation">,</span> <span class="token string">"url"</span><span class="token punctuation">,</span> wallet<span class="token punctuation">.</span><span class="token function">URL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token keyword">for</span> event <span class="token operator">:=</span> <span class="token keyword">range</span> events <span class="token punctuation">&#123;</span>
+			<span class="token keyword">switch</span> event<span class="token punctuation">.</span>Kind <span class="token punctuation">&#123;</span>
+			<span class="token keyword">case</span> accounts<span class="token punctuation">.</span>WalletArrived<span class="token punctuation">:</span>
+				<span class="token keyword">if</span> err <span class="token operator">:=</span> event<span class="token punctuation">.</span>Wallet<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"New wallet appeared, failed to open"</span><span class="token punctuation">,</span> <span class="token string">"url"</span><span class="token punctuation">,</span> event<span class="token punctuation">.</span>Wallet<span class="token punctuation">.</span><span class="token function">URL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token keyword">case</span> accounts<span class="token punctuation">.</span>WalletOpened<span class="token punctuation">:</span>
+				status<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> event<span class="token punctuation">.</span>Wallet<span class="token punctuation">.</span><span class="token function">Status</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+				log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"New wallet appeared"</span><span class="token punctuation">,</span> <span class="token string">"url"</span><span class="token punctuation">,</span> event<span class="token punctuation">.</span>Wallet<span class="token punctuation">.</span><span class="token function">URL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"status"</span><span class="token punctuation">,</span> status<span class="token punctuation">)</span>
+
+				derivationPath <span class="token operator">:=</span> accounts<span class="token punctuation">.</span>DefaultBaseDerivationPath
+				<span class="token keyword">if</span> event<span class="token punctuation">.</span>Wallet<span class="token punctuation">.</span><span class="token function">URL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>Scheme <span class="token operator">==</span> <span class="token string">"ledger"</span> <span class="token punctuation">&#123;</span>
+					derivationPath <span class="token operator">=</span> accounts<span class="token punctuation">.</span>DefaultLedgerBaseDerivationPath
+				<span class="token punctuation">&#125;</span>
+				event<span class="token punctuation">.</span>Wallet<span class="token punctuation">.</span><span class="token function">SelfDerive</span><span class="token punctuation">(</span>derivationPath<span class="token punctuation">,</span> stateReader<span class="token punctuation">)</span>
+
+			<span class="token keyword">case</span> accounts<span class="token punctuation">.</span>WalletDropped<span class="token punctuation">:</span>
+				log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Old wallet dropped"</span><span class="token punctuation">,</span> <span class="token string">"url"</span><span class="token punctuation">,</span> event<span class="token punctuation">.</span>Wallet<span class="token punctuation">.</span><span class="token function">URL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+				event<span class="token punctuation">.</span>Wallet<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalBool</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>ExitWhenSyncedFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			sub <span class="token operator">:=</span> stack<span class="token punctuation">.</span><span class="token function">EventMux</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>downloader<span class="token punctuation">.</span>DoneEvent<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+			<span class="token keyword">defer</span> sub<span class="token punctuation">.</span><span class="token function">Unsubscribe</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			<span class="token keyword">for</span> <span class="token punctuation">&#123;</span>
+				event <span class="token operator">:=</span> <span class="token operator">&lt;-</span>sub<span class="token punctuation">.</span><span class="token function">Chan</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+				<span class="token keyword">if</span> event <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">continue</span>
+				<span class="token punctuation">&#125;</span>
+				done<span class="token punctuation">,</span> ok <span class="token operator">:=</span> event<span class="token punctuation">.</span>Data<span class="token punctuation">.</span><span class="token punctuation">(</span>downloader<span class="token punctuation">.</span>DoneEvent<span class="token punctuation">)</span>
+				<span class="token keyword">if</span> <span class="token operator">!</span>ok <span class="token punctuation">&#123;</span>
+					<span class="token keyword">continue</span>
+				<span class="token punctuation">&#125;</span>
+				<span class="token keyword">if</span> timestamp <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Unix</span><span class="token punctuation">(</span>done<span class="token punctuation">.</span>Latest<span class="token punctuation">.</span>Time<span class="token punctuation">.</span><span class="token function">Int64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> time<span class="token punctuation">.</span><span class="token function">Since</span><span class="token punctuation">(</span>timestamp<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">10</span><span class="token operator">*</span>time<span class="token punctuation">.</span>Minute <span class="token punctuation">&#123;</span>
+					log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Synchronisation completed"</span><span class="token punctuation">,</span> <span class="token string">"latestnum"</span><span class="token punctuation">,</span> done<span class="token punctuation">.</span>Latest<span class="token punctuation">.</span>Number<span class="token punctuation">,</span> <span class="token string">"latesthash"</span><span class="token punctuation">,</span> done<span class="token punctuation">.</span>Latest<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+						<span class="token string">"age"</span><span class="token punctuation">,</span> common<span class="token punctuation">.</span><span class="token function">PrettyAge</span><span class="token punctuation">(</span>timestamp<span class="token punctuation">)</span><span class="token punctuation">)</span>
+					stack<span class="token punctuation">.</span><span class="token function">Stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+				<span class="token punctuation">&#125;</span>
+
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalBool</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>MiningEnabledFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token operator">||</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalBool</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>DeveloperFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalString</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>SyncModeFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token string">"light"</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Light clients do not support mining"</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">var</span> ethereum <span class="token operator">*</span>eth<span class="token punctuation">.</span>Ethereum
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> stack<span class="token punctuation">.</span><span class="token function">Service</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ethereum<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Ethereum service not running: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		gasprice <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">GlobalBig</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> utils<span class="token punctuation">.</span>MinerLegacyGasPriceFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">IsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>MinerGasPriceFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			gasprice <span class="token operator">=</span> utils<span class="token punctuation">.</span><span class="token function">GlobalBig</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> utils<span class="token punctuation">.</span>MinerGasPriceFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		ethereum<span class="token punctuation">.</span><span class="token function">TxPool</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetGasPrice</span><span class="token punctuation">(</span>gasprice<span class="token punctuation">)</span>
+
+		threads <span class="token operator">:=</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalInt</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>MinerLegacyThreadsFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalIsSet</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>MinerThreadsFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			threads <span class="token operator">=</span> ctx<span class="token punctuation">.</span><span class="token function">GlobalInt</span><span class="token punctuation">(</span>utils<span class="token punctuation">.</span>MinerThreadsFlag<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> ethereum<span class="token punctuation">.</span><span class="token function">StartMining</span><span class="token punctuation">(</span>threads<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			utils<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Failed to start mining: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在startNode首先调用了utils.StartNode(stack)区启动节点。调用完毕后一个节点正式启动。接着根据需求解锁我们指定的账户使用–unlock和–password指定要解锁的账户和密钥。接着注册了账户事件，是一个WalletEvent类型容量为16的channel。</p>
+<p>接着启动了一个goroutine，在这个goroutine中先连接了节点使用Attach方法，实际上就是连接InProcRPC服务，然后获取了所有钱包，当接收到事件时触发对应逻辑。</p>
+<p>再往下就是根据情况启动一些辅助逻辑，首先是同步完成监听，其次是根据需求启动挖矿。</p>
+<h2 id="utils-StartNode"><a href="#utils-StartNode" class="headerlink" title="utils.StartNode"></a>utils.StartNode</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\cmd\utils\cmd.go</span>
+<span class="token keyword">func</span> <span class="token function">StartNode</span><span class="token punctuation">(</span>stack <span class="token operator">*</span>node<span class="token punctuation">.</span>Node<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> stack<span class="token punctuation">.</span><span class="token function">Start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"Error starting protocol stack: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		sigc <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> os<span class="token punctuation">.</span>Signal<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+		signal<span class="token punctuation">.</span><span class="token function">Notify</span><span class="token punctuation">(</span>sigc<span class="token punctuation">,</span> syscall<span class="token punctuation">.</span>SIGINT<span class="token punctuation">,</span> syscall<span class="token punctuation">.</span>SIGTERM<span class="token punctuation">)</span>
+		<span class="token keyword">defer</span> signal<span class="token punctuation">.</span><span class="token function">Stop</span><span class="token punctuation">(</span>sigc<span class="token punctuation">)</span>
+		<span class="token operator">&lt;-</span>sigc
+		log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Got interrupt, shutting down..."</span><span class="token punctuation">)</span>
+		<span class="token keyword">go</span> stack<span class="token punctuation">.</span><span class="token function">Stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">10</span><span class="token punctuation">;</span> i <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">;</span> i<span class="token operator">--</span> <span class="token punctuation">&#123;</span>
+			<span class="token operator">&lt;-</span>sigc
+			<span class="token keyword">if</span> i <span class="token operator">></span> <span class="token number">1</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Already shutting down, interrupt more to panic."</span><span class="token punctuation">,</span> <span class="token string">"times"</span><span class="token punctuation">,</span> i<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		debug<span class="token punctuation">.</span><span class="token function">Exit</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// ensure trace and CPU profile data is flushed.</span>
+		debug<span class="token punctuation">.</span><span class="token function">LoudPanic</span><span class="token punctuation">(</span><span class="token string">"boom"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个方法中，先调用了stack.Start()去启动节点，之后启动了一个goroutine，这个goroutine的作用是接收到终端停止信息后，正确停止程序。利用的是Signal包，关于这个包的用法见<a target="_blank" rel="noopener" href="https://chenyaoyang.github.io/2019/02/27/Go%E8%AF%AD%E8%A8%80signal%E5%8C%85%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/">这里</a>。这个goroutine会一直阻塞直到收到退出信号，调用stop关闭节点。</p>
+<h2 id="Node-Start"><a href="#Node-Start" class="headerlink" title="Node.Start()"></a>Node.Start()</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>n <span class="token operator">*</span>Node<span class="token punctuation">)</span> <span class="token function">Start</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	n<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> n<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>server <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> 
+		<span class="token keyword">return</span> ErrNodeRunning
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">openDataDir</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	n<span class="token punctuation">.</span>serverConfig <span class="token operator">=</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>P2P
+	n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>PrivateKey <span class="token operator">=</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span><span class="token function">NodeKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span> 
+	n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>Name <span class="token operator">=</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span><span class="token function">NodeName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> 
+	n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>Logger <span class="token operator">=</span> n<span class="token punctuation">.</span>log 
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>StaticNodes <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> 
+		n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>StaticNodes <span class="token operator">=</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span><span class="token function">StaticNodes</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>TrustedNodes <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>TrustedNodes <span class="token operator">=</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span><span class="token function">TrustedNodes</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>NodeDatabase <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>NodeDatabase <span class="token operator">=</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span><span class="token function">NodeDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	running <span class="token operator">:=</span> <span class="token operator">&amp;</span>p2p<span class="token punctuation">.</span>Server<span class="token punctuation">&#123;</span>Config<span class="token punctuation">:</span> n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">&#125;</span>
+	n<span class="token punctuation">.</span>log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Starting peer-to-peer node"</span><span class="token punctuation">,</span> <span class="token string">"instance"</span><span class="token punctuation">,</span> n<span class="token punctuation">.</span>serverConfig<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+
+	services <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>reflect<span class="token punctuation">.</span>Type<span class="token punctuation">]</span>Service<span class="token punctuation">)</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> constructor <span class="token operator">:=</span> <span class="token keyword">range</span> n<span class="token punctuation">.</span>serviceFuncs <span class="token punctuation">&#123;</span>
+		ctx <span class="token operator">:=</span> <span class="token operator">&amp;</span>ServiceContext<span class="token punctuation">&#123;</span>
+			config<span class="token punctuation">:</span>         n<span class="token punctuation">.</span>config<span class="token punctuation">,</span>
+			services<span class="token punctuation">:</span>       <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>reflect<span class="token punctuation">.</span>Type<span class="token punctuation">]</span>Service<span class="token punctuation">)</span><span class="token punctuation">,</span>
+			EventMux<span class="token punctuation">:</span>       n<span class="token punctuation">.</span>eventmux<span class="token punctuation">,</span>
+			AccountManager<span class="token punctuation">:</span> n<span class="token punctuation">.</span>accman<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">for</span> kind<span class="token punctuation">,</span> s <span class="token operator">:=</span> <span class="token keyword">range</span> services <span class="token punctuation">&#123;</span>
+			ctx<span class="token punctuation">.</span>services<span class="token punctuation">[</span>kind<span class="token punctuation">]</span> <span class="token operator">=</span> s
+		<span class="token punctuation">&#125;</span>
+
+		service<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">constructor</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+		kind <span class="token operator">:=</span> reflect<span class="token punctuation">.</span><span class="token function">TypeOf</span><span class="token punctuation">(</span>service<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> exists <span class="token operator">:=</span> services<span class="token punctuation">[</span>kind<span class="token punctuation">]</span><span class="token punctuation">;</span> exists <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token operator">&amp;</span>DuplicateServiceError<span class="token punctuation">&#123;</span>Kind<span class="token punctuation">:</span> kind<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		services<span class="token punctuation">[</span>kind<span class="token punctuation">]</span> <span class="token operator">=</span> service 
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> service <span class="token operator">:=</span> <span class="token keyword">range</span> services <span class="token punctuation">&#123;</span> 
+		running<span class="token punctuation">.</span>Protocols <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>running<span class="token punctuation">.</span>Protocols<span class="token punctuation">,</span> service<span class="token punctuation">.</span><span class="token function">Protocols</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> running<span class="token punctuation">.</span><span class="token function">Start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token function">convertFileLockError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	started <span class="token operator">:=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>reflect<span class="token punctuation">.</span>Type<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	<span class="token keyword">for</span> kind<span class="token punctuation">,</span> service <span class="token operator">:=</span> <span class="token keyword">range</span> services <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> service<span class="token punctuation">.</span><span class="token function">Start</span><span class="token punctuation">(</span>running<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> kind <span class="token operator">:=</span> <span class="token keyword">range</span> started <span class="token punctuation">&#123;</span>
+				services<span class="token punctuation">[</span>kind<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">Stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+			running<span class="token punctuation">.</span><span class="token function">Stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+		started <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>started<span class="token punctuation">,</span> kind<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startRPC</span><span class="token punctuation">(</span>services<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> service <span class="token operator">:=</span> <span class="token keyword">range</span> services <span class="token punctuation">&#123;</span>
+			service<span class="token punctuation">.</span><span class="token function">Stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		running<span class="token punctuation">.</span><span class="token function">Stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	n<span class="token punctuation">.</span>services <span class="token operator">=</span> services
+	n<span class="token punctuation">.</span>server <span class="token operator">=</span> running
+	n<span class="token punctuation">.</span>stop <span class="token operator">=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先检查是否启动过，之后调用openDataDir尝试打开节点目录</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>n <span class="token operator">*</span>Node<span class="token punctuation">)</span> <span class="token function">openDataDir</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DataDir <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span> 
+	<span class="token punctuation">&#125;</span>
+
+	instdir <span class="token operator">:=</span> filepath<span class="token punctuation">.</span><span class="token function">Join</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DataDir<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">MkdirAll</span><span class="token punctuation">(</span>instdir<span class="token punctuation">,</span> <span class="token number">0700</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	release<span class="token punctuation">,</span> <span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> flock<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span>filepath<span class="token punctuation">.</span><span class="token function">Join</span><span class="token punctuation">(</span>instdir<span class="token punctuation">,</span> <span class="token string">"LOCK"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token function">convertFileLockError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	n<span class="token punctuation">.</span>instanceDirLock <span class="token operator">=</span> release
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>openDataDir比较简单，首先判断是否设置了节点目录，没有的话直接返回，有的话创建一个以节点名为名字的子目录，默认为geth。之后在子目录geth中创建一个文件锁，名字是LOCK，为的是线程安全，之后用instanceDirLock变量记录文件锁引用，以便后续释放。</p>
+<p>回到start中，此时文件目录及文件锁都创建完毕。然后初始化p2p服务，首先配置私钥</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>c <span class="token operator">*</span>Config<span class="token punctuation">)</span> <span class="token function">NodeKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>ecdsa<span class="token punctuation">.</span>PrivateKey <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> c<span class="token punctuation">.</span>P2P<span class="token punctuation">.</span>PrivateKey <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> c<span class="token punctuation">.</span>P2P<span class="token punctuation">.</span>PrivateKey
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> c<span class="token punctuation">.</span>DataDir <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		key<span class="token punctuation">,</span> err <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">GenerateKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"Failed to generate ephemeral node key: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> key
+	<span class="token punctuation">&#125;</span>
+
+	keyfile <span class="token operator">:=</span> c<span class="token punctuation">.</span><span class="token function">ResolvePath</span><span class="token punctuation">(</span>datadirPrivateKey<span class="token punctuation">)</span>            
+	<span class="token keyword">if</span> key<span class="token punctuation">,</span> err <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">LoadECDSA</span><span class="token punctuation">(</span>keyfile<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> 
+		<span class="token keyword">return</span> key
+	<span class="token punctuation">&#125;</span>
+
+	key<span class="token punctuation">,</span> err <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">GenerateKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span> 
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Crit</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"Failed to generate node key: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	instanceDir <span class="token operator">:=</span> filepath<span class="token punctuation">.</span><span class="token function">Join</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span>DataDir<span class="token punctuation">,</span> c<span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">MkdirAll</span><span class="token punctuation">(</span>instanceDir<span class="token punctuation">,</span> <span class="token number">0700</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"Failed to persist node key: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> key
+	<span class="token punctuation">&#125;</span>
+	keyfile <span class="token operator">=</span> filepath<span class="token punctuation">.</span><span class="token function">Join</span><span class="token punctuation">(</span>instanceDir<span class="token punctuation">,</span> datadirPrivateKey<span class="token punctuation">)</span> 
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">SaveECDSA</span><span class="token punctuation">(</span>keyfile<span class="token punctuation">,</span> key<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>  
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"Failed to persist node key: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> key
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一步检查是否加载过私钥。没有的话，如果节点目录为空，直接生成一个，是椭圆曲线加密的秘钥。如果配置节点目录的话，则先尝试从目录中加载秘钥文件，之后读取私钥，秘钥文件是在geth子目录下的nodekey文件。若没有秘钥文件，则生成一个秘钥，之后存储到文件中，还是geth目录下的nodekey文件。</p>
+<p>配置为秘钥后，又配置了服务名，使用NodeName方法，这个方法是一系列字符串组合，不在叙述。之后配置了静态节点</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>c <span class="token operator">*</span>Config<span class="token punctuation">)</span> <span class="token function">StaticNodes</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>enode<span class="token punctuation">.</span>Node <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> c<span class="token punctuation">.</span><span class="token function">parsePersistentNodes</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>c<span class="token punctuation">.</span>staticNodesWarning<span class="token punctuation">,</span> c<span class="token punctuation">.</span><span class="token function">ResolvePath</span><span class="token punctuation">(</span>datadirStaticNodes<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>c <span class="token operator">*</span>Config<span class="token punctuation">)</span> <span class="token function">parsePersistentNodes</span><span class="token punctuation">(</span>w <span class="token operator">*</span><span class="token builtin">bool</span><span class="token punctuation">,</span> path <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>enode<span class="token punctuation">.</span>Node <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> c<span class="token punctuation">.</span>DataDir <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">Stat</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> 
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	c<span class="token punctuation">.</span><span class="token function">warnOnce</span><span class="token punctuation">(</span>w<span class="token punctuation">,</span> <span class="token string">"Found deprecated node list file %s, please use the TOML config file instead."</span><span class="token punctuation">,</span> path<span class="token punctuation">)</span>
+
+	<span class="token keyword">var</span> nodelist <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> common<span class="token punctuation">.</span><span class="token function">LoadJSON</span><span class="token punctuation">(</span>path<span class="token punctuation">,</span> <span class="token operator">&amp;</span>nodelist<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span> 
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"Can't load node list file: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">var</span> nodes <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>enode<span class="token punctuation">.</span>Node
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> url <span class="token operator">:=</span> <span class="token keyword">range</span> nodelist <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> url <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">continue</span>
+		<span class="token punctuation">&#125;</span>
+		node<span class="token punctuation">,</span> err <span class="token operator">:=</span> enode<span class="token punctuation">.</span><span class="token function">ParseV4</span><span class="token punctuation">(</span>url<span class="token punctuation">)</span> 
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"Node URL %s: %v\n"</span><span class="token punctuation">,</span> url<span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token keyword">continue</span>
+		<span class="token punctuation">&#125;</span>
+		nodes <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>nodes<span class="token punctuation">,</span> node<span class="token punctuation">)</span> 
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> nodes
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里直接调用了parsePersistentNodes方法，包括后面加载可信节点也是这个方法，只是传入的参数不同。以静态节点为例，首先通过ResolvePath方法构造出静态节点文件的路径，对于静态节点是datadir/static-nodes.json,对于可信节点是datadir/trusted-nodes.json。之后在parsePersistentNodes中，如果没有配置节点路径，则返回空，否则判断文件是否存在，存在的话解析json文件，实际就是一个字符串数据。每个字符串代表一个节点，之后对于每个字符串解析为一个node节点，最后返回所有节点。</p>
+<p>加载完静态节点和可信节点后，有配置了数据库路径，默认是datadir/geth/nodes，这里用了NodeDB方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>c <span class="token operator">*</span>Config<span class="token punctuation">)</span> <span class="token function">NodeDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">string</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> c<span class="token punctuation">.</span>DataDir <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token string">""</span> <span class="token comment">// ephemeral</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> c<span class="token punctuation">.</span><span class="token function">ResolvePath</span><span class="token punctuation">(</span>datadirNodeDatabase<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>关键是ResolvePath，这个方法被多次用到，这里分析一下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">var</span> isOldGethResource <span class="token operator">=</span> <span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token builtin">bool</span><span class="token punctuation">&#123;</span>
+	<span class="token string">"chaindata"</span><span class="token punctuation">:</span>          <span class="token boolean">true</span><span class="token punctuation">,</span>
+	<span class="token string">"nodes"</span><span class="token punctuation">:</span>              <span class="token boolean">true</span><span class="token punctuation">,</span>
+	<span class="token string">"nodekey"</span><span class="token punctuation">:</span>            <span class="token boolean">true</span><span class="token punctuation">,</span>
+	<span class="token string">"static-nodes.json"</span><span class="token punctuation">:</span>  <span class="token boolean">false</span><span class="token punctuation">,</span> 
+	<span class="token string">"trusted-nodes.json"</span><span class="token punctuation">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span> 
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>c <span class="token operator">*</span>Config<span class="token punctuation">)</span> <span class="token function">ResolvePath</span><span class="token punctuation">(</span>path <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">string</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> filepath<span class="token punctuation">.</span><span class="token function">IsAbs</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> path
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> c<span class="token punctuation">.</span>DataDir <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token string">""</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> warn<span class="token punctuation">,</span> isOld <span class="token operator">:=</span> isOldGethResource<span class="token punctuation">[</span>path<span class="token punctuation">]</span><span class="token punctuation">;</span> isOld <span class="token punctuation">&#123;</span> 
+		oldpath <span class="token operator">:=</span> <span class="token string">""</span>
+		<span class="token keyword">if</span> c<span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token string">"geth"</span> <span class="token punctuation">&#123;</span>
+			oldpath <span class="token operator">=</span> filepath<span class="token punctuation">.</span><span class="token function">Join</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span>DataDir<span class="token punctuation">,</span> path<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> oldpath <span class="token operator">!=</span> <span class="token string">""</span> <span class="token operator">&amp;&amp;</span> common<span class="token punctuation">.</span><span class="token function">FileExist</span><span class="token punctuation">(</span>oldpath<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> warn <span class="token punctuation">&#123;</span>
+				c<span class="token punctuation">.</span><span class="token function">warnOnce</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>c<span class="token punctuation">.</span>oldGethResourceWarning<span class="token punctuation">,</span> <span class="token string">"Using deprecated resource file %s, please move this file to the 'geth' subdirectory of datadir."</span><span class="token punctuation">,</span> oldpath<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">return</span> oldpath
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> filepath<span class="token punctuation">.</span><span class="token function">Join</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span><span class="token function">instanceDir</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> path<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里传入一个路径，一般是文件名，然后先判断是否是绝对路径，是的话直接返回，不是的话再判断datadir是否被设置，没有的话返回空。接着从isOldGethResource中查找以path为键的值，warn表示对应的值，isold表示是否有该键。如果有该键且节点名为geth时，设置目录为datadir/path。接着如果该文件已经存在表示有旧的数据，如果warn位true的话打印log并返回路径。如果节点名不是geth或者没有该键，或者文件不存在，则返回新的路径:datadir/节点名/path</p>
+<p>回到start中，最后新建一个p2p服务。接着构建服务集合，遍历我们再注册服务时创建的serviceFuncs对象（默认时只有eth服务），每次遍历是都先创建一个ServiceContext，然后利用我们注册服务时提供的公共构造服务，然后反射服务的类型放到services中，但是不能重复。按照服务创建的先后顺序，后创建的服务在其ServiceContext中都持有先前服务的引用。</p>
+<p>接着变量已创建的服务，将其协议添加到p2p服务的协议字段。最后先启动p2p服务，然后再启动之前注册的各个服务，注意在某个服务启动失败后，将终止所有服务，包括p2p服务。最后返回错误。</p>
+<p>紧接着，调用startRPC方法启动rpc服务</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>n <span class="token operator">*</span>Node<span class="token punctuation">)</span> <span class="token function">startRPC</span><span class="token punctuation">(</span>services <span class="token keyword">map</span><span class="token punctuation">[</span>reflect<span class="token punctuation">.</span>Type<span class="token punctuation">]</span>Service<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	apis <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">apis</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> service <span class="token operator">:=</span> <span class="token keyword">range</span> services <span class="token punctuation">&#123;</span>
+		apis <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>apis<span class="token punctuation">,</span> service<span class="token punctuation">.</span><span class="token function">APIs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startInProc</span><span class="token punctuation">(</span>apis<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startIPC</span><span class="token punctuation">(</span>apis<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span><span class="token function">stopInProc</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startHTTP</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>httpEndpoint<span class="token punctuation">,</span> apis<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>HTTPModules<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>HTTPCors<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>HTTPVirtualHosts<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>HTTPTimeouts<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span><span class="token function">stopIPC</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		n<span class="token punctuation">.</span><span class="token function">stopInProc</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startWS</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>wsEndpoint<span class="token punctuation">,</span> apis<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>WSModules<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>WSOrigins<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>WSExposeAll<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span><span class="token function">stopHTTP</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		n<span class="token punctuation">.</span><span class="token function">stopIPC</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		n<span class="token punctuation">.</span><span class="token function">stopInProc</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	n<span class="token punctuation">.</span>rpcAPIs <span class="token operator">=</span> apis
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先收集所有可以提供的api，然后依次调用startInProc、startIPC、startHTTP和startWS来根据需求启动各种rpc服务。注意其中任何一个rpc开启失败的话，都会关闭之前开启的rpc服务，并返回错误。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>geth的启动流程主要是就是先构造一个节点，然后启动各种服务。最先被启动的是p2p服务，然后在启动我们之前注册的各种服务，默认情况下只有Ethereum服务，最后启动各种RPC服务。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/DuBNA1QMpPA">https://unsplash.com/photos/DuBNA1QMpPA</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/06/08/go-ethereum%E4%B8%ADtxpool%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="prev" title="go-ethereum中txpool源码学习">
+                  <i class="fa fa-chevron-left"></i> go-ethereum中txpool源码学习
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/06/08/geth%E5%AD%90%E5%91%BD%E4%BB%A4%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%9Ainit%E3%80%81account/" rel="next" title="geth子命令源码分析：init、account">
+                  geth子命令源码分析：init、account <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

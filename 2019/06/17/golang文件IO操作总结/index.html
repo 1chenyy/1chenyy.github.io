@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="golang文件IO操作总结">
+<meta property="og:url" content="http://example.com/2019/06/17/golang%E6%96%87%E4%BB%B6IO%E6%93%8D%E4%BD%9C%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/trevor-cole-389933-unsplash.jpg">
+<meta property="article:published_time" content="2019-06-17T10:18:01.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.499Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="go">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/trevor-cole-389933-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/06/17/golang%E6%96%87%E4%BB%B6IO%E6%93%8D%E4%BD%9C%E6%80%BB%E7%BB%93/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/06/17/golang%E6%96%87%E4%BB%B6IO%E6%93%8D%E4%BD%9C%E6%80%BB%E7%BB%93/","path":"2019/06/17/golang文件IO操作总结/","title":"golang文件IO操作总结"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>golang文件IO操作总结 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%87%E4%BB%B6"><span class="nav-number">1.</span> <span class="nav-text">文件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E6%96%87%E4%BB%B6"><span class="nav-number">1.1.</span> <span class="nav-text">创建文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E6%96%87%E4%BB%B6%E5%A4%A7%E5%B0%8F"><span class="nav-number">1.2.</span> <span class="nav-text">修改文件大小</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E4%BF%A1%E6%81%AF"><span class="nav-number">1.3.</span> <span class="nav-text">文件信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A7%BB%E5%8A%A8"><span class="nav-number">1.4.</span> <span class="nav-text">移动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%A0%E9%99%A4"><span class="nav-number">1.5.</span> <span class="nav-text">删除</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%93%E5%BC%80%E5%92%8C%E5%85%B3%E9%97%AD%E6%96%87%E4%BB%B6"><span class="nav-number">1.6.</span> <span class="nav-text">打开和关闭文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%83%E9%99%90"><span class="nav-number">1.7.</span> <span class="nav-text">权限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%94%B9%E5%8F%98%E6%96%87%E4%BB%B6%E5%B1%9E%E6%80%A7"><span class="nav-number">1.8.</span> <span class="nav-text">改变文件属性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%BB%E5%86%99"><span class="nav-number">2.</span> <span class="nav-text">读写</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%8D%E5%88%B6%E6%96%87%E4%BB%B6"><span class="nav-number">2.1.</span> <span class="nav-text">复制文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B7%B3%E8%BD%AC%E5%88%B0%E6%96%87%E4%BB%B6%E6%8C%87%E5%AE%9A%E4%BD%8D%E7%BD%AE"><span class="nav-number">2.2.</span> <span class="nav-text">跳转到文件指定位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E6%96%87%E4%BB%B6"><span class="nav-number">2.3.</span> <span class="nav-text">写文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%A6%E7%BC%93%E5%AD%98%E7%9A%84%E5%86%99"><span class="nav-number">2.4.</span> <span class="nav-text">带缓存的写</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E6%96%87%E4%BB%B6"><span class="nav-number">2.5.</span> <span class="nav-text">读文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%A6%E7%BC%93%E5%AD%98%E8%AF%BB"><span class="nav-number">2.6.</span> <span class="nav-text">带缓存读</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#scanner"><span class="nav-number">2.7.</span> <span class="nav-text">scanner</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E6%93%8D%E4%BD%9C"><span class="nav-number">3.</span> <span class="nav-text">其他操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%93%E5%8C%85%E4%B8%8E%E8%A7%A3%E5%8C%85"><span class="nav-number">3.1.</span> <span class="nav-text">打包与解包</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E8%A7%A3%E5%8E%8B%E7%BC%A9%E6%93%8D%E4%BD%9C"><span class="nav-number">3.2.</span> <span class="nav-text">其他解压缩操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%B4%E6%97%B6%E7%9B%AE%E5%BD%95%E5%8F%8A%E6%96%87%E4%BB%B6"><span class="nav-number">3.3.</span> <span class="nav-text">临时目录及文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6"><span class="nav-number">3.4.</span> <span class="nav-text">下载文件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bufio-writer%E6%BA%90%E7%A0%81"><span class="nav-number">4.</span> <span class="nav-text">bufio.writer源码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%84%E9%80%A0"><span class="nav-number">4.1.</span> <span class="nav-text">构造</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Available-amp-Buffered"><span class="nav-number">4.2.</span> <span class="nav-text">Available &amp; Buffered</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reset"><span class="nav-number">4.3.</span> <span class="nav-text">reset</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#write"><span class="nav-number">4.4.</span> <span class="nav-text">write</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flush"><span class="nav-number">4.5.</span> <span class="nav-text">flush</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/06/17/golang%E6%96%87%E4%BB%B6IO%E6%93%8D%E4%BD%9C%E6%80%BB%E7%BB%93/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          golang文件IO操作总结
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-17 18:18:01" itemprop="dateCreated datePublished" datetime="2019-06-17T18:18:01+08:00">2019-06-17</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">go语言学习笔记</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>11k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>10 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/trevor-cole-389933-unsplash.jpg"></p>
+<span id="more"></span>
+<p>Go语言中的文件与IO操作也是很丰富的，但是相关操作分散在多个包中，这里就简单总结一下</p>
+<h1 id="文件"><a href="#文件" class="headerlink" title="文件"></a>文件</h1><p>这一部分主要在os包内</p>
+<h2 id="创建文件"><a href="#创建文件" class="headerlink" title="创建文件"></a>创建文件</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	f<span class="token punctuation">,</span>err<span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> f<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>主要使用os.Create方法，创建一个空文件，如果文件已存在，会覆盖，最后还是会得到一个空文件</p>
+<h2 id="修改文件大小"><a href="#修改文件大小" class="headerlink" title="修改文件大小"></a>修改文件大小</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">os<span class="token punctuation">.</span><span class="token function">Truncate</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">,</span><span class="token number">10</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>单位是字节，如果文件不存在会创建文件。查看源码发现内部调用的实际是file的Truncate方法。</p>
+<h2 id="文件信息"><a href="#文件信息" class="headerlink" title="文件信息"></a>文件信息</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	fileInfo<span class="token punctuation">,</span> err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">Stat</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>主要利用stat方法，返回一个FileInfo对象，表示文件信息，个FileInfo是一个接口提供以下信息</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> FileInfo <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+	<span class="token function">Name</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">string</span>       <span class="token comment">// 文件名</span>
+	<span class="token function">Size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">int64</span>        <span class="token comment">// 文件大小</span>
+	<span class="token function">Mode</span><span class="token punctuation">(</span><span class="token punctuation">)</span> FileMode     <span class="token comment">// 文件读写模式</span>
+	<span class="token function">ModTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span> time<span class="token punctuation">.</span>Time <span class="token comment">// 最近修改时间</span>
+	<span class="token function">IsDir</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">bool</span>        <span class="token comment">// 是否是目录</span>
+	<span class="token function">Sys</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>   <span class="token comment">// 基础数据</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>由于stat在文件不存在时会返回错误，所以一般可以用来判断文件是否存在</p>
+<h2 id="移动"><a href="#移动" class="headerlink" title="移动"></a>移动</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">os<span class="token punctuation">.</span><span class="token function">Rename</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">,</span><span class="token string">"s.txt"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>既可以重命名还可以移动文件。注意如果新路径已经存在会被覆盖。当然如果旧文件不存在会报错</p>
+<h2 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">os<span class="token punctuation">.</span><span class="token function">Remove</span><span class="token punctuation">(</span><span class="token string">"s.txt"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>还有一个RemoveAll方法用于删除一个路径下所有文件</p>
+<h2 id="打开和关闭文件"><a href="#打开和关闭文件" class="headerlink" title="打开和关闭文件"></a>打开和关闭文件</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>默认以只读的方式打开文件，文件不存在时会报错，利用defer机制关闭文件</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">OpenFile</span><span class="token punctuation">(</span><span class="token string">"s.txt"</span><span class="token punctuation">,</span>os<span class="token punctuation">.</span>O_APPEND<span class="token operator">|</span>os<span class="token punctuation">.</span>O_CREATE<span class="token punctuation">,</span><span class="token number">0666</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这是一种比较开放式的方法，可以指定打开的方法以及权限。第二个参数常用的参数如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">const</span> <span class="token punctuation">(</span>
+	O_RDONLY <span class="token builtin">int</span> <span class="token operator">=</span> syscall<span class="token punctuation">.</span>O_RDONLY <span class="token comment">// 只读</span>
+	O_WRONLY <span class="token builtin">int</span> <span class="token operator">=</span> syscall<span class="token punctuation">.</span>O_WRONLY <span class="token comment">// 只写</span>
+	O_RDWR   <span class="token builtin">int</span> <span class="token operator">=</span> syscall<span class="token punctuation">.</span>O_RDWR   <span class="token comment">// 可读写</span>
+
+	O_APPEND <span class="token builtin">int</span> <span class="token operator">=</span> syscall<span class="token punctuation">.</span>O_APPEND <span class="token comment">// 以追加形式写</span>
+	O_CREATE <span class="token builtin">int</span> <span class="token operator">=</span> syscall<span class="token punctuation">.</span>O_CREAT  <span class="token comment">// 文件不存在时创建</span>
+	O_EXCL   <span class="token builtin">int</span> <span class="token operator">=</span> syscall<span class="token punctuation">.</span>O_EXCL   <span class="token comment">// 和O_CREATE一起使用，文件不能存在</span>
+	O_SYNC   <span class="token builtin">int</span> <span class="token operator">=</span> syscall<span class="token punctuation">.</span>O_SYNC   <span class="token comment">// 以同步IO模式打开</span>
+	O_TRUNC  <span class="token builtin">int</span> <span class="token operator">=</span> syscall<span class="token punctuation">.</span>O_TRUNC  <span class="token comment">// 打开时裁剪文件</span>
+<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第三个参数在只读时可以直接传0，写的时候要指定文件权限，如0666。</p>
+<h2 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">Chmod</span><span class="token punctuation">(</span><span class="token string">"test.txt"</span><span class="token punctuation">,</span> <span class="token number">0777</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>就是linux的chmod命令。使用时可以利用打开文件的错误来检查读写权限。</p>
+<pre class="line-numbers language-none"><code class="language-none">func main()&#123;
+	os.Chmod(&quot;s.txt&quot;,0400)
+	file,err:&#x3D;os.OpenFile(&quot;s.txt&quot;,os.O_WRONLY,0666)
+	if err !&#x3D; nil &#123;
+		if os.IsPermission(err) &#123;
+			fmt.Println(&quot;没有写权限&quot;)
+		&#125;
+	&#125;
+	defer file.Close()
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="改变文件属性"><a href="#改变文件属性" class="headerlink" title="改变文件属性"></a>改变文件属性</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">os<span class="token punctuation">.</span><span class="token function">Chown</span><span class="token punctuation">(</span><span class="token string">"s.txt"</span><span class="token punctuation">,</span> os<span class="token punctuation">.</span><span class="token function">Getuid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> os<span class="token punctuation">.</span><span class="token function">Getgid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">//改变所有者</span>
+<span class="token comment">//修改最后访问和修改时间</span>
+os<span class="token punctuation">.</span><span class="token function">Chtimes</span><span class="token punctuation">(</span><span class="token string">"test.txt"</span><span class="token punctuation">,</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token operator">*</span>time<span class="token punctuation">.</span>Minute<span class="token punctuation">)</span><span class="token punctuation">,</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token operator">*</span>time<span class="token punctuation">.</span>Minute<span class="token punctuation">)</span><span class="token punctuation">)</span> <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h1 id="读写"><a href="#读写" class="headerlink" title="读写"></a>读写</h1><p>涉及io、os包中的许多方法</p>
+<h2 id="复制文件"><a href="#复制文件" class="headerlink" title="复制文件"></a>复制文件</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	old<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">"s.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> old<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token builtin">new</span><span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span><span class="token string">"s_copy.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> <span class="token builtin">new</span><span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token builtin">len</span><span class="token punctuation">,</span>err<span class="token operator">:=</span>io<span class="token punctuation">.</span><span class="token function">Copy</span><span class="token punctuation">(</span><span class="token builtin">new</span><span class="token punctuation">,</span>old<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"copied %d bytes"</span><span class="token punctuation">,</span><span class="token builtin">len</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Copy实际上是操作两个分别实现了读写接口的对象。</p>
+<h2 id="跳转到文件指定位置"><a href="#跳转到文件指定位置" class="headerlink" title="跳转到文件指定位置"></a>跳转到文件指定位置</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">"s.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	pos<span class="token punctuation">,</span>err<span class="token operator">:=</span>file<span class="token punctuation">.</span><span class="token function">Seek</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>pos<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>seek接受两个参数，第一个是offset，表示偏移量。第二个是whence，表示从哪里开始：0：表示文件开始位置；1：表示当前位置；2：表示文件结尾</p>
+<ul>
+<li>file.Seek(0, 1) 表示文件当前位置</li>
+<li>file.Seek(0, 0) 表示文件开始位置</li>
+</ul>
+<h2 id="写文件"><a href="#写文件" class="headerlink" title="写文件"></a>写文件</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">OpenFile</span><span class="token punctuation">(</span><span class="token string">"s.txt"</span><span class="token punctuation">,</span>os<span class="token punctuation">.</span>O_RDWR<span class="token punctuation">,</span><span class="token number">0666</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token boolean">_</span><span class="token punctuation">,</span>err<span class="token operator">=</span>file<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"hello world"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>另外在ioutil包中还有一个更方便的方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">ioutil<span class="token punctuation">.</span><span class="token function">WriteFile</span><span class="token punctuation">(</span><span class="token string">"s.txt"</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"hello"</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token number">0666</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="带缓存的写"><a href="#带缓存的写" class="headerlink" title="带缓存的写"></a>带缓存的写</h2><p>一般情况下我们可以自己定义一个buffer用来缓存要写入的数据，等数据够多时一次写入，这样可以提高IO性能，不过标准包里已经给我们封装好了</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">OpenFile</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">,</span>os<span class="token punctuation">.</span>O_CREATE<span class="token operator">|</span>os<span class="token punctuation">.</span>O_RDWR<span class="token punctuation">,</span><span class="token number">0666</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	buffer <span class="token operator">:=</span> bufio<span class="token punctuation">.</span><span class="token function">NewWriter</span><span class="token punctuation">(</span>file<span class="token punctuation">)</span>
+
+	<span class="token builtin">len</span><span class="token punctuation">,</span>err<span class="token operator">:=</span>buffer<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"hello"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"写入 %d 字节\n"</span><span class="token punctuation">,</span> <span class="token builtin">len</span><span class="token punctuation">)</span>
+
+	<span class="token builtin">len</span><span class="token punctuation">,</span>err<span class="token operator">=</span>buffer<span class="token punctuation">.</span><span class="token function">WriteString</span><span class="token punctuation">(</span><span class="token string">"world"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"写入 %d 字节\n"</span><span class="token punctuation">,</span> <span class="token builtin">len</span><span class="token punctuation">)</span>
+
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"已缓存 %d 字节\n"</span><span class="token punctuation">,</span>buffer<span class="token punctuation">.</span><span class="token function">Buffered</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"还有 %d 字节可用\n"</span><span class="token punctuation">,</span>buffer<span class="token punctuation">.</span><span class="token function">Available</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	err<span class="token operator">=</span>buffer<span class="token punctuation">.</span><span class="token function">Flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>此外bufio的Writer还有一个reset方法，他接受一个实现Writer接口的对象，然后将buffer中的内容清空，后续的写入都将写到传入的对象中。</p>
+<p>bufio的默认缓存长度为4096，可以使用bufio.NewWriterSize去指定。更多详细内容见后文源码分析</p>
+<h2 id="读文件"><a href="#读文件" class="headerlink" title="读文件"></a>读文件</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	b<span class="token operator">:=</span><span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span>
+	n<span class="token punctuation">,</span>err<span class="token operator">:=</span>file<span class="token punctuation">.</span><span class="token function">Read</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"读了%d个字节"</span><span class="token punctuation">,</span>n<span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>read方法需要传入一个切片，由于切片长度限制所以最多可以读若干的字节</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	b<span class="token operator">:=</span><span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span><span class="token number">12</span><span class="token punctuation">)</span>
+	n<span class="token punctuation">,</span>err<span class="token operator">:=</span>io<span class="token punctuation">.</span><span class="token function">ReadFull</span><span class="token punctuation">(</span>file<span class="token punctuation">,</span>b<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"读了%d个字节"</span><span class="token punctuation">,</span>n<span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>ReadFull则是要求将切片填满，即最少读多少字节，若不够则会返回错误，但还是会读取到内容。类似的还有<code>func ReadAtLeast(r Reader, buf []byte, min int) (n int, err error)</code>，也是指定最少要读的字节数，否则会报错，但是已读内容会保留。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	data<span class="token punctuation">,</span>err<span class="token operator">:=</span>ioutil<span class="token punctuation">.</span><span class="token function">ReadAll</span><span class="token punctuation">(</span>file<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>ReadAll是一次读取所有内容</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	data<span class="token punctuation">,</span>err<span class="token operator">:=</span>ioutil<span class="token punctuation">.</span><span class="token function">ReadFile</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这是专门针对文件设计的一次读取全部内容</p>
+<h2 id="带缓存读"><a href="#带缓存读" class="headerlink" title="带缓存读"></a>带缓存读</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span> err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	buffer <span class="token operator">:=</span> bufio<span class="token punctuation">.</span><span class="token function">NewReader</span><span class="token punctuation">(</span>file<span class="token punctuation">)</span>
+	bytes<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> buffer<span class="token punctuation">.</span><span class="token function">Peek</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+
+	b<span class="token punctuation">,</span><span class="token boolean">_</span><span class="token operator">:=</span>buffer<span class="token punctuation">.</span><span class="token function">ReadByte</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	buf <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span>
+	buffer<span class="token punctuation">.</span><span class="token function">Read</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>buffer<span class="token punctuation">.</span><span class="token function">ReadString</span><span class="token punctuation">(</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">'r'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>注意和几个方法的区别，Peek是读取指定数量的内容，但是读完指针不会变。剩余几个Read方法指针会随着读取后移，ReadString以及未提到的ReadBytes都是从当前指针位置开始读到指定位置为止。</p>
+<h2 id="scanner"><a href="#scanner" class="headerlink" title="scanner"></a>scanner</h2><p>这是bufio包中的类，它读取时比较特使是按照给定的分隔符读取的，类似于split的功能</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span> err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	scanner <span class="token operator">:=</span> bufio<span class="token punctuation">.</span><span class="token function">NewScanner</span><span class="token punctuation">(</span>file<span class="token punctuation">)</span>
+	scanner<span class="token punctuation">.</span><span class="token function">Split</span><span class="token punctuation">(</span>bufio<span class="token punctuation">.</span>ScanWords<span class="token punctuation">)</span>
+	<span class="token keyword">for</span> scanner<span class="token punctuation">.</span><span class="token function">Scan</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>scanner<span class="token punctuation">.</span><span class="token function">Text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	err <span class="token operator">=</span> scanner<span class="token punctuation">.</span><span class="token function">Err</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"读取完成"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面我们按照空格分隔，循环读取，直到完成。用法的关键是Split方法的参数，他需要一个SplitFunc类型，用来指定划分方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> SplitFunc <span class="token keyword">func</span><span class="token punctuation">(</span>data <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> atEOF <span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>advance <span class="token builtin">int</span><span class="token punctuation">,</span> token <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>例子中我们用了包中定义好的方法，以空格分隔</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">ScanWords</span><span class="token punctuation">(</span>data <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> atEOF <span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>advance <span class="token builtin">int</span><span class="token punctuation">,</span> token <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token comment">// Skip leading spaces.</span>
+	start <span class="token operator">:=</span> <span class="token number">0</span>
+	<span class="token keyword">for</span> width <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> start <span class="token operator">&lt;</span> <span class="token function">len</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span> start <span class="token operator">+=</span> width <span class="token punctuation">&#123;</span>
+		<span class="token keyword">var</span> r <span class="token builtin">rune</span>
+		r<span class="token punctuation">,</span> width <span class="token operator">=</span> utf8<span class="token punctuation">.</span><span class="token function">DecodeRune</span><span class="token punctuation">(</span>data<span class="token punctuation">[</span>start<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> <span class="token operator">!</span><span class="token function">isSpace</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">break</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// Scan until space, marking end of word.</span>
+	<span class="token keyword">for</span> width<span class="token punctuation">,</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">,</span> start<span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token function">len</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span> i <span class="token operator">+=</span> width <span class="token punctuation">&#123;</span>
+		<span class="token keyword">var</span> r <span class="token builtin">rune</span>
+		r<span class="token punctuation">,</span> width <span class="token operator">=</span> utf8<span class="token punctuation">.</span><span class="token function">DecodeRune</span><span class="token punctuation">(</span>data<span class="token punctuation">[</span>i<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> <span class="token function">isSpace</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> i <span class="token operator">+</span> width<span class="token punctuation">,</span> data<span class="token punctuation">[</span>start<span class="token punctuation">:</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// If we're at EOF, we have a final, non-empty, non-terminated word. Return it.</span>
+	<span class="token keyword">if</span> atEOF <span class="token operator">&amp;&amp;</span> <span class="token function">len</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span> <span class="token operator">></span> start <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token function">len</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">,</span> data<span class="token punctuation">[</span>start<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// Request more data.</span>
+	<span class="token keyword">return</span> start<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个逻辑也很简单，首先跳过开头的空格，然后从第一个不是空格位置开始扫描，直到遇到下一个空格为止，返回下一次扫描时起始位置、本次扫描的有效数据。根据这个例子我们可以很简单的修改为其他分隔符功能</p>
+<h1 id="其他操作"><a href="#其他操作" class="headerlink" title="其他操作"></a>其他操作</h1><h2 id="打包与解包"><a href="#打包与解包" class="headerlink" title="打包与解包"></a>打包与解包</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	out<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span><span class="token string">"test.zip"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> out<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	zipWriter <span class="token operator">:=</span> zip<span class="token punctuation">.</span><span class="token function">NewWriter</span><span class="token punctuation">(</span>out<span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> zipWriter<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	m<span class="token operator">:=</span><span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span>
+	m<span class="token punctuation">[</span><span class="token string">"t.txt"</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">"aaa"</span>
+	m<span class="token punctuation">[</span><span class="token string">"tt.txt"</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">"bbb"</span>
+
+	<span class="token keyword">for</span> name<span class="token punctuation">,</span>body<span class="token operator">:=</span><span class="token keyword">range</span> m<span class="token punctuation">&#123;</span>
+		file<span class="token punctuation">,</span>err<span class="token operator">:=</span>zipWriter<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token boolean">_</span><span class="token punctuation">,</span>err<span class="token operator">=</span>file<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span>body<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>流程很简单，就是创建一个文件，然后打开一个与该文件相关的写入对象，然后向里面写入文件，每次写入文件都要手动创建并写入内容。解包如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	zipreader<span class="token punctuation">,</span>err<span class="token operator">:=</span>zip<span class="token punctuation">.</span><span class="token function">OpenReader</span><span class="token punctuation">(</span><span class="token string">"test.zip"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span>  zipreader<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span>file<span class="token operator">:=</span><span class="token keyword">range</span> zipreader<span class="token punctuation">.</span>Reader<span class="token punctuation">.</span>File<span class="token punctuation">&#123;</span>
+		zipfile<span class="token punctuation">,</span>err<span class="token operator">:=</span>file<span class="token punctuation">.</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">defer</span> zipfile<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> file<span class="token punctuation">.</span><span class="token function">FileInfo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">IsDir</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			err<span class="token operator">=</span>os<span class="token punctuation">.</span><span class="token function">MkdirAll</span><span class="token punctuation">(</span>file<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> file<span class="token punctuation">.</span><span class="token function">Mode</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+			out<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">OpenFile</span><span class="token punctuation">(</span>file<span class="token punctuation">.</span>Name<span class="token punctuation">,</span>os<span class="token punctuation">.</span>O_CREATE<span class="token operator">|</span>os<span class="token punctuation">.</span>O_RDWR<span class="token operator">|</span>os<span class="token punctuation">.</span>O_TRUNC<span class="token punctuation">,</span><span class="token number">0666</span><span class="token punctuation">)</span>
+			<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">defer</span> out<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			<span class="token boolean">_</span><span class="token punctuation">,</span>err<span class="token operator">=</span>io<span class="token punctuation">.</span><span class="token function">Copy</span><span class="token punctuation">(</span>out<span class="token punctuation">,</span>zipfile<span class="token punctuation">)</span>
+			<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>解包会稍微麻烦一点，先用zip包打开要解包的文件，获得一个reader对象，然后他的Reader.File字段保存着所有文件，需要先用open方法打开，然后在判断是否是文件夹，在确定正确路径，真正的解包是将遍历到的文件使用copy方法复制出来即可。</p>
+<h2 id="其他解压缩操作"><a href="#其他解压缩操作" class="headerlink" title="其他解压缩操作"></a>其他解压缩操作</h2><p>除了提供zip类型文件操作，标准包还提供了<a target="_blank" rel="noopener" href="https://golang.org/pkg/archive/tar/">tar</a>，<a target="_blank" rel="noopener" href="https://golang.org/pkg/compress/gzip/">gzip</a>，<a target="_blank" rel="noopener" href="https://golang.org/pkg/compress/zlib/">zlib</a>, <a target="_blank" rel="noopener" href="https://golang.org/pkg/compress/bzip2/">bz2</a>, <a target="_blank" rel="noopener" href="https://golang.org/pkg/compress/flate/">flate</a>, <a target="_blank" rel="noopener" href="https://golang.org/pkg/compress/lzw/">lzw</a>支持，而且都有例子，这里就不一一举例了。</p>
+<h2 id="临时目录及文件"><a href="#临时目录及文件" class="headerlink" title="临时目录及文件"></a>临时目录及文件</h2><p>ioutil还另外提供了两个与临时目录及临时文件有个的方法：<code>TempDir()</code>、<code>TempFile()</code></p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	tempDir<span class="token punctuation">,</span>err<span class="token operator">:=</span>ioutil<span class="token punctuation">.</span><span class="token function">TempDir</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">,</span><span class="token string">"tempdir"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"创建临时文件夹："</span><span class="token punctuation">,</span>tempDir<span class="token punctuation">)</span>
+
+	tempfile<span class="token punctuation">,</span>err<span class="token operator">:=</span>ioutil<span class="token punctuation">.</span><span class="token function">TempFile</span><span class="token punctuation">(</span>tempDir<span class="token punctuation">,</span><span class="token string">"t.txt"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"创建临时文件："</span><span class="token punctuation">,</span>tempfile<span class="token punctuation">.</span><span class="token function">Name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		tempfile<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		os<span class="token punctuation">.</span><span class="token function">Remove</span><span class="token punctuation">(</span>tempfile<span class="token punctuation">.</span><span class="token function">Name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		os<span class="token punctuation">.</span><span class="token function">Remove</span><span class="token punctuation">(</span>tempDir<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	n<span class="token punctuation">,</span>err<span class="token operator">:=</span>tempfile<span class="token punctuation">.</span><span class="token function">WriteString</span><span class="token punctuation">(</span><span class="token string">"hello world"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"写入字节数："</span><span class="token punctuation">,</span>n<span class="token punctuation">)</span>
+
+	b<span class="token punctuation">,</span>err<span class="token operator">:=</span>ioutil<span class="token punctuation">.</span><span class="token function">ReadFile</span><span class="token punctuation">(</span>tempfile<span class="token punctuation">.</span><span class="token function">Name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"读取字节数："</span><span class="token punctuation">,</span>n<span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>不同的操作系统由不同的临时目录，可以通过<code>os.TempDir()</code>查看</p>
+<h2 id="下载文件"><a href="#下载文件" class="headerlink" title="下载文件"></a>下载文件</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	file<span class="token punctuation">,</span>err<span class="token operator">:=</span>os<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span><span class="token string">"pic.jpg"</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> file<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	resp<span class="token punctuation">,</span>err<span class="token operator">:=</span>http<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">"http://b.hiphotos.baidu.com/image/pic/item/908fa0ec08fa513db777cf78376d55fbb3fbd9b3.jpg"</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> resp<span class="token punctuation">.</span>Body<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	n<span class="token punctuation">,</span>err<span class="token operator">:=</span>io<span class="token punctuation">.</span><span class="token function">Copy</span><span class="token punctuation">(</span>file<span class="token punctuation">,</span>resp<span class="token punctuation">.</span>Body<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"下载字节数："</span><span class="token punctuation">,</span>n<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>前面说过，copy操作的是两个实现读写接口的对象，所以也可以用来下载文件。</p>
+<h1 id="bufio-writer源码"><a href="#bufio-writer源码" class="headerlink" title="bufio.writer源码"></a>bufio.writer源码</h1><p>这个实现比较简单，我们简要看一下源码实现</p>
+<h2 id="构造"><a href="#构造" class="headerlink" title="构造"></a>构造</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">defaultBufSize <span class="token operator">=</span> <span class="token number">4096</span>
+
+<span class="token keyword">func</span> <span class="token function">NewWriter</span><span class="token punctuation">(</span>w io<span class="token punctuation">.</span>Writer<span class="token punctuation">)</span> <span class="token operator">*</span>Writer <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">NewWriterSize</span><span class="token punctuation">(</span>w<span class="token punctuation">,</span> defaultBufSize<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">NewWriterSize</span><span class="token punctuation">(</span>w io<span class="token punctuation">.</span>Writer<span class="token punctuation">,</span> size <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token operator">*</span>Writer <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">,</span> ok <span class="token operator">:=</span> w<span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>Writer<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> ok <span class="token operator">&amp;&amp;</span> <span class="token function">len</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">)</span> <span class="token operator">>=</span> size <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> b
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> size <span class="token operator">&lt;=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		size <span class="token operator">=</span> defaultBufSize
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>Writer<span class="token punctuation">&#123;</span>
+		buf<span class="token punctuation">:</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		wr<span class="token punctuation">:</span>  w<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> Writer <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	err <span class="token builtin">error</span>
+	buf <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+	n   <span class="token builtin">int</span>
+	wr  io<span class="token punctuation">.</span>Writer
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>构造比较简单，最终是创建一个Writer对象，Writer中封装了一个字节切片用来缓存，还封装了我们传入的writer对象，用来最后实际写。切片的默认长度是4096。另外还有一个整数n用来记录已缓存量。</p>
+<h2 id="Available-amp-Buffered"><a href="#Available-amp-Buffered" class="headerlink" title="Available &amp; Buffered"></a>Available &amp; Buffered</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Writer<span class="token punctuation">)</span> <span class="token function">Available</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">int</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> <span class="token function">len</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">)</span> <span class="token operator">-</span> b<span class="token punctuation">.</span>n <span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Writer<span class="token punctuation">)</span> <span class="token function">Buffered</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">int</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> b<span class="token punctuation">.</span>n <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>Available就是总长度减去已写入长度，Buffered就是返回已写入长度</p>
+<h2 id="reset"><a href="#reset" class="headerlink" title="reset"></a>reset</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Writer<span class="token punctuation">)</span> <span class="token function">Reset</span><span class="token punctuation">(</span>w io<span class="token punctuation">.</span>Writer<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">.</span>err <span class="token operator">=</span> <span class="token boolean">nil</span>
+	b<span class="token punctuation">.</span>n <span class="token operator">=</span> <span class="token number">0</span>
+	b<span class="token punctuation">.</span>wr <span class="token operator">=</span> w
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>重置Writer，就是将Writer的几个成员根据情况初始化</p>
+<h2 id="write"><a href="#write" class="headerlink" title="write"></a>write</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Writer<span class="token punctuation">)</span> <span class="token function">Write</span><span class="token punctuation">(</span>p <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nn <span class="token builtin">int</span><span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">for</span> <span class="token function">len</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span> <span class="token operator">></span> b<span class="token punctuation">.</span><span class="token function">Available</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> b<span class="token punctuation">.</span>err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">var</span> n <span class="token builtin">int</span>
+		<span class="token keyword">if</span> b<span class="token punctuation">.</span><span class="token function">Buffered</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+			n<span class="token punctuation">,</span> b<span class="token punctuation">.</span>err <span class="token operator">=</span> b<span class="token punctuation">.</span>wr<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+			n <span class="token operator">=</span> <span class="token function">copy</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span>b<span class="token punctuation">.</span>n<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> p<span class="token punctuation">)</span>
+			b<span class="token punctuation">.</span>n <span class="token operator">+=</span> n
+			b<span class="token punctuation">.</span><span class="token function">Flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		nn <span class="token operator">+=</span> n
+		p <span class="token operator">=</span> p<span class="token punctuation">[</span>n<span class="token punctuation">:</span><span class="token punctuation">]</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> b<span class="token punctuation">.</span>err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> nn<span class="token punctuation">,</span> b<span class="token punctuation">.</span>err
+	<span class="token punctuation">&#125;</span>
+	n <span class="token operator">:=</span> <span class="token function">copy</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span>b<span class="token punctuation">.</span>n<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> p<span class="token punctuation">)</span>
+	b<span class="token punctuation">.</span>n <span class="token operator">+=</span> n
+	nn <span class="token operator">+=</span> n
+	<span class="token keyword">return</span> nn<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先考虑要写入内容大于可用空间的情况。此时，如果已缓存长度为0，表示这个缓存总长度就是0，所以所有内容直接写入指定的writer。否则，先将缓存填满，并将缓存中的内容写入writer。之后判断剩余的内容是否超过可用空间，是的话循环前面操作。如果可以写入，则直接写入，同时已写入长度标记n对应增长。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Writer<span class="token punctuation">)</span> <span class="token function">WriteByte</span><span class="token punctuation">(</span>c <span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> b<span class="token punctuation">.</span>err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> b<span class="token punctuation">.</span>err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> b<span class="token punctuation">.</span><span class="token function">Available</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> b<span class="token punctuation">.</span><span class="token function">Flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> b<span class="token punctuation">.</span>err
+	<span class="token punctuation">&#125;</span>
+	b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span>b<span class="token punctuation">.</span>n<span class="token punctuation">]</span> <span class="token operator">=</span> c
+	b<span class="token punctuation">.</span>n<span class="token operator">++</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>写入单个字符就比较简单了，只要可用空间不为0就可以写入，否则就先flush在写入</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Writer<span class="token punctuation">)</span> <span class="token function">WriteString</span><span class="token punctuation">(</span>s <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	nn <span class="token operator">:=</span> <span class="token number">0</span>
+	<span class="token keyword">for</span> <span class="token function">len</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token operator">></span> b<span class="token punctuation">.</span><span class="token function">Available</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> b<span class="token punctuation">.</span>err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		n <span class="token operator">:=</span> <span class="token function">copy</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span>b<span class="token punctuation">.</span>n<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> s<span class="token punctuation">)</span>
+		b<span class="token punctuation">.</span>n <span class="token operator">+=</span> n
+		nn <span class="token operator">+=</span> n
+		s <span class="token operator">=</span> s<span class="token punctuation">[</span>n<span class="token punctuation">:</span><span class="token punctuation">]</span>
+		b<span class="token punctuation">.</span><span class="token function">Flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> b<span class="token punctuation">.</span>err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> nn<span class="token punctuation">,</span> b<span class="token punctuation">.</span>err
+	<span class="token punctuation">&#125;</span>
+	n <span class="token operator">:=</span> <span class="token function">copy</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span>b<span class="token punctuation">.</span>n<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> s<span class="token punctuation">)</span>
+	b<span class="token punctuation">.</span>n <span class="token operator">+=</span> n
+	nn <span class="token operator">+=</span> n
+	<span class="token keyword">return</span> nn<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>字符串本质上也是一个字节数组，和写入一个字节数组的方法类型</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Writer<span class="token punctuation">)</span> <span class="token function">WriteRune</span><span class="token punctuation">(</span>r <span class="token builtin">rune</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>size <span class="token builtin">int</span><span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> r <span class="token operator">&lt;</span> utf8<span class="token punctuation">.</span>RuneSelf <span class="token punctuation">&#123;</span>
+		err <span class="token operator">=</span> b<span class="token punctuation">.</span><span class="token function">WriteByte</span><span class="token punctuation">(</span><span class="token function">byte</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">,</span> err
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> b<span class="token punctuation">.</span>err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">,</span> b<span class="token punctuation">.</span>err
+	<span class="token punctuation">&#125;</span>
+	n <span class="token operator">:=</span> b<span class="token punctuation">.</span><span class="token function">Available</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> n <span class="token operator">&lt;</span> utf8<span class="token punctuation">.</span>UTFMax <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> b<span class="token punctuation">.</span><span class="token function">Flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> b<span class="token punctuation">.</span>err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">,</span> b<span class="token punctuation">.</span>err
+		<span class="token punctuation">&#125;</span>
+		n <span class="token operator">=</span> b<span class="token punctuation">.</span><span class="token function">Available</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> n <span class="token operator">&lt;</span> utf8<span class="token punctuation">.</span>UTFMax <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> b<span class="token punctuation">.</span><span class="token function">WriteString</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	size <span class="token operator">=</span> utf8<span class="token punctuation">.</span><span class="token function">EncodeRune</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span>b<span class="token punctuation">.</span>n<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> r<span class="token punctuation">)</span>
+	b<span class="token punctuation">.</span>n <span class="token operator">+=</span> size
+	<span class="token keyword">return</span> size<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>写入一个rune类型数据有些不同。首先判断传入的值是否仅仅是一个字节（r &lt; utf8.RuneSelf），是的话调用WriteByte。否则，先判断可用空间是否小于UTFMax（4个字节），是的话要先将缓存内容flush，然后在判断，若还不够则转为string类型写入。若可以写入则调用EncodeRune将rune类型写入字节数组。</p>
+<h2 id="flush"><a href="#flush" class="headerlink" title="flush"></a>flush</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>Writer<span class="token punctuation">)</span> <span class="token function">Flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> b<span class="token punctuation">.</span>err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> b<span class="token punctuation">.</span>err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> b<span class="token punctuation">.</span>n <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	n<span class="token punctuation">,</span> err <span class="token operator">:=</span> b<span class="token punctuation">.</span>wr<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">:</span>b<span class="token punctuation">.</span>n<span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> n <span class="token operator">&lt;</span> b<span class="token punctuation">.</span>n <span class="token operator">&amp;&amp;</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		err <span class="token operator">=</span> io<span class="token punctuation">.</span>ErrShortWrite
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> n <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> n <span class="token operator">&lt;</span> b<span class="token punctuation">.</span>n <span class="token punctuation">&#123;</span>
+			<span class="token function">copy</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">:</span>b<span class="token punctuation">.</span>n<span class="token operator">-</span>n<span class="token punctuation">]</span><span class="token punctuation">,</span> b<span class="token punctuation">.</span>buf<span class="token punctuation">[</span>n<span class="token punctuation">:</span>b<span class="token punctuation">.</span>n<span class="token punctuation">]</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		b<span class="token punctuation">.</span>n <span class="token operator">-=</span> n
+		b<span class="token punctuation">.</span>err <span class="token operator">=</span> err
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	b<span class="token punctuation">.</span>n <span class="token operator">=</span> <span class="token number">0</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这就是实际写入writer的方法，首先检查写入缓存过程中是否有错，有错的话直接返回错误。之后看是否有数据要写入，有的话调用writer的write的方法一次写入一个数组，接着对具体错误做出处理即可。这里额外考虑了写入的长度不是我们给的长度的情况。另外对于有错的话，对于那些未写入的内容还要予以保留。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/salaAJW7Xdg">https://unsplash.com/photos/salaAJW7Xdg</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/06/17/Android%E6%BA%90%E7%A0%81%E4%B8%8B%E8%BD%BD%E5%8F%8A%E7%BC%96%E8%AF%91/" rel="prev" title="Android源码下载及编译">
+                  <i class="fa fa-chevron-left"></i> Android源码下载及编译
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/06/17/golang%E5%8F%8D%E5%B0%84%E6%80%BB%E7%BB%93/" rel="next" title="golang反射总结">
+                  golang反射总结 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

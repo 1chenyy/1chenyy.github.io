@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="严格的内存困难型哈希函数">
+<meta property="og:url" content="http://example.com/2019/05/22/%E4%B8%A5%E6%A0%BC%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%B0%E9%9A%BE%E5%9E%8B%E5%93%88%E5%B8%8C%E5%87%BD%E6%95%B0/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/keith-luke-1419663-unsplash.jpg">
+<meta property="article:published_time" content="2019-05-22T07:45:22.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.500Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="翻译">
+<meta property="article:tag" content="区块链">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/keith-luke-1419663-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/05/22/%E4%B8%A5%E6%A0%BC%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%B0%E9%9A%BE%E5%9E%8B%E5%93%88%E5%B8%8C%E5%87%BD%E6%95%B0/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/05/22/%E4%B8%A5%E6%A0%BC%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%B0%E9%9A%BE%E5%9E%8B%E5%93%88%E5%B8%8C%E5%87%BD%E6%95%B0/","path":"2019/05/22/严格的内存困难型哈希函数/","title":"严格的内存困难型哈希函数"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>严格的内存困难型哈希函数 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%A8%E8%BD%AF%E4%BB%B6%E8%AE%A4%E8%AF%81%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">在软件认证中的应用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%A5%E6%A0%BC%E5%86%85%E5%AD%98%E5%9B%B0%E9%9A%BE%E5%9E%8B%E5%87%BD%E6%95%B0"><span class="nav-number">4.</span> <span class="nav-text">严格内存困难型函数</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SeqMemoHash"><span class="nav-number">5.</span> <span class="nav-text">SeqMemoHash</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RandMemoHash-%E6%B7%BB%E5%8A%A0%E4%B8%8D%E5%8F%AF%E9%A2%84%E6%B5%8B%E7%9A%84%E5%86%85%E5%AD%98%E8%AE%BF%E9%97%AE"><span class="nav-number">6.</span> <span class="nav-text">RandMemoHash,添加不可预测的内存访问</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="nav-number">7.</span> <span class="nav-text">性能优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%80%90%E6%AD%A5%E9%AA%8C%E8%AF%81"><span class="nav-number">8.</span> <span class="nav-text">逐步验证</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">9.</span> <span class="nav-text">结论</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/05/22/%E4%B8%A5%E6%A0%BC%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%B0%E9%9A%BE%E5%9E%8B%E5%93%88%E5%B8%8C%E5%87%BD%E6%95%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          严格的内存困难型哈希函数
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-05-22 15:45:22" itemprop="dateCreated datePublished" datetime="2019-05-22T15:45:22+08:00">2019-05-22</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%BF%BB%E8%AF%91/" itemprop="url" rel="index"><span itemprop="name">翻译</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.4k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>4 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/keith-luke-1419663-unsplash.jpg"></p>
+<span id="more"></span>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://www.hashcash.org/papers/memohash.pdf">原文地址</a></p>
+</blockquote>
+<h1 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h1><p>本文介绍严格内存困难型函数的概念。严格内存困难型函数是内存困难性函数的一个扩展，当用于实际计算的内存比预定义的最优内存略微减少时，会使函数的计算指数级变慢或根本不可行。严格内存困难型函数的主要应用是证明在一定的时间间隔内或在一定的计算中使用了一定的内存。这反过来可以用来证明设备的内存区域不包含隐藏数据。其他应用场景包括密码散列和工作证明。我们提供了SeqMemoHash和RandMemoHash两个在随机预测模型下的连续内存困难函数</p>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>加密哈希函数易于计算，但很难反推，同时保留了大量源熵。加密哈希函数称为许多其他函数的基石，比如密钥生成函数（KDF）。密钥生成函数使用伪随机函数从密钥(如主密钥)中派生一个或多个密钥。基于密码的KDFs(PKDF)(也称为密码散列函数)使用密码或密码短语作为主密钥。PKDFs通常用于密钥扩展。密钥扩展是用来在网站中实现更安全的密码认证。该网站不存储原始密码，而是利用PKDF产生一个散列密钥。如果攻击者能够访问所有网站用户的派生密钥列表，他可能尝试执行字典攻击或暴力攻击。这需要为每个密码候选项计算PKDF，并将结果与散列值进行比较。为了降低这些攻击的有用性，于是设计了密钥扩展函数，使它们要么需要昂贵的计算，要么需要大量的RAM。通过对密钥进行递归哈希产生的摘要和一个随机变量异或可以实现这种昂贵计算，比如PBKDF2体制（异或是为了尽可能少的减少熵）。<a target="_blank" rel="noopener" href="https://www.tarsnap.com/scrypt/scrypt.pdf">scrypt算法</a>是密钥扩展算法的一个例子，该算法可以配置为需要使用一定数量的RAM才能有效地计算，并且每个内存访问都依赖于前一个内存访问。这使得破解机的硬件实现不那么吸引人，因为这种内存访问模式既不能并行化，也不能流水线化。尽管如此，即使计算期间使用的内存小于最优值，scrypt函数仍然可以快速计算。密码散列函数不需要防止用更少的内存计算该函数：它所期望的性能是，用小于最优内存的函数计算会使计算速度足够慢，因此创建具有这种特性的破译机器没有经济效益。在scrypt中，计算时间随着内存减少的数量线性增长，直到剩下一个非常小的内存时，计算将变得不可能。相比之下，在严格的内存困难型函数(SMHF)中，如果从最优值中删除超过一个常数的少量内存，计算会立即变得不可行，甚至不可能。在随机预测模型下，我们给出了SeqMemoHash和RandMemoHash这两个严格的内存困难型函数。这些函数可以用作密码散列函数，但它们可能达不到高的吞吐量，因为它们需要哈希函数来支持严格属性，而scrypt只需要一个一致的强序函数(一种如果按不同的顺序计算运算，其输出很可能不同的函数)。不过可以修改我们的方案，在不影响实际安全性的前提下通过减少哈希函数的轮数来实现更高的吞吐量。例如SHA-256减少到16轮回比比Salsa20/8快4倍。</p>
+<h1 id="在软件认证中的应用"><a href="#在软件认证中的应用" class="headerlink" title="在软件认证中的应用"></a>在软件认证中的应用</h1><p>假设验证者希望在目标计算机上验证软件，并且已经有一个验证方法来验证正在运行或已安装的软件是否与预定义的条件相同（比如通过哈希）。但是认证过程还必须验证空闲内存中没有隐藏任何内容，无论是在易失性存储还是非易失性存储中。一个简单的但不是最优的方案的是，验证者发送一个真正的随机数序列来填充未使用的内存，然后执行已知的软件验证阶段，最后检查内存中是否存在相同的序列。SMHF可以在没有网络传输随机值的情况下提供相同的功能，这可能会造成非常高的开销。验证器向认证计算机提供种子，然后计算机计算一个伪随机数序列，该伪随机数序列使用多轮SMHF填充未使用的内存。此填充过程将花费比通信延迟更高的量时间。然后目标计算机返回上一轮SMHF的散列摘要，由验证器进行验证。在已知的软件认证阶段结束后，验证者向目标计算机发送一个挑战。计算机必须使用与SMHF的最后一轮输出相连接的挑战的散列进行响应（应该存储在内存中）。如果内存中没有填充此数据，并且目标计算机试图重新计算的话，这种行为将被探测到，因为这样做的延迟会非常大。</p>
+<h1 id="严格内存困难型函数"><a href="#严格内存困难型函数" class="headerlink" title="严格内存困难型函数"></a>严格内存困难型函数</h1><p><strong>定义1：</strong> 针对内存大小为n的随机存取机，如果他在执行T(n)操作时T(n)=O(n)，提出了一种RAM-fast算法</p>
+<p><strong>定义2：</strong> 如果一个函数可以用随机存取机的RAM-fast算法来计算，那么它就是RAM-fast。</p>
+<p><strong>定义3：</strong> 随机存取机器上的内存困难型算法是这样一种算法：他使用大小为n的空间和T(n)操作，n=Ω(T(n)^1−ϵ)</p>
+<p><strong>定义3：</strong> 如果一个函数是RAM-fast而且可以在随机存取机上一n的空间通过内存困难型算法执行，但是不能在并行随机存储机上以小于n-x的空间运行，那么他是一个内存困难型函数。</p>
+<h1 id="SeqMemoHash"><a href="#SeqMemoHash" class="headerlink" title="SeqMemoHash"></a>SeqMemoHash</h1><p>SeqMemoHash是我们第一个SMHF提议。设H为单向压缩函数。设D为哈希摘要大小。设s是一个大小等于D的主秘密。设M[i]为为内存数组(0≤i&lt; N)，其中内存单元包含D个字节。设R是函数的轮数。该算法就地计算，输出为内存数组M。对于PoW或密码散列，取内存的最后z块(M[N-z]..M[N-1])，再用一个安全的加密哈希函数进行哈希，得到最终结果。</p>
+<pre class="line-numbers language-none"><code class="language-none">SeqMemoHash(s,R,N):
+    Set M[0]:&#x3D;s
+    For i:&#x3D;1 to N-1 do set M[i]:&#x3D;H(M[i-1])
+    For r:&#x3D;1 to R do
+        For b:&#x3D;0 to N-1 do 
+            M[b]:&#x3D;H(M[(b-1+N) mod N] || M[b]) &#x2F;&#x2F;注：||表示拼接<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果设置R≥N+1，那么SeqMemoHash是严格内存困难型函数。现在我们尝试一个非正式的证明。设c为压缩函数的工作状态空间。如果可用内存低于N*D+c，则计算最后一轮时需要存储一个大小为D的临时状态，而且至少计算前一轮两次。第二次计算必须要n*D+c-D的空间。同样的参数也可以随着内存减少应用到前一轮。经过N轮后，由于没有足够的暂存空间来计算压缩函数的工作状态，使得计算变得不可行的。更仔细的分析表明，每轮执行的回溯调用的数量随着回溯深度的增加而增加，因为每轮都需要存储临时散列摘要，从而减少了调用方的轮临时存储空间。这个问题类似于寄存器分配问题，作者找不到求最优解所需哈希数的精确递归式。</p>
+<h1 id="RandMemoHash-添加不可预测的内存访问"><a href="#RandMemoHash-添加不可预测的内存访问" class="headerlink" title="RandMemoHash,添加不可预测的内存访问"></a>RandMemoHash,添加不可预测的内存访问</h1><p>SeqMemoHash的每个散列步骤的输入都是预先知道的，因此可以使用最优寄存器分配算法重用尽可能多的中间结果。事实上，一个总是删除链中最老块的贪婪算法似乎是最优的。在本节中，我们建议对前面的函数进行一些轻微的修改，以防止任何寄存器分配算法提前知道将来需要哪些寄存器(或内存块)。：我们强制其中一个块的索引依赖于链的最后一个散列。这给出了一个高度均匀的随机分布的索引。当需要重新计算并执行回溯时，仍然有可能将当前块索引预先存储并作为参数传递给回溯子例程，以便在回溯函数返回后动态优化内存状态。然而，下面的问题似乎是np完全的，所以对于一个足够大的N，可能只找到一个次优解。仿真结果表明，当所提供的内存小于最优内存时，贪婪算法执行的哈希步数随着轮数的阶乘增加而增加。如果我们能够证明这对于任何算法都是正确的，那么这就意味着当R≥35，计算对于128位等效安全变得不可行的。</p>
+<p>我们定义RandMemoHash如下:</p>
+<pre class="line-numbers language-none"><code class="language-none">RandMemoHash(s,R,N)：
+    Set M[0]:&#x3D;s
+    For i:&#x3D;1 to N-1 do set M[i]:&#x3D;H(M[i-1])
+    For r:&#x3D;1 to R do:
+        For b:&#x3D;0 to N-1 do:
+            p:&#x3D;(b-1+N) mod N
+            q:&#x3D;AsInteger(M[p]) mod (N-1)
+            j:&#x3D;(b+q) mod N
+            M[b]:&#x3D;H(M[p] || M[j])<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>注意，如果输入是按随机顺序而不是按顺序执行的，它会降低CPU缓存的效用，这通常是一个优势。</p>
+<p>若要使用RandMemoHash作为密码散列函数，如果最终结果是完全哈希的话可以使用一个降低轮数的版本替换函数H（如SHA-256使用16轮）。此外，种子应该使用一个标准的快速密钥推导函数从密码中得出，而且结果M应该通过另一个密钥推导函数来输出更短的密钥。</p>
+<h1 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h1><p>当使用RandMemoHash作为工作证明时，它可以防止使用gpu或asic发送垃圾邮件或获得比标准计算机更快的速度。通过要求1mb内存，在一个最先进的gpu上计算SeqMemoHash(从2013年开始)会比使用标准电脑要慢。内部哈希函数可以按轮数减少，只需为减少的轮函数找到一个pre-image比完全计算RandMemoHash要困难。</p>
+<p>使用RandMemoHash作为PoW的建议配置如下:</p>
+<ul>
+<li>RandMemoHash使用4轮(R=4)</li>
+<li>内部哈希函数是SHA-256，减少到16个循环</li>
+<li>N = 2^16，所以需要2mb的内存来优化计算SeqMemoHash。</li>
+<li>计算SeqMemoHash至少需要2^18次被减少的哈希计算，这相当于2^16次完整的SHA-256计算，在标准计算机中大约需要30毫秒。</li>
+<li>假设每个SHA-256轮需要4个步骤，那么RandMemoHash计算的总步骤数为2^24。</li>
+</ul>
+<p>对于这种配置，估计用一半内存计算RandMemoHash需要重新计算大约2^60个散列摘要。</p>
+<p>在PoW中也不需要隐藏初始种子，不需要隐藏任何中间状态。使用完整的SHA-256哈希最后一个块，可以防止完整的SeqMemoHash原像攻击。：攻击者不会愿意每次都破坏一个内部约简版哈希函数，即使它在计算上是可行的。例如，打破减少到16轮的SHA-2的原像抵抗需要2^32步。然后是计算成本，如果内存比最优内存少32字节的RandMemoHash至少需要执行这2^32个额外步骤，因此RandMemoHash需要的时间比以前多256倍。</p>
+<h1 id="逐步验证"><a href="#逐步验证" class="headerlink" title="逐步验证"></a>逐步验证</h1><p>当SeqMemoHash或RandMemoHash被用作PoW时，攻击者可以通过欺骗PoW的难度来尝试DoS攻击，并迫使验证者在计算(无效的)MemoHash摘要时投入CPU资源。防止这种攻击的一种方法是创建一个PoW，该PoW由在两个幂为2的步骤中(在哈希步骤1,2,4,8，..)生成的所有中间结果的串联组成最后的结果。对于上一节给出的配置，这需要17个中间散列摘要和最终散列摘要。验证者必须在计算过程中根据给定的值检查每个中间状态。此保护确保攻击者必须执行验证者执行的至少一半操作。</p>
+<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><p>介绍了严格内存困难函数(SMHF)的概念，和现在的两个SMHF候选SeqMemoHash和RandMemoHash，而且我们推测，他们在随机预测模型下是内存困难的。</p>
+<blockquote>
+<p>题图来自unsplash: <a target="_blank" rel="noopener" href="https://unsplash.com/photos/TAm2z1TOges">https://unsplash.com/photos/TAm2z1TOges</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag"><i class="fa fa-tag"></i> 翻译</a>
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/05/19/go-ethereum%E4%B8%ADcore-blockchain%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="prev" title="go-ethereum中core-blockchain源码学习">
+                  <i class="fa fa-chevron-left"></i> go-ethereum中core-blockchain源码学习
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/05/23/Hashimoto%EF%BC%9AIO%E9%99%90%E5%88%B6%E7%9A%84%E5%B7%A5%E4%BD%9C%E8%AF%81%E6%98%8E/" rel="next" title="Hashimoto：IO限制的工作证明">
+                  Hashimoto：IO限制的工作证明 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

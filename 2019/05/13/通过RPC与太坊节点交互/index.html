@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过RPC与太坊节点交互">
+<meta property="og:url" content="http://example.com/2019/05/13/%E9%80%9A%E8%BF%87RPC%E4%B8%8E%E5%A4%AA%E5%9D%8A%E8%8A%82%E7%82%B9%E4%BA%A4%E4%BA%92/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/pixpoetry-1578727-unsplash.jpg">
+<meta property="article:published_time" content="2019-05-13T06:10:50.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.502Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/pixpoetry-1578727-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/05/13/%E9%80%9A%E8%BF%87RPC%E4%B8%8E%E5%A4%AA%E5%9D%8A%E8%8A%82%E7%82%B9%E4%BA%A4%E4%BA%92/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/05/13/%E9%80%9A%E8%BF%87RPC%E4%B8%8E%E5%A4%AA%E5%9D%8A%E8%8A%82%E7%82%B9%E4%BA%A4%E4%BA%92/","path":"2019/05/13/通过RPC与太坊节点交互/","title":"通过RPC与太坊节点交互"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>通过RPC与太坊节点交互 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP-RPC"><span class="nav-number">2.</span> <span class="nav-text">HTTP-RPC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#curl%E5%91%BD%E4%BB%A4"><span class="nav-number">2.1.</span> <span class="nav-text">curl命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%B0%83%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">代码调用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IPC-RPC"><span class="nav-number">3.</span> <span class="nav-text">IPC-RPC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#nc%E5%91%BD%E4%BB%A4"><span class="nav-number">3.1.</span> <span class="nav-text">nc命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%B0%83%E7%94%A8-1"><span class="nav-number">3.2.</span> <span class="nav-text">代码调用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#websocket-RPC"><span class="nav-number">4.</span> <span class="nav-text">websocket-RPC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B7%A8%E8%AF%AD%E8%A8%80%E5%8E%9F%E7%94%9F%E8%B0%83%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">跨语言原生调用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#web3-js"><span class="nav-number">6.</span> <span class="nav-text">web3.js</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/05/13/%E9%80%9A%E8%BF%87RPC%E4%B8%8E%E5%A4%AA%E5%9D%8A%E8%8A%82%E7%82%B9%E4%BA%A4%E4%BA%92/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          通过RPC与太坊节点交互
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-05-13 14:10:50" itemprop="dateCreated datePublished" datetime="2019-05-13T14:10:50+08:00">2019-05-13</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" itemprop="url" rel="index"><span itemprop="name">以太坊</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>9.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>9 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/head/pixpoetry-1578727-unsplash.jpg"></p>
+<span id="more"></span>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>geth提供了一整套的rpc接口，分为标准接口和扩展接口，平时我们打开geth客户端默认开放的就是标准接口，关于标准接口中所有接口的详细内容见<a target="_blank" rel="noopener" href="https://github.com/ethereum/wiki/wiki/JSON-RPC#json-rpc-api-reference">这里</a>，除了标准接口之外geth又添加了一系列扩展接口，如用于节点管理的admin系列接口，管理挖矿miner系列接口等，详细说明见<a target="_blank" rel="noopener" href="https://github.com/ethereum/go-ethereum/wiki/Management-APIs">这里</a>，要想使用这一类rpc接口，需要在启动geth客户端时使用指定所开放的接口。</p>
+<p>以太坊实现rpc的方法有多种，外部可以使用的有http，ipc和ws。下面分别介绍一下</p>
+<h1 id="HTTP-RPC"><a href="#HTTP-RPC" class="headerlink" title="HTTP-RPC"></a>HTTP-RPC</h1><p>要使用这种rpc需要在启动时使用–rpc开启，默认开放在8545端口上，可以使用–rpcport修改，另外还可以用–rpcaddr指定监听地址，默认为localhost，修改外外网ip就可以在外网访问本地节点；用–rpcapi指定所开放的api。（后面的ipc和ws模式都有相关参数设置）</p>
+<h2 id="curl命令"><a href="#curl命令" class="headerlink" title="curl命令"></a>curl命令</h2><p>由于是jsonrpc类型的接口，所以我们需要向目标地址端口发送json格式数据来，首先可以根据官方文档说明的使用curl命令体验一下，命令如下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">curl</span> -X POST --data <span class="token string">'&#123;"jsonrpc":"2.0","method":"rpc_modules","params":[],"id":67&#125;'</span> <span class="token number">127.0</span>.0.1:8545<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>-X POST指定使用post方式发送数据，–data指定发送的Jason数据，其中需要指定的几个字段我们稍后介绍，最后跟上地址和端口。最后返回下面数据，这里我们请求的是服务端开发的api接口：</p>
+<pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+    <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">67</span><span class="token punctuation">,</span>
+    <span class="token property">"jsonrpc"</span><span class="token operator">:</span> <span class="token string">"2.0"</span><span class="token punctuation">,</span>
+    <span class="token property">"result"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+        <span class="token property">"eth"</span><span class="token operator">:</span> <span class="token string">"1.0"</span><span class="token punctuation">,</span>
+        <span class="token property">"evm"</span><span class="token operator">:</span> <span class="token string">"1.0"</span><span class="token punctuation">,</span>
+        <span class="token property">"net"</span><span class="token operator">:</span> <span class="token string">"1.0"</span><span class="token punctuation">,</span>
+        <span class="token property">"personal"</span><span class="token operator">:</span> <span class="token string">"1.0"</span><span class="token punctuation">,</span>
+        <span class="token property">"rpc"</span><span class="token operator">:</span> <span class="token string">"1.0"</span><span class="token punctuation">,</span>
+        <span class="token property">"web3"</span><span class="token operator">:</span> <span class="token string">"1.0"</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>还有一点需要注意的是，如果使用ganache测试上面的命令基本可以通过，如果用geth测试，需要加上-H “Content-Type: application/json”</p>
+<h2 id="代码调用"><a href="#代码调用" class="headerlink" title="代码调用"></a>代码调用</h2><p>除了使用命令行的方法，我们还可以使用代码调用：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+	<span class="token string">"fmt"</span>
+	<span class="token string">"io/ioutil"</span>
+	<span class="token string">"log"</span>
+	<span class="token string">"net/http"</span>
+	<span class="token string">"strings"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	resp<span class="token punctuation">,</span>err<span class="token operator">:=</span>http<span class="token punctuation">.</span><span class="token function">Post</span><span class="token punctuation">(</span><span class="token string">"http://127.0.0.1:8545"</span><span class="token punctuation">,</span><span class="token string">"application/x-www-form-urlencoded"</span><span class="token punctuation">,</span>strings<span class="token punctuation">.</span><span class="token function">NewReader</span><span class="token punctuation">(</span><span class="token string">`&#123;"jsonrpc":"2.0","method":"rpc_modules","params":[],"id":67&#125;`</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> resp<span class="token punctuation">.</span>Body<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	body<span class="token punctuation">,</span>err<span class="token operator">:=</span>ioutil<span class="token punctuation">.</span><span class="token function">ReadAll</span><span class="token punctuation">(</span>resp<span class="token punctuation">.</span>Body<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>body<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>和前面使用的curl命令效果一样，发送一个post请求，注意contentType要为”application/x-www-form-urlencoded”，但是在geth测试中要改为application/json，为了谨慎起见建议无论用什么测试都将contentType设为application/json。</p>
+<p>既然是发送的json数据，我们实际使用时候并不想每次都直接写入json字符串，我们还可以使用json对象形式，关于json对象的数据结构，我们通过翻阅源码（详见<a target="_blank" rel="noopener" href="https://blog.grapefruit.tk/2019/03/29/go-ethereum%E4%B8%ADrpc%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">这里</a>）可知go-ethereum的jsonrpc数据结构如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> jsonrpcMessage <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Version <span class="token builtin">string</span>          <span class="token string">`json:"jsonrpc,omitempty"`</span>
+	ID      json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"id,omitempty"`</span>
+	Method  <span class="token builtin">string</span>          <span class="token string">`json:"method,omitempty"`</span>
+	Params  json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"params,omitempty"`</span>
+	Error   <span class="token operator">*</span>jsonError      <span class="token string">`json:"error,omitempty"`</span>
+	Result  json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"result,omitempty"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> jsonError <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Code    <span class="token builtin">int</span>         <span class="token string">`json:"code"`</span>
+	Message <span class="token builtin">string</span>      <span class="token string">`json:"message"`</span>
+	Data    <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> <span class="token string">`json:"data,omitempty"`</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>无论收发都用的是jsonrpcMessage，这里也可以发现我们请求的时候需要指定一下内容：Version：版本号，字段是jsonrpc；ID：本次请求的ID，字段是id；Method：本次请求的方法，字段是method；Params：本次请求的方法参数列表，字段是params。剩余的Error和Result是响应中包含的。既然知道了json对象，我们就可以构建一个对象然后像上面一样发送请求，代码如下：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+	<span class="token string">"bytes"</span>
+	<span class="token string">"encoding/json"</span>
+	<span class="token string">"fmt"</span>
+	<span class="token string">"io/ioutil"</span>
+	<span class="token string">"log"</span>
+	<span class="token string">"net/http"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">type</span> jsonrpcMessage <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Version <span class="token builtin">string</span>          <span class="token string">`json:"jsonrpc,omitempty"`</span>
+	ID      json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"id,omitempty"`</span>
+	Method  <span class="token builtin">string</span>          <span class="token string">`json:"method,omitempty"`</span>
+	Params  json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"params,omitempty"`</span>
+	Error   <span class="token operator">*</span>jsonError      <span class="token string">`json:"error,omitempty"`</span>
+	Result  json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"result,omitempty"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> jsonError <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Code    <span class="token builtin">int</span>         <span class="token string">`json:"code"`</span>
+	Message <span class="token builtin">string</span>      <span class="token string">`json:"message"`</span>
+	Data    <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> <span class="token string">`json:"data,omitempty"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	msg<span class="token operator">:=</span>jsonrpcMessage<span class="token punctuation">&#123;</span>Version<span class="token punctuation">:</span><span class="token string">"2.0"</span><span class="token punctuation">,</span>Method<span class="token punctuation">:</span><span class="token string">"rpc_modules"</span><span class="token punctuation">,</span>Params<span class="token punctuation">:</span>json<span class="token punctuation">.</span>RawMessage<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>ID<span class="token punctuation">:</span>json<span class="token punctuation">.</span><span class="token function">RawMessage</span><span class="token punctuation">(</span><span class="token string">"5"</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span>
+	data<span class="token punctuation">,</span>err<span class="token operator">:=</span>json<span class="token punctuation">.</span><span class="token function">Marshal</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"Marshal:"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	resp<span class="token punctuation">,</span>err<span class="token operator">:=</span>http<span class="token punctuation">.</span><span class="token function">Post</span><span class="token punctuation">(</span><span class="token string">"http://127.0.0.1:8545"</span><span class="token punctuation">,</span><span class="token string">"application/json"</span><span class="token punctuation">,</span>bytes<span class="token punctuation">.</span><span class="token function">NewReader</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"Post:"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> resp<span class="token punctuation">.</span>Body<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	body<span class="token punctuation">,</span>err<span class="token operator">:=</span>ioutil<span class="token punctuation">.</span><span class="token function">ReadAll</span><span class="token punctuation">(</span>resp<span class="token punctuation">.</span>Body<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"ReadAll:"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">var</span> result jsonrpcMessage
+	err<span class="token operator">=</span>json<span class="token punctuation">.</span><span class="token function">Unmarshal</span><span class="token punctuation">(</span>body<span class="token punctuation">,</span><span class="token operator">&amp;</span>result<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"Unmarshal:"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Result<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面举得都是不带参数的例子，对于带参数的主要问题是在源码中jsonrpcMessage的Params字段是一个json.RawMessage类型，当然我们可以给他改为[]string，不过不修改也可以使用，json.RawMessage主要作用就是在序列化或反序列化时保持数据原样，而json.RawMessage本身实际上就是一个字节数组，详细信息可见json源码。所以我们在给结构体中json.RawMessage类型字段赋值时要先对数据进行一次序列化，即变为字节数组后再赋值，如下调用了web3_sha3方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">params<span class="token punctuation">,</span><span class="token boolean">_</span><span class="token operator">:=</span>json<span class="token punctuation">.</span><span class="token function">Marshal</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span><span class="token string">"0x68656c6c6f20776f726c64"</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+msg<span class="token operator">:=</span>jsonrpcMessage<span class="token punctuation">&#123;</span>Version<span class="token punctuation">:</span><span class="token string">"2.0"</span><span class="token punctuation">,</span>Method<span class="token punctuation">:</span><span class="token string">"web3_sha3"</span><span class="token punctuation">,</span>Params<span class="token punctuation">:</span>params<span class="token punctuation">,</span>ID<span class="token punctuation">:</span>json<span class="token punctuation">.</span><span class="token function">RawMessage</span><span class="token punctuation">(</span><span class="token string">"5"</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h1 id="IPC-RPC"><a href="#IPC-RPC" class="headerlink" title="IPC-RPC"></a>IPC-RPC</h1><p>不同于http-rpc，ipc形式的rpc在geth户客户端是默认开启的，默认文件路径是datadir/geth.ipc，在linux中使用的是unix socket形式</p>
+<h2 id="nc命令"><a href="#nc命令" class="headerlink" title="nc命令"></a>nc命令</h2><p>根据官方文档提示，我们可以用nc命令实现调用，还是发送一段json数据，如下</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">echo</span> <span class="token string">'&#123;"jsonrpc":"2.0","method":"rpc_modules","params":[],"id":1&#125;'</span> <span class="token operator">|</span> <span class="token function">nc</span> -U mychain/chain1/geth.ipc<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="代码调用-1"><a href="#代码调用-1" class="headerlink" title="代码调用"></a>代码调用</h2><p>go语言版本的代码调用如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+	<span class="token string">"bytes"</span>
+	<span class="token string">"encoding/json"</span>
+	<span class="token string">"fmt"</span>
+	<span class="token string">"log"</span>
+	<span class="token string">"net"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">type</span> jsonrpcMessage <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Version <span class="token builtin">string</span>          <span class="token string">`json:"jsonrpc,omitempty"`</span>
+	ID      json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"id,omitempty"`</span>
+	Method  <span class="token builtin">string</span>          <span class="token string">`json:"method,omitempty"`</span>
+	Params  json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"params,omitempty"`</span>
+	Error   <span class="token operator">*</span>jsonError      <span class="token string">`json:"error,omitempty"`</span>
+	Result  json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"result,omitempty"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> jsonError <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Code    <span class="token builtin">int</span>         <span class="token string">`json:"code"`</span>
+	Message <span class="token builtin">string</span>      <span class="token string">`json:"message"`</span>
+	Data    <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> <span class="token string">`json:"data,omitempty"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	msg<span class="token operator">:=</span>jsonrpcMessage<span class="token punctuation">&#123;</span>Version<span class="token punctuation">:</span><span class="token string">"2.0"</span><span class="token punctuation">,</span>Method<span class="token punctuation">:</span><span class="token string">"rpc_modules"</span><span class="token punctuation">,</span>Params<span class="token punctuation">:</span>json<span class="token punctuation">.</span>RawMessage<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>ID<span class="token punctuation">:</span>json<span class="token punctuation">.</span><span class="token function">RawMessage</span><span class="token punctuation">(</span><span class="token string">"5"</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span>
+	data<span class="token punctuation">,</span>err<span class="token operator">:=</span>json<span class="token punctuation">.</span><span class="token function">Marshal</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span><span class="token string">"Marshal: "</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	conn<span class="token punctuation">,</span>err<span class="token operator">:=</span>net<span class="token punctuation">.</span><span class="token function">Dial</span><span class="token punctuation">(</span><span class="token string">"unix"</span><span class="token punctuation">,</span><span class="token string">"/home/chenw/chenyy/mychain/chain1/geth.ipc"</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> conn<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span><span class="token string">"dial: "</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token boolean">_</span><span class="token punctuation">,</span>err<span class="token operator">=</span>conn<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span><span class="token string">"write: "</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	temp <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span><span class="token number">1024</span><span class="token punctuation">)</span>
+	<span class="token keyword">var</span> buf bytes<span class="token punctuation">.</span>Buffer
+	<span class="token keyword">var</span> result jsonrpcMessage
+	count<span class="token operator">:=</span><span class="token number">0</span>
+	<span class="token keyword">for</span><span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">,</span>err<span class="token operator">:=</span>conn<span class="token punctuation">.</span><span class="token function">Read</span><span class="token punctuation">(</span>temp<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span><span class="token string">"read: "</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		count<span class="token operator">+=</span>n
+		buf<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>temp<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> json<span class="token punctuation">.</span><span class="token function">Valid</span><span class="token punctuation">(</span>buf<span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token punctuation">:</span>count<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">break</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	json<span class="token punctuation">.</span><span class="token function">Unmarshal</span><span class="token punctuation">(</span>buf<span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token punctuation">:</span>count<span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token operator">&amp;</span>result<span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Result<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1 id="websocket-RPC"><a href="#websocket-RPC" class="headerlink" title="websocket-RPC"></a>websocket-RPC</h1><p>最后再演示一下websocket的rpc调用，首先要注意的是go的标准包并不支持websocket，go-ethereum使用的是golang官方维护的一个net包–”golang.org/x/net/websocket”，其中有websocket实现，但是该包并不完善，官方推荐使用Gorilla WebSocket，所以首先要安装该包</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">go get github.com/gorilla/websocket<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>其次要测试ws，要在启动以太坊节点时加上–ws参数，完整客户端测试代码如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+	<span class="token string">"encoding/json"</span>
+	<span class="token string">"fmt"</span>
+	<span class="token string">"github.com/gorilla/websocket"</span>
+	<span class="token string">"log"</span>
+	<span class="token string">"net/url"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">type</span> jsonrpcMessage <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Version <span class="token builtin">string</span>          <span class="token string">`json:"jsonrpc,omitempty"`</span>
+	ID      json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"id,omitempty"`</span>
+	Method  <span class="token builtin">string</span>          <span class="token string">`json:"method,omitempty"`</span>
+	Params  json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"params,omitempty"`</span>
+	Error   <span class="token operator">*</span>jsonError      <span class="token string">`json:"error,omitempty"`</span>
+	Result  json<span class="token punctuation">.</span>RawMessage <span class="token string">`json:"result,omitempty"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> jsonError <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Code    <span class="token builtin">int</span>         <span class="token string">`json:"code"`</span>
+	Message <span class="token builtin">string</span>      <span class="token string">`json:"message"`</span>
+	Data    <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> <span class="token string">`json:"data,omitempty"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	msg<span class="token operator">:=</span>jsonrpcMessage<span class="token punctuation">&#123;</span>Version<span class="token punctuation">:</span><span class="token string">"2.0"</span><span class="token punctuation">,</span>Method<span class="token punctuation">:</span><span class="token string">"rpc_modules"</span><span class="token punctuation">,</span>Params<span class="token punctuation">:</span>json<span class="token punctuation">.</span>RawMessage<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>ID<span class="token punctuation">:</span>json<span class="token punctuation">.</span><span class="token function">RawMessage</span><span class="token punctuation">(</span><span class="token string">"5"</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span>
+	u<span class="token operator">:=</span>url<span class="token punctuation">.</span>URL<span class="token punctuation">&#123;</span>Scheme<span class="token punctuation">:</span><span class="token string">"ws"</span><span class="token punctuation">,</span>Host<span class="token punctuation">:</span><span class="token string">"127.0.0.1:8546"</span><span class="token punctuation">&#125;</span>
+	c<span class="token punctuation">,</span><span class="token boolean">_</span><span class="token punctuation">,</span>err<span class="token operator">:=</span>websocket<span class="token punctuation">.</span>DefaultDialer<span class="token punctuation">.</span><span class="token function">Dial</span><span class="token punctuation">(</span>u<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token boolean">nil</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"Dial:"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">defer</span> c<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	err<span class="token operator">=</span>c<span class="token punctuation">.</span><span class="token function">WriteJSON</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"WriteJSON:"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">var</span> result jsonrpcMessage
+	err<span class="token operator">=</span>c<span class="token punctuation">.</span><span class="token function">ReadJSON</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>result<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"ReadJSON:"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Result<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1 id="跨语言原生调用"><a href="#跨语言原生调用" class="headerlink" title="跨语言原生调用"></a>跨语言原生调用</h1><p>既然是jsonrpc格式请求，那么跨语言的交互也是必须的，下面用java语言演示一下httprpc调用，首先定义json数据对象</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">class</span> <span class="token class-name">JsonMsg</span><span class="token punctuation">&#123;</span>
+    <span class="token class-name">String</span> jsonrpc<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> id<span class="token punctuation">;</span>
+    <span class="token class-name">String</span> method<span class="token punctuation">;</span>
+    <span class="token class-name">JsonArray</span> params<span class="token punctuation">;</span>
+    <span class="token class-name">JsonErr</span> error<span class="token punctuation">;</span>
+    <span class="token class-name">JsonElement</span> result<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">class</span> <span class="token class-name">JsonErr</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> code<span class="token punctuation">;</span>
+    <span class="token class-name">String</span> message<span class="token punctuation">;</span>
+    <span class="token class-name">String</span> data<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中params我定义为一个JsonArray类型，result定义为JsonElement类型，处理json数据时使用Gson库：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">GethRPC</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Gson</span> gson <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Gson</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">JsonMsg</span> msg <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">JsonMsg</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        msg<span class="token punctuation">.</span>jsonrpc <span class="token operator">=</span> <span class="token string">"2.0"</span><span class="token punctuation">;</span>
+        msg<span class="token punctuation">.</span>method <span class="token operator">=</span> <span class="token string">"web3_clientVersion"</span><span class="token punctuation">;</span>
+        msg<span class="token punctuation">.</span>id <span class="token operator">=</span> <span class="token number">5</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> request <span class="token operator">=</span> gson<span class="token punctuation">.</span><span class="token function">toJson</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span><span class="token punctuation">&#123;</span>
+            <span class="token class-name">URL</span> url <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">URL</span><span class="token punctuation">(</span><span class="token string">"http://127.0.0.1:8545"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">URLConnection</span> conn <span class="token operator">=</span> url<span class="token punctuation">.</span><span class="token function">openConnection</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setRequestProperty</span><span class="token punctuation">(</span><span class="token string">"Content-Type"</span><span class="token punctuation">,</span> <span class="token string">"application/json"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setRequestProperty</span><span class="token punctuation">(</span><span class="token string">"charset"</span><span class="token punctuation">,</span> <span class="token string">"utf-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setRequestProperty</span><span class="token punctuation">(</span><span class="token string">"Content-length"</span><span class="token punctuation">,</span>request<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setDoInput</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setDoOutput</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setUseCaches</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">BufferedOutputStream</span> outputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BufferedOutputStream</span><span class="token punctuation">(</span>conn<span class="token punctuation">.</span><span class="token function">getOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            outputStream<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span>request<span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            outputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">BufferedInputStream</span> inputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BufferedInputStream</span><span class="token punctuation">(</span>conn<span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">ByteArrayOutputStream</span> result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ByteArrayOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> buffer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token number">1024</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+            <span class="token keyword">int</span> length<span class="token punctuation">;</span>
+            <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>length <span class="token operator">=</span> inputStream<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span>buffer<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                result<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>gson<span class="token punctuation">.</span><span class="token function">fromJson</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token class-name">JsonMsg</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">.</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span><span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>对于有参数的rpc调用如下：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">GethRPC</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Gson</span> gson <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Gson</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">JsonMsg</span> msg <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">JsonMsg</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        msg<span class="token punctuation">.</span>jsonrpc <span class="token operator">=</span> <span class="token string">"2.0"</span><span class="token punctuation">;</span>
+        msg<span class="token punctuation">.</span>method <span class="token operator">=</span> <span class="token string">"web3_sha3"</span><span class="token punctuation">;</span>
+        <span class="token class-name">JsonArray</span> params <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">JsonArray</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        params<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"0x68656c6c6f20776f726c64"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        msg<span class="token punctuation">.</span>params <span class="token operator">=</span> params<span class="token punctuation">;</span>
+        msg<span class="token punctuation">.</span>id <span class="token operator">=</span> <span class="token number">5</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> request <span class="token operator">=</span> gson<span class="token punctuation">.</span><span class="token function">toJson</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span><span class="token punctuation">&#123;</span>
+            <span class="token class-name">URL</span> url <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">URL</span><span class="token punctuation">(</span><span class="token string">"http://127.0.0.1:8545"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">URLConnection</span> conn <span class="token operator">=</span> url<span class="token punctuation">.</span><span class="token function">openConnection</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setRequestProperty</span><span class="token punctuation">(</span><span class="token string">"Content-Type"</span><span class="token punctuation">,</span> <span class="token string">"application/json"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setRequestProperty</span><span class="token punctuation">(</span><span class="token string">"charset"</span><span class="token punctuation">,</span> <span class="token string">"utf-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setRequestProperty</span><span class="token punctuation">(</span><span class="token string">"Content-length"</span><span class="token punctuation">,</span>request<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setDoInput</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setDoOutput</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            conn<span class="token punctuation">.</span><span class="token function">setUseCaches</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">BufferedOutputStream</span> outputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BufferedOutputStream</span><span class="token punctuation">(</span>conn<span class="token punctuation">.</span><span class="token function">getOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            outputStream<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span>request<span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            outputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">BufferedInputStream</span> inputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BufferedInputStream</span><span class="token punctuation">(</span>conn<span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">ByteArrayOutputStream</span> result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ByteArrayOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> buffer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token number">1024</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+            <span class="token keyword">int</span> length<span class="token punctuation">;</span>
+            <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>length <span class="token operator">=</span> inputStream<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span>buffer<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                result<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>gson<span class="token punctuation">.</span><span class="token function">fromJson</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token class-name">JsonMsg</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">.</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            inputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            result<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span><span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1 id="web3-js"><a href="#web3-js" class="headerlink" title="web3.js"></a>web3.js</h1><p>像前面那样直接通过以太坊的rpc接口进行交互也行的通，但是还是比较麻烦，于是以太坊官方推出了一个库–web3.js，他是用js实现的API，用于和以太坊节点通信，底层还是rpc调用，只是帮我们封装了一系列方法，我们直接调用即可。</p>
+<p>使用起来很简单，首先在工程目录下安装web3（当然前提是安装了node.js）：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">npm</span> <span class="token function">install</span> web3<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>然后开启以太坊节点，如ganache-cli，下面提供一个示例获取节点上的所有账户和某些账户的余额：</p>
+<pre class="line-numbers language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">var</span> Web3 <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">"web3"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">var</span> web3 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Web3</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Web3<span class="token punctuation">.</span>providers<span class="token punctuation">.</span>HttpProvider</span><span class="token punctuation">(</span><span class="token string">"http://localhost:8545"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+web3<span class="token punctuation">.</span>eth<span class="token punctuation">.</span><span class="token function">getAccounts</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span>console<span class="token punctuation">.</span>log<span class="token punctuation">)</span><span class="token punctuation">;</span>
+web3<span class="token punctuation">.</span>eth<span class="token punctuation">.</span><span class="token function">getBalance</span><span class="token punctuation">(</span><span class="token string">"0x383edc3e6721b037263a92bf7218cc71fe617cd9"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span>console<span class="token punctuation">.</span>log<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用起来很简单，首先获取web3模块，然后创建web3对象，创建时使用HttpProvider也就是http-rpc的方式连接以太坊节点，当然也可以使用websocket的方法连接，这时首先要开启节点的websocket功能（使用–ws），然后创建web3对象时用一下方式：</p>
+<pre class="line-numbers language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">var</span> web3 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Web3</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Web3<span class="token punctuation">.</span>providers<span class="token punctuation">.</span>WebsocketProvider</span><span class="token punctuation">(</span><span class="token string">'ws://localhost:8546'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>另外关于web3.js的api问题，由于不同版本的api变化较大，详细信息参考<a target="_blank" rel="noopener" href="https://web3js.readthedocs.io/en/1.0/index.html">官方文档</a>。</p>
+<p>当然web3.js是是为js语言服务的，相应的还有python版、java版的类似库供我们使用。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/8pgK9350lv4">https://unsplash.com/photos/8pgK9350lv4</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/05/10/go-ethereum%E4%B8%ADeth-Fetcher%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="prev" title="go-ethereum中eth-Fetcher源码学习">
+                  <i class="fa fa-chevron-left"></i> go-ethereum中eth-Fetcher源码学习
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/05/16/go-ethereum%E4%B8%ADeth-downloader%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A01/" rel="next" title="go-ethereum中eth-downloader源码学习（一）">
+                  go-ethereum中eth-downloader源码学习（一） <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

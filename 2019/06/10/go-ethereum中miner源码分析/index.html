@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="go-ethereum中miner源码分析">
+<meta property="og:url" content="http://example.com/2019/06/10/go-ethereum%E4%B8%ADminer%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/alexey-topolyanskiy-37372-unsplash.jpg">
+<meta property="article:published_time" content="2019-06-10T09:16:59.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.494Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/alexey-topolyanskiy-37372-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/06/10/go-ethereum%E4%B8%ADminer%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/06/10/go-ethereum%E4%B8%ADminer%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/","path":"2019/06/10/go-ethereum中miner源码分析/","title":"go-ethereum中miner源码分析"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>go-ethereum中miner源码分析 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%A5%E5%8F%A3"><span class="nav-number">1.</span> <span class="nav-text">入口</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#StartMining"><span class="nav-number">2.</span> <span class="nav-text">StartMining</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#miner"><span class="nav-number">3.</span> <span class="nav-text">miner</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#update"><span class="nav-number">3.1.</span> <span class="nav-text">update</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Start"><span class="nav-number">3.2.</span> <span class="nav-text">Start</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Stop"><span class="nav-number">3.3.</span> <span class="nav-text">Stop</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Mining"><span class="nav-number">3.4.</span> <span class="nav-text">Mining</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#worker"><span class="nav-number">4.</span> <span class="nav-text">worker</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#start"><span class="nav-number">4.1.</span> <span class="nav-text">start</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%AD%E6%96%AD"><span class="nav-number">4.2.</span> <span class="nav-text">中断</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#unconfirmedBlocks"><span class="nav-number">5.</span> <span class="nav-text">unconfirmedBlocks</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Insert"><span class="nav-number">5.1.</span> <span class="nav-text">Insert</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Shift"><span class="nav-number">5.2.</span> <span class="nav-text">Shift</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/06/10/go-ethereum%E4%B8%ADminer%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go-ethereum中miner源码分析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-10 17:16:59" itemprop="dateCreated datePublished" datetime="2019-06-10T17:16:59+08:00">2019-06-10</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go-ethereum%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">go-ethereum源码学习</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>20k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>19 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/alexey-topolyanskiy-37372-unsplash.jpg"></p>
+<span id="more"></span>
+<h1 id="入口"><a href="#入口" class="headerlink" title="入口"></a>入口</h1><h1 id="StartMining"><a href="#StartMining" class="headerlink" title="StartMining"></a>StartMining</h1><p>一般来说有两个途径去启动挖矿：</p>
+<p>第一个是在启动geth是使用–mine参数启动挖矿，回顾之前geth启动流程，在startNode最后，判断如果使用了–mine参数则调用Ethereim的StartMining方法启动挖矿。</p>
+<p>第二个是在节点启动后，通过rpc去连接节点，然后使用mine.start()方法启动，该rpc服务对应的逻辑如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\eth\api.go</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>api <span class="token operator">*</span>PrivateMinerAPI<span class="token punctuation">)</span> <span class="token function">Start</span><span class="token punctuation">(</span>threads <span class="token operator">*</span><span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> threads <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> api<span class="token punctuation">.</span>e<span class="token punctuation">.</span><span class="token function">StartMining</span><span class="token punctuation">(</span>runtime<span class="token punctuation">.</span><span class="token function">NumCPU</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> api<span class="token punctuation">.</span>e<span class="token punctuation">.</span><span class="token function">StartMining</span><span class="token punctuation">(</span><span class="token operator">*</span>threads<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可见也是使用Ethereim的StartMining方法，该方法参数就是挖矿使用的线程数。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>s <span class="token operator">*</span>Ethereum<span class="token punctuation">)</span> <span class="token function">StartMining</span><span class="token punctuation">(</span>threads <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">type</span> threaded <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">SetThreads</span><span class="token punctuation">(</span>threads <span class="token builtin">int</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> th<span class="token punctuation">,</span> ok <span class="token operator">:=</span> s<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token punctuation">(</span>threaded<span class="token punctuation">)</span><span class="token punctuation">;</span> ok <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Updated mining threads"</span><span class="token punctuation">,</span> <span class="token string">"threads"</span><span class="token punctuation">,</span> threads<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> threads <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+			threads <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span> 
+		<span class="token punctuation">&#125;</span>
+		th<span class="token punctuation">.</span><span class="token function">SetThreads</span><span class="token punctuation">(</span>threads<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> <span class="token operator">!</span>s<span class="token punctuation">.</span><span class="token function">IsMining</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		s<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">RLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		price <span class="token operator">:=</span> s<span class="token punctuation">.</span>gasPrice
+		s<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">RUnlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		s<span class="token punctuation">.</span>txPool<span class="token punctuation">.</span><span class="token function">SetGasPrice</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span>
+
+		eb<span class="token punctuation">,</span> err <span class="token operator">:=</span> s<span class="token punctuation">.</span><span class="token function">Etherbase</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Cannot start mining without etherbase"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+			<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"etherbase missing: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> clique<span class="token punctuation">,</span> ok <span class="token operator">:=</span> s<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>clique<span class="token punctuation">.</span>Clique<span class="token punctuation">)</span><span class="token punctuation">;</span> ok <span class="token punctuation">&#123;</span>
+			wallet<span class="token punctuation">,</span> err <span class="token operator">:=</span> s<span class="token punctuation">.</span>accountManager<span class="token punctuation">.</span><span class="token function">Find</span><span class="token punctuation">(</span>accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span>Address<span class="token punctuation">:</span> eb<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+			<span class="token keyword">if</span> wallet <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token operator">||</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Etherbase account unavailable locally"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+				<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"signer missing: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+			clique<span class="token punctuation">.</span><span class="token function">Authorize</span><span class="token punctuation">(</span>eb<span class="token punctuation">,</span> wallet<span class="token punctuation">.</span>SignData<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		atomic<span class="token punctuation">.</span><span class="token function">StoreUint32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">.</span>protocolManager<span class="token punctuation">.</span>acceptTxs<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+
+		<span class="token keyword">go</span> s<span class="token punctuation">.</span>miner<span class="token punctuation">.</span><span class="token function">Start</span><span class="token punctuation">(</span>eb<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一步是共识引擎修改挖矿线程数，这里我们以Ethash为例，</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>ethash <span class="token operator">*</span>Ethash<span class="token punctuation">)</span> <span class="token function">SetThreads</span><span class="token punctuation">(</span>threads <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	ethash<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> ethash<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> ethash<span class="token punctuation">.</span>shared <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		ethash<span class="token punctuation">.</span>shared<span class="token punctuation">.</span><span class="token function">SetThreads</span><span class="token punctuation">(</span>threads<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	ethash<span class="token punctuation">.</span>threads <span class="token operator">=</span> threads
+	<span class="token keyword">select</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">case</span> ethash<span class="token punctuation">.</span>update <span class="token operator">&lt;-</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">:</span>
+	<span class="token keyword">default</span><span class="token punctuation">:</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>主要就是修改threads字段。接着判断是否正在挖矿，</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>s <span class="token operator">*</span>Ethereum<span class="token punctuation">)</span> <span class="token function">IsMining</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">bool</span>      <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> s<span class="token punctuation">.</span>miner<span class="token punctuation">.</span><span class="token function">Mining</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>如果没有在挖矿，则在一个单独的goroutine中运行miner的start方法。</p>
+<h1 id="miner"><a href="#miner" class="headerlink" title="miner"></a>miner</h1><p>这是一个挖矿工作的帮助类</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Miner <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	mux      <span class="token operator">*</span>event<span class="token punctuation">.</span>TypeMux
+	worker   <span class="token operator">*</span>worker
+	coinbase common<span class="token punctuation">.</span>Address
+	eth      Backend
+	engine   consensus<span class="token punctuation">.</span>Engine
+	exitCh   <span class="token keyword">chan</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+
+	canStart    <span class="token builtin">int32</span> 
+	shouldStart <span class="token builtin">int32</span> 
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">New</span><span class="token punctuation">(</span>eth Backend<span class="token punctuation">,</span> config <span class="token operator">*</span>params<span class="token punctuation">.</span>ChainConfig<span class="token punctuation">,</span> mux <span class="token operator">*</span>event<span class="token punctuation">.</span>TypeMux<span class="token punctuation">,</span> engine consensus<span class="token punctuation">.</span>Engine<span class="token punctuation">,</span> recommit time<span class="token punctuation">.</span>Duration<span class="token punctuation">,</span> gasFloor<span class="token punctuation">,</span> gasCeil <span class="token builtin">uint64</span><span class="token punctuation">,</span> isLocalBlock <span class="token keyword">func</span><span class="token punctuation">(</span>block <span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">)</span> <span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token operator">*</span>Miner <span class="token punctuation">&#123;</span>
+	miner <span class="token operator">:=</span> <span class="token operator">&amp;</span>Miner<span class="token punctuation">&#123;</span>
+		eth<span class="token punctuation">:</span>      eth<span class="token punctuation">,</span>
+		mux<span class="token punctuation">:</span>      mux<span class="token punctuation">,</span>
+		engine<span class="token punctuation">:</span>   engine<span class="token punctuation">,</span>
+		exitCh<span class="token punctuation">:</span>   <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		worker<span class="token punctuation">:</span>   <span class="token function">newWorker</span><span class="token punctuation">(</span>config<span class="token punctuation">,</span> engine<span class="token punctuation">,</span> eth<span class="token punctuation">,</span> mux<span class="token punctuation">,</span> recommit<span class="token punctuation">,</span> gasFloor<span class="token punctuation">,</span> gasCeil<span class="token punctuation">,</span> isLocalBlock<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		canStart<span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">go</span> miner<span class="token punctuation">.</span><span class="token function">update</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> miner
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>它的new方法子创建Ethereum时被调用来构建一个miner对象，new方法中在一个单独的goroutine中调用了updateff</p>
+<h2 id="update"><a href="#update" class="headerlink" title="update"></a>update</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>Miner<span class="token punctuation">)</span> <span class="token function">update</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	events <span class="token operator">:=</span> self<span class="token punctuation">.</span>mux<span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>downloader<span class="token punctuation">.</span>StartEvent<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> downloader<span class="token punctuation">.</span>DoneEvent<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> downloader<span class="token punctuation">.</span>FailedEvent<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> events<span class="token punctuation">.</span><span class="token function">Unsubscribe</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">select</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">case</span> ev <span class="token operator">:=</span> <span class="token operator">&lt;-</span>events<span class="token punctuation">.</span><span class="token function">Chan</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+			<span class="token keyword">if</span> ev <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">return</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">switch</span> ev<span class="token punctuation">.</span>Data<span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token keyword">type</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">case</span> downloader<span class="token punctuation">.</span>StartEvent<span class="token punctuation">:</span>
+				atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>self<span class="token punctuation">.</span>canStart<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+				<span class="token keyword">if</span> self<span class="token punctuation">.</span><span class="token function">Mining</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+					self<span class="token punctuation">.</span><span class="token function">Stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+					atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>self<span class="token punctuation">.</span>shouldStart<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+					log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Mining aborted due to sync"</span><span class="token punctuation">)</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token keyword">case</span> downloader<span class="token punctuation">.</span>DoneEvent<span class="token punctuation">,</span> downloader<span class="token punctuation">.</span>FailedEvent<span class="token punctuation">:</span>
+				shouldStart <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">LoadInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>self<span class="token punctuation">.</span>shouldStart<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">1</span>
+
+				atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>self<span class="token punctuation">.</span>canStart<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+				atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>self<span class="token punctuation">.</span>shouldStart<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+				<span class="token keyword">if</span> shouldStart <span class="token punctuation">&#123;</span>
+					self<span class="token punctuation">.</span><span class="token function">Start</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>coinbase<span class="token punctuation">)</span>
+				<span class="token punctuation">&#125;</span>
+				<span class="token keyword">return</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token keyword">case</span> <span class="token operator">&lt;-</span>self<span class="token punctuation">.</span>exitCh<span class="token punctuation">:</span>
+			<span class="token keyword">return</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这是一个事件订阅接受的逻辑，首先订阅了downloader的三种事件，根据每种事件都有对应逻辑。StartEvent是在节点同步时发出，此时节点正在同步数据，网卡要暂停。FailedEvent与DoneEvent是在同步完成后发出此时可以开始挖矿。还有一点是一旦接受到FailedEvent或DoneEvent事件时就要退出循环。</p>
+<h2 id="Start"><a href="#Start" class="headerlink" title="Start"></a>Start</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>Miner<span class="token punctuation">)</span> <span class="token function">Start</span><span class="token punctuation">(</span>coinbase common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>self<span class="token punctuation">.</span>shouldStart<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+	self<span class="token punctuation">.</span><span class="token function">SetEtherbase</span><span class="token punctuation">(</span>coinbase<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">LoadInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>self<span class="token punctuation">.</span>canStart<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Network syncing, will start miner afterwards"</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	self<span class="token punctuation">.</span>worker<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>指定一个coinbase开始挖矿，实际执行的是worker</p>
+<h2 id="Stop"><a href="#Stop" class="headerlink" title="Stop"></a>Stop</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>Miner<span class="token punctuation">)</span> <span class="token function">Stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	self<span class="token punctuation">.</span>worker<span class="token punctuation">.</span><span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>self<span class="token punctuation">.</span>shouldStart<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="Mining"><a href="#Mining" class="headerlink" title="Mining"></a>Mining</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>self <span class="token operator">*</span>Miner<span class="token punctuation">)</span> <span class="token function">Mining</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> self<span class="token punctuation">.</span>worker<span class="token punctuation">.</span><span class="token function">isRunning</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>判断是否在挖矿</p>
+<h1 id="worker"><a href="#worker" class="headerlink" title="worker"></a>worker</h1><p>这个才是真正工作的，miner只是在控制worker，在创建miner是也就创建了worker</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">newWorker</span><span class="token punctuation">(</span>config <span class="token operator">*</span>params<span class="token punctuation">.</span>ChainConfig<span class="token punctuation">,</span> engine consensus<span class="token punctuation">.</span>Engine<span class="token punctuation">,</span> eth Backend<span class="token punctuation">,</span> mux <span class="token operator">*</span>event<span class="token punctuation">.</span>TypeMux<span class="token punctuation">,</span> recommit time<span class="token punctuation">.</span>Duration<span class="token punctuation">,</span> gasFloor<span class="token punctuation">,</span> gasCeil <span class="token builtin">uint64</span><span class="token punctuation">,</span> isLocalBlock <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">)</span> <span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token operator">*</span>worker <span class="token punctuation">&#123;</span>
+	worker <span class="token operator">:=</span> <span class="token operator">&amp;</span>worker<span class="token punctuation">&#123;</span>
+		config<span class="token punctuation">:</span>             config<span class="token punctuation">,</span>
+		engine<span class="token punctuation">:</span>             engine<span class="token punctuation">,</span>
+		eth<span class="token punctuation">:</span>                eth<span class="token punctuation">,</span>
+		mux<span class="token punctuation">:</span>                mux<span class="token punctuation">,</span>
+		chain<span class="token punctuation">:</span>              eth<span class="token punctuation">.</span><span class="token function">BlockChain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		gasFloor<span class="token punctuation">:</span>           gasFloor<span class="token punctuation">,</span>
+		gasCeil<span class="token punctuation">:</span>            gasCeil<span class="token punctuation">,</span>
+		isLocalBlock<span class="token punctuation">:</span>       isLocalBlock<span class="token punctuation">,</span>
+		localUncles<span class="token punctuation">:</span>        <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		remoteUncles<span class="token punctuation">:</span>       <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		unconfirmed<span class="token punctuation">:</span>        <span class="token function">newUnconfirmedBlocks</span><span class="token punctuation">(</span>eth<span class="token punctuation">.</span><span class="token function">BlockChain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> miningLogAtDepth<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		pendingTasks<span class="token punctuation">:</span>       <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token operator">*</span>task<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		txsCh<span class="token punctuation">:</span>              <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> core<span class="token punctuation">.</span>NewTxsEvent<span class="token punctuation">,</span> txChanSize<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		chainHeadCh<span class="token punctuation">:</span>        <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> core<span class="token punctuation">.</span>ChainHeadEvent<span class="token punctuation">,</span> chainHeadChanSize<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		chainSideCh<span class="token punctuation">:</span>        <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> core<span class="token punctuation">.</span>ChainSideEvent<span class="token punctuation">,</span> chainSideChanSize<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		newWorkCh<span class="token punctuation">:</span>          <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token operator">*</span>newWorkReq<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		taskCh<span class="token punctuation">:</span>             <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token operator">*</span>task<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		resultCh<span class="token punctuation">:</span>           <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">,</span> resultQueueSize<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		exitCh<span class="token punctuation">:</span>             <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		startCh<span class="token punctuation">:</span>            <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		resubmitIntervalCh<span class="token punctuation">:</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> time<span class="token punctuation">.</span>Duration<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		resubmitAdjustCh<span class="token punctuation">:</span>   <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token operator">*</span>intervalAdjust<span class="token punctuation">,</span> resubmitAdjustChanSize<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	worker<span class="token punctuation">.</span>txsSub <span class="token operator">=</span> eth<span class="token punctuation">.</span><span class="token function">TxPool</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SubscribeNewTxsEvent</span><span class="token punctuation">(</span>worker<span class="token punctuation">.</span>txsCh<span class="token punctuation">)</span>
+	worker<span class="token punctuation">.</span>chainHeadSub <span class="token operator">=</span> eth<span class="token punctuation">.</span><span class="token function">BlockChain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SubscribeChainHeadEvent</span><span class="token punctuation">(</span>worker<span class="token punctuation">.</span>chainHeadCh<span class="token punctuation">)</span>
+	worker<span class="token punctuation">.</span>chainSideSub <span class="token operator">=</span> eth<span class="token punctuation">.</span><span class="token function">BlockChain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SubscribeChainSideEvent</span><span class="token punctuation">(</span>worker<span class="token punctuation">.</span>chainSideCh<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> recommit <span class="token operator">&lt;</span> minRecommitInterval <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Sanitizing miner recommit interval"</span><span class="token punctuation">,</span> <span class="token string">"provided"</span><span class="token punctuation">,</span> recommit<span class="token punctuation">,</span> <span class="token string">"updated"</span><span class="token punctuation">,</span> minRecommitInterval<span class="token punctuation">)</span>
+		recommit <span class="token operator">=</span> minRecommitInterval
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">go</span> worker<span class="token punctuation">.</span><span class="token function">mainLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">go</span> worker<span class="token punctuation">.</span><span class="token function">newWorkLoop</span><span class="token punctuation">(</span>recommit<span class="token punctuation">)</span>
+	<span class="token keyword">go</span> worker<span class="token punctuation">.</span><span class="token function">resultLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">go</span> worker<span class="token punctuation">.</span><span class="token function">taskLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	worker<span class="token punctuation">.</span>startCh <span class="token operator">&lt;-</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span> worker
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>主要是构建了对象并订阅了几个事件。然后启动了4个goroutine取执行几个方法。每个方法都是事件循环机制。</p>
+<h2 id="start"><a href="#start" class="headerlink" title="start"></a>start</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>worker<span class="token punctuation">)</span> <span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>w<span class="token punctuation">.</span>running<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+	w<span class="token punctuation">.</span>startCh <span class="token operator">&lt;-</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>miner通过调用start开始挖矿。这里只是给running赋值1标记开始挖矿，另外给startCh赋值触发逻辑。startCh在newWorkLoop中</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">//worker::newWorkLoop</span>
+<span class="token keyword">case</span> <span class="token operator">&lt;-</span>w<span class="token punctuation">.</span>startCh<span class="token punctuation">:</span>
+	<span class="token function">clearPending</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">CurrentBlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	timestamp <span class="token operator">=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Unix</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token function">commit</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">,</span> commitInterruptNewHead<span class="token punctuation">)</span>
+	
+clearPending <span class="token operator">:=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>number <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	w<span class="token punctuation">.</span>pendingMu<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">for</span> h<span class="token punctuation">,</span> t <span class="token operator">:=</span> <span class="token keyword">range</span> w<span class="token punctuation">.</span>pendingTasks <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> t<span class="token punctuation">.</span>block<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span>staleThreshold <span class="token operator">&lt;=</span> number <span class="token punctuation">&#123;</span>
+			<span class="token function">delete</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>pendingTasks<span class="token punctuation">,</span> h<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	w<span class="token punctuation">.</span>pendingMu<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+commit <span class="token operator">:=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>noempty <span class="token builtin">bool</span><span class="token punctuation">,</span> s <span class="token builtin">int32</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> interrupt <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span>interrupt<span class="token punctuation">,</span> s<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	interrupt <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span><span class="token builtin">int32</span><span class="token punctuation">)</span>
+	w<span class="token punctuation">.</span>newWorkCh <span class="token operator">&lt;-</span> <span class="token operator">&amp;</span>newWorkReq<span class="token punctuation">&#123;</span>interrupt<span class="token punctuation">:</span> interrupt<span class="token punctuation">,</span> noempty<span class="token punctuation">:</span> noempty<span class="token punctuation">,</span> timestamp<span class="token punctuation">:</span> timestamp<span class="token punctuation">&#125;</span>
+	timer<span class="token punctuation">.</span><span class="token function">Reset</span><span class="token punctuation">(</span>recommit<span class="token punctuation">)</span>
+	atomic<span class="token punctuation">.</span><span class="token function">StoreInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>w<span class="token punctuation">.</span>newTxs<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先调用clearPending方法清理一些过于旧的task，然后记录当前时间戳，调用commit方法，这里主要是给newWorkCh传递了事件，接着启动了一个定时器（默认3秒触发）。先看newWorkCh的逻辑</p>
+<pre class="line-numbers language-fo" data-language="fo"><code class="language-fo">&#x2F;&#x2F;worker::mainLoop
+case req :&#x3D; &lt;-w.newWorkCh:
+	w.commitNewWork(req.interrupt, req.noempty, req.timestamp)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>直接调用commitNewWork方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>worker<span class="token punctuation">)</span> <span class="token function">commitNewWork</span><span class="token punctuation">(</span>interrupt <span class="token operator">*</span><span class="token builtin">int32</span><span class="token punctuation">,</span> noempty <span class="token builtin">bool</span><span class="token punctuation">,</span> timestamp <span class="token builtin">int64</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	w<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">RLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> w<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">RUnlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	tstart <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	parent <span class="token operator">:=</span> w<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">CurrentBlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> parent<span class="token punctuation">.</span><span class="token function">Time</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Cmp</span><span class="token punctuation">(</span><span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetInt64</span><span class="token punctuation">(</span>timestamp<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		timestamp <span class="token operator">=</span> parent<span class="token punctuation">.</span><span class="token function">Time</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Int64</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> now <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Unix</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> timestamp <span class="token operator">></span> now<span class="token operator">+</span><span class="token number">1</span> <span class="token punctuation">&#123;</span>
+		wait <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Duration</span><span class="token punctuation">(</span>timestamp<span class="token operator">-</span>now<span class="token punctuation">)</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second
+		log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Mining too far in the future"</span><span class="token punctuation">,</span> <span class="token string">"wait"</span><span class="token punctuation">,</span> common<span class="token punctuation">.</span><span class="token function">PrettyDuration</span><span class="token punctuation">(</span>wait<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		time<span class="token punctuation">.</span><span class="token function">Sleep</span><span class="token punctuation">(</span>wait<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	num <span class="token operator">:=</span> parent<span class="token punctuation">.</span><span class="token function">Number</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	header <span class="token operator">:=</span> <span class="token operator">&amp;</span>types<span class="token punctuation">.</span>Header<span class="token punctuation">&#123;</span>
+		ParentHash<span class="token punctuation">:</span> parent<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Number<span class="token punctuation">:</span>     num<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>num<span class="token punctuation">,</span> common<span class="token punctuation">.</span>Big1<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		GasLimit<span class="token punctuation">:</span>   core<span class="token punctuation">.</span><span class="token function">CalcGasLimit</span><span class="token punctuation">(</span>parent<span class="token punctuation">,</span> w<span class="token punctuation">.</span>gasFloor<span class="token punctuation">,</span> w<span class="token punctuation">.</span>gasCeil<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Extra<span class="token punctuation">:</span>      w<span class="token punctuation">.</span>extra<span class="token punctuation">,</span>
+		Time<span class="token punctuation">:</span>       big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span>timestamp<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> w<span class="token punctuation">.</span><span class="token function">isRunning</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> w<span class="token punctuation">.</span>coinbase <span class="token operator">==</span> <span class="token punctuation">(</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Refusing to mine without etherbase"</span><span class="token punctuation">)</span>
+			<span class="token keyword">return</span>
+		<span class="token punctuation">&#125;</span>
+		header<span class="token punctuation">.</span>Coinbase <span class="token operator">=</span> w<span class="token punctuation">.</span>coinbase
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> w<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token function">Prepare</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>chain<span class="token punctuation">,</span> header<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Failed to prepare header for mining"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> daoBlock <span class="token operator">:=</span> w<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DAOForkBlock<span class="token punctuation">;</span> daoBlock <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		limit <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>daoBlock<span class="token punctuation">,</span> params<span class="token punctuation">.</span>DAOForkExtraRange<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> header<span class="token punctuation">.</span>Number<span class="token punctuation">.</span><span class="token function">Cmp</span><span class="token punctuation">(</span>daoBlock<span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> header<span class="token punctuation">.</span>Number<span class="token punctuation">.</span><span class="token function">Cmp</span><span class="token punctuation">(</span>limit<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> w<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DAOForkSupport <span class="token punctuation">&#123;</span>
+				header<span class="token punctuation">.</span>Extra <span class="token operator">=</span> common<span class="token punctuation">.</span><span class="token function">CopyBytes</span><span class="token punctuation">(</span>params<span class="token punctuation">.</span>DAOForkBlockExtra<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> bytes<span class="token punctuation">.</span><span class="token function">Equal</span><span class="token punctuation">(</span>header<span class="token punctuation">.</span>Extra<span class="token punctuation">,</span> params<span class="token punctuation">.</span>DAOForkBlockExtra<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				header<span class="token punctuation">.</span>Extra <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> 
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	err <span class="token operator">:=</span> w<span class="token punctuation">.</span><span class="token function">makeCurrent</span><span class="token punctuation">(</span>parent<span class="token punctuation">,</span> header<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Failed to create mining context"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	env <span class="token operator">:=</span> w<span class="token punctuation">.</span>current
+	<span class="token keyword">if</span> w<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DAOForkSupport <span class="token operator">&amp;&amp;</span> w<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DAOForkBlock <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> w<span class="token punctuation">.</span>config<span class="token punctuation">.</span>DAOForkBlock<span class="token punctuation">.</span><span class="token function">Cmp</span><span class="token punctuation">(</span>header<span class="token punctuation">.</span>Number<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		misc<span class="token punctuation">.</span><span class="token function">ApplyDAOHardFork</span><span class="token punctuation">(</span>env<span class="token punctuation">.</span>state<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	uncles <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Header<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span>
+	commitUncles <span class="token operator">:=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>blocks <span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+		<span class="token keyword">for</span> hash<span class="token punctuation">,</span> uncle <span class="token operator">:=</span> <span class="token keyword">range</span> blocks <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> uncle<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span>staleThreshold <span class="token operator">&lt;=</span> header<span class="token punctuation">.</span>Number<span class="token punctuation">.</span><span class="token function">Uint64</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token function">delete</span><span class="token punctuation">(</span>blocks<span class="token punctuation">,</span> hash<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">for</span> hash<span class="token punctuation">,</span> uncle <span class="token operator">:=</span> <span class="token keyword">range</span> blocks <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>uncles<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">2</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">break</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">if</span> err <span class="token operator">:=</span> w<span class="token punctuation">.</span><span class="token function">commitUncle</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> uncle<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Trace</span><span class="token punctuation">(</span><span class="token string">"Possible uncle rejected"</span><span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> hash<span class="token punctuation">,</span> <span class="token string">"reason"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Debug</span><span class="token punctuation">(</span><span class="token string">"Committing new uncle to block"</span><span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> hash<span class="token punctuation">)</span>
+				uncles <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>uncles<span class="token punctuation">,</span> uncle<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token function">commitUncles</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>localUncles<span class="token punctuation">)</span>
+	<span class="token function">commitUncles</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>remoteUncles<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> <span class="token operator">!</span>noempty <span class="token punctuation">&#123;</span>
+		w<span class="token punctuation">.</span><span class="token function">commit</span><span class="token punctuation">(</span>uncles<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> tstart<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	pending<span class="token punctuation">,</span> err <span class="token operator">:=</span> w<span class="token punctuation">.</span>eth<span class="token punctuation">.</span><span class="token function">TxPool</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Pending</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Failed to fetch pending transactions"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>pending<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		w<span class="token punctuation">.</span><span class="token function">updateSnapshot</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+
+	localTxs<span class="token punctuation">,</span> remoteTxs <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">]</span>types<span class="token punctuation">.</span>Transactions<span class="token punctuation">)</span><span class="token punctuation">,</span> pending
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> account <span class="token operator">:=</span> <span class="token keyword">range</span> w<span class="token punctuation">.</span>eth<span class="token punctuation">.</span><span class="token function">TxPool</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Locals</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> txs <span class="token operator">:=</span> remoteTxs<span class="token punctuation">[</span>account<span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token function">len</span><span class="token punctuation">(</span>txs<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">delete</span><span class="token punctuation">(</span>remoteTxs<span class="token punctuation">,</span> account<span class="token punctuation">)</span>
+			localTxs<span class="token punctuation">[</span>account<span class="token punctuation">]</span> <span class="token operator">=</span> txs
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>localTxs<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		txs <span class="token operator">:=</span> types<span class="token punctuation">.</span><span class="token function">NewTransactionsByPriceAndNonce</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>signer<span class="token punctuation">,</span> localTxs<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> w<span class="token punctuation">.</span><span class="token function">commitTransactions</span><span class="token punctuation">(</span>txs<span class="token punctuation">,</span> w<span class="token punctuation">.</span>coinbase<span class="token punctuation">,</span> interrupt<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>remoteTxs<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		txs <span class="token operator">:=</span> types<span class="token punctuation">.</span><span class="token function">NewTransactionsByPriceAndNonce</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>signer<span class="token punctuation">,</span> remoteTxs<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> w<span class="token punctuation">.</span><span class="token function">commitTransactions</span><span class="token punctuation">(</span>txs<span class="token punctuation">,</span> w<span class="token punctuation">.</span>coinbase<span class="token punctuation">,</span> interrupt<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	w<span class="token punctuation">.</span><span class="token function">commit</span><span class="token punctuation">(</span>uncles<span class="token punctuation">,</span> w<span class="token punctuation">.</span>fullTaskHook<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">,</span> tstart<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先获取区块链当前区块记为父块，如果提交任务的时间戳比父块时间戳还小，要重设时间戳为父块时间戳加1。另外时间戳也不能比当前时间大，否则睡眠一段时间。</p>
+<p>之后构建一个洗呢区块头，先填充父块hash，区块编号，gaslimit，额外数据（默认为geth版本等信息）以及时间戳。如果正在挖矿还要填入Coinbase。之后调用engine.Prepare方法，主要是计算区块应有的难度。再往下调用了makeCurrent方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>worker<span class="token punctuation">)</span> <span class="token function">makeCurrent</span><span class="token punctuation">(</span>parent <span class="token operator">*</span>types<span class="token punctuation">.</span>Block<span class="token punctuation">,</span> header <span class="token operator">*</span>types<span class="token punctuation">.</span>Header<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	state<span class="token punctuation">,</span> err <span class="token operator">:=</span> w<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">StateAt</span><span class="token punctuation">(</span>parent<span class="token punctuation">.</span><span class="token function">Root</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	env <span class="token operator">:=</span> <span class="token operator">&amp;</span>environment<span class="token punctuation">&#123;</span>
+		signer<span class="token punctuation">:</span>    types<span class="token punctuation">.</span><span class="token function">NewEIP155Signer</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>config<span class="token punctuation">.</span>ChainID<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		state<span class="token punctuation">:</span>     state<span class="token punctuation">,</span>
+		ancestors<span class="token punctuation">:</span> mapset<span class="token punctuation">.</span><span class="token function">NewSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		family<span class="token punctuation">:</span>    mapset<span class="token punctuation">.</span><span class="token function">NewSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		uncles<span class="token punctuation">:</span>    mapset<span class="token punctuation">.</span><span class="token function">NewSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		header<span class="token punctuation">:</span>    header<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ancestor <span class="token operator">:=</span> <span class="token keyword">range</span> w<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">GetBlocksFromHash</span><span class="token punctuation">(</span>parent<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> uncle <span class="token operator">:=</span> <span class="token keyword">range</span> ancestor<span class="token punctuation">.</span><span class="token function">Uncles</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			env<span class="token punctuation">.</span>family<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>uncle<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		env<span class="token punctuation">.</span>family<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>ancestor<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		env<span class="token punctuation">.</span>ancestors<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>ancestor<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	env<span class="token punctuation">.</span>tcount <span class="token operator">=</span> <span class="token number">0</span>
+	w<span class="token punctuation">.</span>current <span class="token operator">=</span> env
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>makeCurrent先获取了父区块的状态树，然后构建了一个environment对象。之后获取了父区块的7个祖先区块，记录每一个祖先hash一起对于的叔块hash，然后设置worker的current为刚才构建的environment。</p>
+<p>回到commitNewWork中，接着调用了两次commitUncles分别处理localUncles和remoteUncles。这两个map是在收到ChainSideEvent事件时按照区块的性质添加的。具体处理逻辑是遍历map中的所有区块，对于编号在当前区块之上七代以内的，作为该区块的叔块，但最多只有两个叔块，选择叔块是要先用commitUncle检查，主要检查是否已被作为叔块添加过。接着如果noempty参数为false，commit方法其中update参数为false。否则先从txpool中取出那些可以执行的交易，也就是pending队列中。如果没有可执行交易调用updateSnapshot并返回</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>worker<span class="token punctuation">)</span> <span class="token function">updateSnapshot</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	w<span class="token punctuation">.</span>snapshotMu<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> w<span class="token punctuation">.</span>snapshotMu<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">var</span> uncles <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Header
+	w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>uncles<span class="token punctuation">.</span><span class="token function">Each</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span>item <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">&#123;</span>
+		hash<span class="token punctuation">,</span> ok <span class="token operator">:=</span> item<span class="token punctuation">.</span><span class="token punctuation">(</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> <span class="token operator">!</span>ok <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">false</span>
+		<span class="token punctuation">&#125;</span>
+		uncle<span class="token punctuation">,</span> exist <span class="token operator">:=</span> w<span class="token punctuation">.</span>localUncles<span class="token punctuation">[</span>hash<span class="token punctuation">]</span>
+		<span class="token keyword">if</span> <span class="token operator">!</span>exist <span class="token punctuation">&#123;</span>
+			uncle<span class="token punctuation">,</span> exist <span class="token operator">=</span> w<span class="token punctuation">.</span>remoteUncles<span class="token punctuation">[</span>hash<span class="token punctuation">]</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> <span class="token operator">!</span>exist <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">false</span>
+		<span class="token punctuation">&#125;</span>
+		uncles <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>uncles<span class="token punctuation">,</span> uncle<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">false</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+	w<span class="token punctuation">.</span>snapshotBlock <span class="token operator">=</span> types<span class="token punctuation">.</span><span class="token function">NewBlock</span><span class="token punctuation">(</span>
+		w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>header<span class="token punctuation">,</span>
+		w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>txs<span class="token punctuation">,</span>
+		uncles<span class="token punctuation">,</span>
+		w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>receipts<span class="token punctuation">,</span>
+	<span class="token punctuation">)</span>
+
+	w<span class="token punctuation">.</span>snapshotState <span class="token operator">=</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">Copy</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里主要是手机有效叔块然后构建一个区块赋值给snapshotBlock，同时复制状态树。</p>
+<p>回到commitNewWork中，如果有可执行交易则将交易分为本地交易和远端交易两部分。如果本地交易数量大于0，则执行NewTransactionsByPriceAndNonce，这是将交易按照gasprice排序（pending内部每个地址对应的交易按nonce排序，这里去每个地址的第一个交易按gasprice排序），然后调用commitTransactions方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>worker<span class="token punctuation">)</span> <span class="token function">commitTransactions</span><span class="token punctuation">(</span>txs <span class="token operator">*</span>types<span class="token punctuation">.</span>TransactionsByPriceAndNonce<span class="token punctuation">,</span> coinbase common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> interrupt <span class="token operator">*</span><span class="token builtin">int32</span><span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> w<span class="token punctuation">.</span>current <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">true</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>gasPool <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>gasPool <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>core<span class="token punctuation">.</span>GasPool<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">AddGas</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>header<span class="token punctuation">.</span>GasLimit<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">var</span> coalescedLogs <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log
+
+	<span class="token keyword">for</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> interrupt <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> atomic<span class="token punctuation">.</span><span class="token function">LoadInt32</span><span class="token punctuation">(</span>interrupt<span class="token punctuation">)</span> <span class="token operator">!=</span> commitInterruptNone <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">LoadInt32</span><span class="token punctuation">(</span>interrupt<span class="token punctuation">)</span> <span class="token operator">==</span> commitInterruptResubmit <span class="token punctuation">&#123;</span>
+				ratio <span class="token operator">:=</span> <span class="token function">float64</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>header<span class="token punctuation">.</span>GasLimit<span class="token operator">-</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>gasPool<span class="token punctuation">.</span><span class="token function">Gas</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token function">float64</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>header<span class="token punctuation">.</span>GasLimit<span class="token punctuation">)</span>
+				<span class="token keyword">if</span> ratio <span class="token operator">&lt;</span> <span class="token number">0.1</span> <span class="token punctuation">&#123;</span>
+					ratio <span class="token operator">=</span> <span class="token number">0.1</span>
+				<span class="token punctuation">&#125;</span>
+				w<span class="token punctuation">.</span>resubmitAdjustCh <span class="token operator">&lt;-</span> <span class="token operator">&amp;</span>intervalAdjust<span class="token punctuation">&#123;</span>
+					ratio<span class="token punctuation">:</span> ratio<span class="token punctuation">,</span>
+					inc<span class="token punctuation">:</span>   <span class="token boolean">true</span><span class="token punctuation">,</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">return</span> atomic<span class="token punctuation">.</span><span class="token function">LoadInt32</span><span class="token punctuation">(</span>interrupt<span class="token punctuation">)</span> <span class="token operator">==</span> commitInterruptNewHead
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>gasPool<span class="token punctuation">.</span><span class="token function">Gas</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> params<span class="token punctuation">.</span>TxGas <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Trace</span><span class="token punctuation">(</span><span class="token string">"Not enough gas for further transactions"</span><span class="token punctuation">,</span> <span class="token string">"have"</span><span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>gasPool<span class="token punctuation">,</span> <span class="token string">"want"</span><span class="token punctuation">,</span> params<span class="token punctuation">.</span>TxGas<span class="token punctuation">)</span>
+			<span class="token keyword">break</span>
+		<span class="token punctuation">&#125;</span>
+		tx <span class="token operator">:=</span> txs<span class="token punctuation">.</span><span class="token function">Peek</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> tx <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">break</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> tx<span class="token punctuation">.</span><span class="token function">Protected</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>w<span class="token punctuation">.</span>config<span class="token punctuation">.</span><span class="token function">IsEIP155</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>header<span class="token punctuation">.</span>Number<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span><span class="token function">Trace</span><span class="token punctuation">(</span><span class="token string">"Ignoring reply protected transaction"</span><span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"eip155"</span><span class="token punctuation">,</span> w<span class="token punctuation">.</span>config<span class="token punctuation">.</span>EIP155Block<span class="token punctuation">)</span>
+
+			txs<span class="token punctuation">.</span><span class="token function">Pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			<span class="token keyword">continue</span>
+		<span class="token punctuation">&#125;</span>
+		w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">Prepare</span><span class="token punctuation">(</span>tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>tcount<span class="token punctuation">)</span>
+
+		logs<span class="token punctuation">,</span> err <span class="token operator">:=</span> w<span class="token punctuation">.</span><span class="token function">commitTransaction</span><span class="token punctuation">(</span>tx<span class="token punctuation">,</span> coinbase<span class="token punctuation">)</span>
+		<span class="token keyword">switch</span> err <span class="token punctuation">&#123;</span>
+		<span class="token keyword">case</span> core<span class="token punctuation">.</span>ErrGasLimitReached<span class="token punctuation">:</span>
+			log<span class="token punctuation">.</span><span class="token function">Trace</span><span class="token punctuation">(</span><span class="token string">"Gas limit exceeded for current block"</span><span class="token punctuation">,</span> <span class="token string">"sender"</span><span class="token punctuation">,</span> from<span class="token punctuation">)</span>
+			txs<span class="token punctuation">.</span><span class="token function">Pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+		<span class="token keyword">case</span> core<span class="token punctuation">.</span>ErrNonceTooLow<span class="token punctuation">:</span>
+			log<span class="token punctuation">.</span><span class="token function">Trace</span><span class="token punctuation">(</span><span class="token string">"Skipping transaction with low nonce"</span><span class="token punctuation">,</span> <span class="token string">"sender"</span><span class="token punctuation">,</span> from<span class="token punctuation">,</span> <span class="token string">"nonce"</span><span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">Nonce</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+			txs<span class="token punctuation">.</span><span class="token function">Shift</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+		<span class="token keyword">case</span> core<span class="token punctuation">.</span>ErrNonceTooHigh<span class="token punctuation">:</span> pool and miner<span class="token punctuation">,</span> skip account <span class="token operator">=</span>
+			log<span class="token punctuation">.</span><span class="token function">Trace</span><span class="token punctuation">(</span><span class="token string">"Skipping account with hight nonce"</span><span class="token punctuation">,</span> <span class="token string">"sender"</span><span class="token punctuation">,</span> from<span class="token punctuation">,</span> <span class="token string">"nonce"</span><span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">Nonce</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+			txs<span class="token punctuation">.</span><span class="token function">Pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+		<span class="token keyword">case</span> <span class="token boolean">nil</span><span class="token punctuation">:</span>
+			coalescedLogs <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>coalescedLogs<span class="token punctuation">,</span> logs<span class="token operator">...</span><span class="token punctuation">)</span>
+			w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>tcount<span class="token operator">++</span>
+			txs<span class="token punctuation">.</span><span class="token function">Shift</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+		<span class="token keyword">default</span><span class="token punctuation">:</span>
+			log<span class="token punctuation">.</span><span class="token function">Debug</span><span class="token punctuation">(</span><span class="token string">"Transaction failed, account skipped"</span><span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+			txs<span class="token punctuation">.</span><span class="token function">Shift</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> <span class="token operator">!</span>w<span class="token punctuation">.</span><span class="token function">isRunning</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token function">len</span><span class="token punctuation">(</span>coalescedLogs<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		cpy <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log<span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>coalescedLogs<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">for</span> i<span class="token punctuation">,</span> l <span class="token operator">:=</span> <span class="token keyword">range</span> coalescedLogs <span class="token punctuation">&#123;</span>
+			cpy<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>types<span class="token punctuation">.</span>Log<span class="token punctuation">)</span>
+			<span class="token operator">*</span>cpy<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">*</span>l
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">go</span> w<span class="token punctuation">.</span>mux<span class="token punctuation">.</span><span class="token function">Post</span><span class="token punctuation">(</span>core<span class="token punctuation">.</span>PendingLogsEvent<span class="token punctuation">&#123;</span>Logs<span class="token punctuation">:</span> cpy<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> interrupt <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		w<span class="token punctuation">.</span>resubmitAdjustCh <span class="token operator">&lt;-</span> <span class="token operator">&amp;</span>intervalAdjust<span class="token punctuation">&#123;</span>inc<span class="token punctuation">:</span> <span class="token boolean">false</span><span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">false</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先创建一个gaspool来记录gas用量。只有有一个循环，每次从给定的交易集合中取一个，使用peek方法，取的是gasprice最大的那个，然后恢复出该交易的发送人，如果该交易被保护并且不是EIP155分叉则忽略该交易。接着去执行这个交易</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>worker<span class="token punctuation">)</span> <span class="token function">commitTransaction</span><span class="token punctuation">(</span>tx <span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">,</span> coinbase common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	snap <span class="token operator">:=</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">Snapshot</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	receipt<span class="token punctuation">,</span> <span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> core<span class="token punctuation">.</span><span class="token function">ApplyTransaction</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>config<span class="token punctuation">,</span> w<span class="token punctuation">.</span>chain<span class="token punctuation">,</span> <span class="token operator">&amp;</span>coinbase<span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>gasPool<span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>state<span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>header<span class="token punctuation">,</span> tx<span class="token punctuation">,</span> <span class="token operator">&amp;</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>header<span class="token punctuation">.</span>GasUsed<span class="token punctuation">,</span> <span class="token operator">*</span>w<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">GetVMConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">RevertToSnapshot</span><span class="token punctuation">(</span>snap<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>txs <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>txs<span class="token punctuation">,</span> tx<span class="token punctuation">)</span>
+	w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>receipts <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>receipts<span class="token punctuation">,</span> receipt<span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> receipt<span class="token punctuation">.</span>Logs<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>先获得状态树快照，庵后使用ApplyTransaction执行交易这个我们之前分析过，如果执行出错回滚状态树，否则将交易及收据放到current对应字段，并返回收据logs。回到commitTransactions中，根据对应错误打印不同log并弹出该交易，若没有错收集log，然后调用Shift方法，这个方法是将对应地址的交易集合中第一个交易踢出并重排顺序。</p>
+<p>就这样循环直到处理完所有给定的交易，回到commitNewWork中，刚才处理的是本地交易，然后处理远端交集。都处理完后调用commit方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>worker<span class="token punctuation">)</span> <span class="token function">commit</span><span class="token punctuation">(</span>uncles <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Header<span class="token punctuation">,</span> interval <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> update <span class="token builtin">bool</span><span class="token punctuation">,</span> start time<span class="token punctuation">.</span>Time<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	receipts <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Receipt<span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>receipts<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">for</span> i<span class="token punctuation">,</span> l <span class="token operator">:=</span> <span class="token keyword">range</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>receipts <span class="token punctuation">&#123;</span>
+		receipts<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>types<span class="token punctuation">.</span>Receipt<span class="token punctuation">)</span>
+		<span class="token operator">*</span>receipts<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">*</span>l
+	<span class="token punctuation">&#125;</span>
+	s <span class="token operator">:=</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">Copy</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	block<span class="token punctuation">,</span> err <span class="token operator">:=</span> w<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token function">Finalize</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>chain<span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>header<span class="token punctuation">,</span> s<span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>txs<span class="token punctuation">,</span> uncles<span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>receipts<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> w<span class="token punctuation">.</span><span class="token function">isRunning</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> interval <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">interval</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">select</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">case</span> w<span class="token punctuation">.</span>taskCh <span class="token operator">&lt;-</span> <span class="token operator">&amp;</span>task<span class="token punctuation">&#123;</span>receipts<span class="token punctuation">:</span> receipts<span class="token punctuation">,</span> state<span class="token punctuation">:</span> s<span class="token punctuation">,</span> block<span class="token punctuation">:</span> block<span class="token punctuation">,</span> createdAt<span class="token punctuation">:</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">:</span>
+			w<span class="token punctuation">.</span>unconfirmed<span class="token punctuation">.</span><span class="token function">Shift</span><span class="token punctuation">(</span>block<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span>
+
+			feesWei <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span>
+			<span class="token keyword">for</span> i<span class="token punctuation">,</span> tx <span class="token operator">:=</span> <span class="token keyword">range</span> block<span class="token punctuation">.</span><span class="token function">Transactions</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				feesWei<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>feesWei<span class="token punctuation">,</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Mul</span><span class="token punctuation">(</span><span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetUint64</span><span class="token punctuation">(</span>receipts<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>GasUsed<span class="token punctuation">)</span><span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">GasPrice</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+			feesEth <span class="token operator">:=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Float<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Quo</span><span class="token punctuation">(</span><span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Float<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetInt</span><span class="token punctuation">(</span>feesWei<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Float<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetInt</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span><span class="token function">NewInt</span><span class="token punctuation">(</span>params<span class="token punctuation">.</span>Ether<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+			log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Commit new mining work"</span><span class="token punctuation">,</span> <span class="token string">"number"</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Number</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"sealhash"</span><span class="token punctuation">,</span> w<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token function">SealHash</span><span class="token punctuation">(</span>block<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+				<span class="token string">"uncles"</span><span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>uncles<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"txs"</span><span class="token punctuation">,</span> w<span class="token punctuation">.</span>current<span class="token punctuation">.</span>tcount<span class="token punctuation">,</span> <span class="token string">"gas"</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">GasUsed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"fees"</span><span class="token punctuation">,</span> feesEth<span class="token punctuation">,</span> <span class="token string">"elapsed"</span><span class="token punctuation">,</span> common<span class="token punctuation">.</span><span class="token function">PrettyDuration</span><span class="token punctuation">(</span>time<span class="token punctuation">.</span><span class="token function">Since</span><span class="token punctuation">(</span>start<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+		<span class="token keyword">case</span> <span class="token operator">&lt;-</span>w<span class="token punctuation">.</span>exitCh<span class="token punctuation">:</span>
+			log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Worker has exited"</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> update <span class="token punctuation">&#123;</span>
+		w<span class="token punctuation">.</span><span class="token function">updateSnapshot</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>到这里该处理的交易都处理完了，首先复制所有收据及窗台书，然后调用engine.Finalize方法发放奖励并生成区块。接着如果正在挖矿且没有中断，则给taskCh赋值触发相应逻辑。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">//worker::taskLoop</span>
+<span class="token keyword">case</span> task <span class="token operator">:=</span> <span class="token operator">&lt;-</span>w<span class="token punctuation">.</span>taskCh<span class="token punctuation">:</span>
+	<span class="token keyword">if</span> w<span class="token punctuation">.</span>newTaskHook <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		w<span class="token punctuation">.</span><span class="token function">newTaskHook</span><span class="token punctuation">(</span>task<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	sealHash <span class="token operator">:=</span> w<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token function">SealHash</span><span class="token punctuation">(</span>task<span class="token punctuation">.</span>block<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> sealHash <span class="token operator">==</span> prev <span class="token punctuation">&#123;</span>
+		<span class="token keyword">continue</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token function">interrupt</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	stopCh<span class="token punctuation">,</span> prev <span class="token operator">=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">,</span> sealHash
+
+	<span class="token keyword">if</span> w<span class="token punctuation">.</span>skipSealHook <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> w<span class="token punctuation">.</span><span class="token function">skipSealHook</span><span class="token punctuation">(</span>task<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">continue</span>
+	<span class="token punctuation">&#125;</span>
+	w<span class="token punctuation">.</span>pendingMu<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	w<span class="token punctuation">.</span>pendingTasks<span class="token punctuation">[</span>w<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token function">SealHash</span><span class="token punctuation">(</span>task<span class="token punctuation">.</span>block<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> task
+	w<span class="token punctuation">.</span>pendingMu<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> w<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token function">Seal</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>chain<span class="token punctuation">,</span> task<span class="token punctuation">.</span>block<span class="token punctuation">,</span> w<span class="token punctuation">.</span>resultCh<span class="token punctuation">,</span> stopCh<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Block sealing failed"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里首先计算新区快头的hash值，如果等于前一次任务的，即prev，则退出。否则终止之前操作，然后记录该hash值为prev。然后在pendingTasks中记录这个task，并调用共识引擎的Seal方法，也就是实际的挖矿算法取寻找nonce（<a target="_blank" rel="noopener" href="https://blog.grapefruit.tk/2019/05/30/go-ethereum%E4%B8%ADethash%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">详见这里</a>）。当找到后resultCh会收到信号触发对应逻辑</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">case</span> block <span class="token operator">:=</span> <span class="token operator">&lt;-</span>w<span class="token punctuation">.</span>resultCh<span class="token punctuation">:</span>
+	<span class="token keyword">if</span> block <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">continue</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> w<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">HasBlock</span><span class="token punctuation">(</span>block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">continue</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">var</span> <span class="token punctuation">(</span>
+		sealhash <span class="token operator">=</span> w<span class="token punctuation">.</span>engine<span class="token punctuation">.</span><span class="token function">SealHash</span><span class="token punctuation">(</span>block<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		hash     <span class="token operator">=</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">)</span>
+	w<span class="token punctuation">.</span>pendingMu<span class="token punctuation">.</span><span class="token function">RLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	task<span class="token punctuation">,</span> exist <span class="token operator">:=</span> w<span class="token punctuation">.</span>pendingTasks<span class="token punctuation">[</span>sealhash<span class="token punctuation">]</span>
+	w<span class="token punctuation">.</span>pendingMu<span class="token punctuation">.</span><span class="token function">RUnlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token operator">!</span>exist <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Block found but no relative pending task"</span><span class="token punctuation">,</span> <span class="token string">"number"</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Number</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"sealhash"</span><span class="token punctuation">,</span> sealhash<span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> hash<span class="token punctuation">)</span>
+		<span class="token keyword">continue</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">var</span> <span class="token punctuation">(</span>
+		receipts <span class="token operator">=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Receipt<span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>task<span class="token punctuation">.</span>receipts<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		logs     <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Log
+	<span class="token punctuation">)</span>
+	<span class="token keyword">for</span> i<span class="token punctuation">,</span> receipt <span class="token operator">:=</span> <span class="token keyword">range</span> task<span class="token punctuation">.</span>receipts <span class="token punctuation">&#123;</span>
+		receipts<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>types<span class="token punctuation">.</span>Receipt<span class="token punctuation">)</span>
+		<span class="token operator">*</span>receipts<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">*</span>receipt
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> log <span class="token operator">:=</span> <span class="token keyword">range</span> receipt<span class="token punctuation">.</span>Logs <span class="token punctuation">&#123;</span>
+			log<span class="token punctuation">.</span>BlockHash <span class="token operator">=</span> hash
+		<span class="token punctuation">&#125;</span>
+		logs <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>logs<span class="token punctuation">,</span> receipt<span class="token punctuation">.</span>Logs<span class="token operator">...</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	stat<span class="token punctuation">,</span> err <span class="token operator">:=</span> w<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">WriteBlockWithState</span><span class="token punctuation">(</span>block<span class="token punctuation">,</span> receipts<span class="token punctuation">,</span> task<span class="token punctuation">.</span>state<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Failed writing block to chain"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">continue</span>
+	<span class="token punctuation">&#125;</span>
+	log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Successfully sealed new block"</span><span class="token punctuation">,</span> <span class="token string">"number"</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Number</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"sealhash"</span><span class="token punctuation">,</span> sealhash<span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> hash<span class="token punctuation">,</span>
+		<span class="token string">"elapsed"</span><span class="token punctuation">,</span> common<span class="token punctuation">.</span><span class="token function">PrettyDuration</span><span class="token punctuation">(</span>time<span class="token punctuation">.</span><span class="token function">Since</span><span class="token punctuation">(</span>task<span class="token punctuation">.</span>createdAt<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	w<span class="token punctuation">.</span>mux<span class="token punctuation">.</span><span class="token function">Post</span><span class="token punctuation">(</span>core<span class="token punctuation">.</span>NewMinedBlockEvent<span class="token punctuation">&#123;</span>Block<span class="token punctuation">:</span> block<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">var</span> events <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	<span class="token keyword">switch</span> stat <span class="token punctuation">&#123;</span>
+	<span class="token keyword">case</span> core<span class="token punctuation">.</span>CanonStatTy<span class="token punctuation">:</span>
+		events <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>events<span class="token punctuation">,</span> core<span class="token punctuation">.</span>ChainEvent<span class="token punctuation">&#123;</span>Block<span class="token punctuation">:</span> block<span class="token punctuation">,</span> Hash<span class="token punctuation">:</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Logs<span class="token punctuation">:</span> logs<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+		events <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>events<span class="token punctuation">,</span> core<span class="token punctuation">.</span>ChainHeadEvent<span class="token punctuation">&#123;</span>Block<span class="token punctuation">:</span> block<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">case</span> core<span class="token punctuation">.</span>SideStatTy<span class="token punctuation">:</span>
+		events <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>events<span class="token punctuation">,</span> core<span class="token punctuation">.</span>ChainSideEvent<span class="token punctuation">&#123;</span>Block<span class="token punctuation">:</span> block<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	w<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">PostChainEvents</span><span class="token punctuation">(</span>events<span class="token punctuation">,</span> logs<span class="token punctuation">)</span>
+	w<span class="token punctuation">.</span>unconfirmed<span class="token punctuation">.</span><span class="token function">Insert</span><span class="token punctuation">(</span>block<span class="token punctuation">.</span><span class="token function">NumberU64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> block<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>先判断这个找到的block是否为空或已经有了，一切正常的话，从pendingTasks中找到对应task，遍历它的所有收据然后补齐收据中log的BlockHash字段。之后调用WriteBlockWithState写入本地区块链，成功的话发送NewMinedBlockEvent事件，这个事件被ProtocolManager接受并广播新块。在worker中，根据插入结果广播事件。最后将新区快插入到unconfirmed中。</p>
+<h2 id="中断"><a href="#中断" class="headerlink" title="中断"></a>中断</h2><p>刚才梳理了正常的挖矿流程，在最开始的时候，newWorkLoop收到startCh事件后，会设置一个定时器，他到时间后也会执行commit方法，只不过noempty参数为true，还是一样的流程，在taskLoop收到taskCh启动挖矿是会先执行一次interrupt方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">interrupt <span class="token operator">:=</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> stopCh <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>stopCh<span class="token punctuation">)</span>
+		stopCh <span class="token operator">=</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里关闭的stopCh就是控制挖矿的，他会停止挖矿，然后随后又重新开始一次</p>
+<h1 id="unconfirmedBlocks"><a href="#unconfirmedBlocks" class="headerlink" title="unconfirmedBlocks"></a>unconfirmedBlocks</h1><p>这个表示那些本地挖到的但是还未确认的区块，创建worker是被创建</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">newUnconfirmedBlocks</span><span class="token punctuation">(</span>chain chainRetriever<span class="token punctuation">,</span> depth <span class="token builtin">uint</span><span class="token punctuation">)</span> <span class="token operator">*</span>unconfirmedBlocks <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>unconfirmedBlocks<span class="token punctuation">&#123;</span>
+		chain<span class="token punctuation">:</span> chain<span class="token punctuation">,</span>
+		depth<span class="token punctuation">:</span> depth<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> unconfirmedBlocks <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	chain  chainRetriever 
+	depth  <span class="token builtin">uint</span>          
+	blocks <span class="token operator">*</span>ring<span class="token punctuation">.</span>Ring    
+	lock   sync<span class="token punctuation">.</span>RWMutex   
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> unconfirmedBlock <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	index <span class="token builtin">uint64</span>
+	hash  common<span class="token punctuation">.</span>Hash
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="Insert"><a href="#Insert" class="headerlink" title="Insert"></a>Insert</h2><p>每挖到一个区块就调用一次</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>set <span class="token operator">*</span>unconfirmedBlocks<span class="token punctuation">)</span> <span class="token function">Insert</span><span class="token punctuation">(</span>index <span class="token builtin">uint64</span><span class="token punctuation">,</span> hash common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	set<span class="token punctuation">.</span><span class="token function">Shift</span><span class="token punctuation">(</span>index<span class="token punctuation">)</span>
+
+	item <span class="token operator">:=</span> ring<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+	item<span class="token punctuation">.</span>Value <span class="token operator">=</span> <span class="token operator">&amp;</span>unconfirmedBlock<span class="token punctuation">&#123;</span>
+		index<span class="token punctuation">:</span> index<span class="token punctuation">,</span>
+		hash<span class="token punctuation">:</span>  hash<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+
+	set<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> set<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> set<span class="token punctuation">.</span>blocks <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		set<span class="token punctuation">.</span>blocks <span class="token operator">=</span> item
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		set<span class="token punctuation">.</span>blocks<span class="token punctuation">.</span><span class="token function">Move</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Link</span><span class="token punctuation">(</span>item<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	
+	log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"ðŸ”¨ mined potential block"</span><span class="token punctuation">,</span> <span class="token string">"number"</span><span class="token punctuation">,</span> index<span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> hash<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>先删除从新区快高度减去depth之外的所有区块，然后新建一个unconfirmedBlock对象，将其加入集合中。</p>
+<h2 id="Shift"><a href="#Shift" class="headerlink" title="Shift"></a>Shift</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>set <span class="token operator">*</span>unconfirmedBlocks<span class="token punctuation">)</span> <span class="token function">Shift</span><span class="token punctuation">(</span>height <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	set<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> set<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> set<span class="token punctuation">.</span>blocks <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		next <span class="token operator">:=</span> set<span class="token punctuation">.</span>blocks<span class="token punctuation">.</span>Value<span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>unconfirmedBlock<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> next<span class="token punctuation">.</span>index<span class="token operator">+</span><span class="token function">uint64</span><span class="token punctuation">(</span>set<span class="token punctuation">.</span>depth<span class="token punctuation">)</span> <span class="token operator">></span> height <span class="token punctuation">&#123;</span>
+			<span class="token keyword">break</span>
+		<span class="token punctuation">&#125;</span>
+		header <span class="token operator">:=</span> set<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">GetHeaderByNumber</span><span class="token punctuation">(</span>next<span class="token punctuation">.</span>index<span class="token punctuation">)</span>
+		<span class="token keyword">switch</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">case</span> header <span class="token operator">==</span> <span class="token boolean">nil</span><span class="token punctuation">:</span>
+			log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Failed to retrieve header of mined block"</span><span class="token punctuation">,</span> <span class="token string">"number"</span><span class="token punctuation">,</span> next<span class="token punctuation">.</span>index<span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> next<span class="token punctuation">.</span>hash<span class="token punctuation">)</span>
+		<span class="token keyword">case</span> header<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> next<span class="token punctuation">.</span>hash<span class="token punctuation">:</span>
+			log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"ðŸ”— block reached canonical chain"</span><span class="token punctuation">,</span> <span class="token string">"number"</span><span class="token punctuation">,</span> next<span class="token punctuation">.</span>index<span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> next<span class="token punctuation">.</span>hash<span class="token punctuation">)</span>
+		<span class="token keyword">default</span><span class="token punctuation">:</span>
+			included <span class="token operator">:=</span> <span class="token boolean">false</span>
+			<span class="token keyword">for</span> number <span class="token operator">:=</span> next<span class="token punctuation">.</span>index<span class="token punctuation">;</span> <span class="token operator">!</span>included <span class="token operator">&amp;&amp;</span> number <span class="token operator">&lt;</span> next<span class="token punctuation">.</span>index<span class="token operator">+</span><span class="token function">uint64</span><span class="token punctuation">(</span>set<span class="token punctuation">.</span>depth<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> number <span class="token operator">&lt;=</span> height<span class="token punctuation">;</span> number<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> block <span class="token operator">:=</span> set<span class="token punctuation">.</span>chain<span class="token punctuation">.</span><span class="token function">GetBlockByNumber</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span><span class="token punctuation">;</span> block <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> uncle <span class="token operator">:=</span> <span class="token keyword">range</span> block<span class="token punctuation">.</span><span class="token function">Uncles</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+						<span class="token keyword">if</span> uncle<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> next<span class="token punctuation">.</span>hash <span class="token punctuation">&#123;</span>
+							included <span class="token operator">=</span> <span class="token boolean">true</span>
+							<span class="token keyword">break</span>
+						<span class="token punctuation">&#125;</span>
+					<span class="token punctuation">&#125;</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">if</span> included <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"â‘‚ block became an uncle"</span><span class="token punctuation">,</span> <span class="token string">"number"</span><span class="token punctuation">,</span> next<span class="token punctuation">.</span>index<span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> next<span class="token punctuation">.</span>hash<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+				log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"ðŸ˜± block lost"</span><span class="token punctuation">,</span> <span class="token string">"number"</span><span class="token punctuation">,</span> next<span class="token punctuation">.</span>index<span class="token punctuation">,</span> <span class="token string">"hash"</span><span class="token punctuation">,</span> next<span class="token punctuation">.</span>hash<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> set<span class="token punctuation">.</span>blocks<span class="token punctuation">.</span>Value <span class="token operator">==</span> set<span class="token punctuation">.</span>blocks<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>Value <span class="token punctuation">&#123;</span>
+			set<span class="token punctuation">.</span>blocks <span class="token operator">=</span> <span class="token boolean">nil</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+			set<span class="token punctuation">.</span>blocks <span class="token operator">=</span> set<span class="token punctuation">.</span>blocks<span class="token punctuation">.</span><span class="token function">Move</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+			set<span class="token punctuation">.</span>blocks<span class="token punctuation">.</span><span class="token function">Unlink</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+			set<span class="token punctuation">.</span>blocks <span class="token operator">=</span> set<span class="token punctuation">.</span>blocks<span class="token punctuation">.</span><span class="token function">Move</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>会删除那些过于早的区块。遍历其中给的每一个区块，如果其高度加上depth（默认是7）高于给定的高度则跳过，否则按照高度从区块链中取出区块头，如果该区块头hash等于正在遍历的区块头hash，则表示我们挖的区块进入主链。如果不是，则检查是否称为叔块。这一部分检查主要是为了打印log，主要逻辑在最后，此时这个区块在给定区块高度减depth以外，需要从中删除。</p>
+<p>unconfirmedBlocks使用了环形链表ring作为主要的数据结构。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/-oWyJoSqBRM">https://unsplash.com/photos/-oWyJoSqBRM</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/06/10/go-ethereum%E4%B8%ADevent%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="prev" title="go-ethereum中event源码分析">
+                  <i class="fa fa-chevron-left"></i> go-ethereum中event源码分析
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/06/17/Android%E6%BA%90%E7%A0%81%E4%B8%8B%E8%BD%BD%E5%8F%8A%E7%BC%96%E8%AF%91/" rel="next" title="Android源码下载及编译">
+                  Android源码下载及编译 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

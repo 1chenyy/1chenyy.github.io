@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="分组密码中的算法模式">
+<meta property="og:url" content="http://example.com/2019/03/24/%E5%88%86%E7%BB%84%E5%AF%86%E7%A0%81%E4%B8%AD%E7%9A%84%E7%AE%97%E6%B3%95%E6%A8%A1%E5%BC%8F/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz1.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz2.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz3.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz4.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz5.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz6.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz7.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz8.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz9.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz10.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz11.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz12.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz13.png">
+<meta property="article:published_time" content="2019-03-24T01:34:08.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.501Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="密码学">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz1.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/03/24/%E5%88%86%E7%BB%84%E5%AF%86%E7%A0%81%E4%B8%AD%E7%9A%84%E7%AE%97%E6%B3%95%E6%A8%A1%E5%BC%8F/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/03/24/%E5%88%86%E7%BB%84%E5%AF%86%E7%A0%81%E4%B8%AD%E7%9A%84%E7%AE%97%E6%B3%95%E6%A8%A1%E5%BC%8F/","path":"2019/03/24/分组密码中的算法模式/","title":"分组密码中的算法模式"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>分组密码中的算法模式 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%B5%E5%AD%90%E5%AF%86%E7%A0%81%E8%96%84%EF%BC%88ECB%EF%BC%89%E6%A8%A1%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">电子密码薄（ECB）模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%9D%97%E9%93%BE%E6%8E%A5%EF%BC%88CBC%EF%BC%89%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">加密块链接（CBC）模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8F%8D%E9%A6%88%EF%BC%88CFB%EF%BC%89%E6%A8%A1%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">加密反馈（CFB）模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BE%93%E5%87%BA%E5%8F%8D%E9%A6%88%EF%BC%88OFB%EF%BC%89%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.</span> <span class="nav-text">输出反馈（OFB）模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%A1%E6%95%B0%E5%99%A8-CTR-%E6%A8%A1%E5%BC%8F"><span class="nav-number">5.</span> <span class="nav-text">计数器(CTR)模式</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/03/24/%E5%88%86%E7%BB%84%E5%AF%86%E7%A0%81%E4%B8%AD%E7%9A%84%E7%AE%97%E6%B3%95%E6%A8%A1%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          分组密码中的算法模式
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-03-24 09:34:08" itemprop="dateCreated datePublished" datetime="2019-03-24T09:34:08+08:00">2019-03-24</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%AF%86%E7%A0%81%E5%AD%A6/" itemprop="url" rel="index"><span itemprop="name">密码学</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz1.jpg"></p>
+<span id="more"></span>
+<p>算法模式是块加密中一系列步骤中基本，同一种加密方法采用不同的模式会产生不同的密文，安全性也不尽相同</p>
+<h1 id="电子密码薄（ECB）模式"><a href="#电子密码薄（ECB）模式" class="headerlink" title="电子密码薄（ECB）模式"></a>电子密码薄（ECB）模式</h1><p>这是块加密中最简单的模式，如定义每块为64位，则将明文每64位分一组，之后对每组使用相同的秘钥和加密算法进行单独加密。解密时也是按64位分组，用同样的秘钥和加密方法进行解密即可。这种方法只适合于短消息，因为如果有重复信息，密文也会产生重复，易被攻击。加解密示意图如下：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz2.png"></p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz3.png"></p>
+<h1 id="加密块链接（CBC）模式"><a href="#加密块链接（CBC）模式" class="headerlink" title="加密块链接（CBC）模式"></a>加密块链接（CBC）模式</h1><p>这种模式的特点是对前一个块加密的结果会影响当前块的加密，确保了每条消息的唯一性。基本过程如下：</p>
+<ol>
+<li>首先随机出一个与分组等长的初始文本块，然后用该文本块和第一个要加密的块做异或运算，并对运算结果进行加密</li>
+<li>加密第二个块时，用第一个块加密之后的密文与第二个块进行异或运算，并对运算结果使用和第一块相同的算法和秘钥进行加密</li>
+<li>依次类推，关键点是，在加密前使用上一块的密文与当前块做异或运算，之后再加密</li>
+</ol>
+<p>可以抽象为下面数学表达(Ek表示加密函数，Ci表示明文的第几块)：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz4.png"></p>
+<p>示意图如下：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz5.png"></p>
+<p>对于解密，首先要了解一下异或运算的一个重要性质，就是连用两次异或后能恢复原值，即 A = A XOR B XOR B。由于这个性质异或就天然的有隐藏和还原信息的功能，所以解密算法如下</p>
+<ol>
+<li>首先对密文块1进行解密，解密后再和加密时使用的初始文本块做异或运算就得到了原文.</li>
+<li>对其他密文块也是一样，先解密，再与前一个密文块做异或，就得到原文</li>
+</ol>
+<p>可以抽象为下面数学表达(Dk表示解密函数，Ci表示明文的第几块)：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz6.png"></p>
+<p>示意图如下：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz7.png"></p>
+<p>这种模式虽然很好的隐藏了信息，但是由于加密时都要依赖前面的信息，所以只能串行加密。不能并行运算。但是解密时可以并行运算</p>
+<h1 id="加密反馈（CFB）模式"><a href="#加密反馈（CFB）模式" class="headerlink" title="加密反馈（CFB）模式"></a>加密反馈（CFB）模式</h1><p>首先并不是所有程序都能处理数据库，如一个输入系统，需要以安全方式在信道中立即传输信息，这就要求数据用更小的单元进行加密（如8位，以byte长度）。所以出现了CFB模式。基本流程如下：</p>
+<ol>
+<li>首先也需要一个64位的初始化向量，并将其放在移位寄存器中，并对该初始化向量进行加密，得到64位的初始密文</li>
+<li>将加密过的初始化向量前j位和明文前j为进行异或，作为密文输出</li>
+<li>将寄存器中的初始化向量左移j位，并将刚才加密的j位拼接到初始化向量尾部</li>
+<li>然后重复上面步骤，即再对寄存器中的新初始化向量加密，随后再加密明文前j位，再进行左移个补充操作，最后再循环</li>
+</ol>
+<p>示意图如下：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz8.png"></p>
+<p>解密也很简单，由于明文是和移位寄存器中加密过的内容做异或后得到的密文，所以根据异或的性质，只需把密文和移位寄存器（初始内容还是加密时选定初始内容）中加密过的内容再做一次异或就得到明文（注意解密之后，寄存器中内容也要同步移位）示意图如下：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz9.png"></p>
+<p>这种模式虽然和CBC很像，但是有一个优点，就是明文是不需要填充为分组的整数倍数长度的，明文和密文有相等长度，且较为灵活。</p>
+<h1 id="输出反馈（OFB）模式"><a href="#输出反馈（OFB）模式" class="headerlink" title="输出反馈（OFB）模式"></a>输出反馈（OFB）模式</h1><p>这种模式和CFB模型类似，但是没有CFB那么复杂，直接看一下示意图比较清晰：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz10.png"></p>
+<p>可见主要区别是移位寄存器中的内容不再受密文的影响，而是每次独立进行加密。这样做的一大好处是某一位出错后，仅影响该位的密文，而和后面无关，前面CBC和CFB每次加密都会用到前面的信息，某一位出错将会影响后面所有输出。</p>
+<p>解密过程也就相对较简单，将密文和初始向量加密后的信息做异或处理即可，随后也同步更新移位寄存器中内容。示意图如下</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz11.png"></p>
+<h1 id="计数器-CTR-模式"><a href="#计数器-CTR-模式" class="headerlink" title="计数器(CTR)模式"></a>计数器(CTR)模式</h1><p>这种模式也被成为ICM(Integer Counter Mode)或SIC模式(Segmented Integer Counter)</p>
+<p>这种模式类似于OFB模式，只不过将寄存器中的值换做一个计数器，计数器在任意时间产生不同的输出，之后对该输出进行加密，并用加密过的结果和明文异或，得到的结果作为密文。示意图（注意图中计数器的输出采用的是一个初始化向量和整数拼接的方式）如下：</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz12.png"></p>
+<p>解密方法和OFB类似，不在赘述，直接看示意图</p>
+<p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/fz13.png"></p>
+<p>这种方式的一大特点是可以并行加密，由于不同块的计数器输出是可以事先预测的，所以可以实现并行加密。</p>
+<blockquote>
+<p>题图来自unsplash: <a target="_blank" rel="noopener" href="https://unsplash.com/photos/pdRsf77OBoo">https://unsplash.com/photos/pdRsf77OBoo</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AF%86%E7%A0%81%E5%AD%A6/" rel="tag"><i class="fa fa-tag"></i> 密码学</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/03/22/Protobuf%E5%AD%A6%E4%B9%A0%E5%8F%8A%E7%BC%96%E7%A0%81%E6%B7%B1%E5%85%A5/" rel="prev" title="Protobuf学习及编码深入">
+                  <i class="fa fa-chevron-left"></i> Protobuf学习及编码深入
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/03/25/DES%E5%8A%A0%E5%AF%86/" rel="next" title="DES加密与实现">
+                  DES加密与实现 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

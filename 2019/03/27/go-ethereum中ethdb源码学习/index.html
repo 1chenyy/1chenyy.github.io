@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="go-ethereum中ethdb源码学习">
+<meta property="og:url" content="http://example.com/2019/03/27/go-ethereum%E4%B8%ADethdb%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/db1.png">
+<meta property="article:published_time" content="2019-03-27T08:19:14.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.492Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta property="article:tag" content="数据库">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/db1.png">
+
+
+<link rel="canonical" href="http://example.com/2019/03/27/go-ethereum%E4%B8%ADethdb%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/03/27/go-ethereum%E4%B8%ADethdb%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/","path":"2019/03/27/go-ethereum中ethdb源码学习/","title":"go-ethereum中ethdb源码学习"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>go-ethereum中ethdb源码学习 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#go-leveldb%E4%BD%BF%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">go-leveldb使用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%93%E5%BC%80%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">2.1.</span> <span class="nav-text">打开数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A2%9E%E5%88%A0%E6%94%B9%E6%9F%A5"><span class="nav-number">2.2.</span> <span class="nav-text">增删改查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%99%AE%E9%80%9A%E8%BF%AD%E4%BB%A3"><span class="nav-number">2.3.</span> <span class="nav-text">普通迭代</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%87%E5%AE%9A%E8%B5%B7%E7%82%B9%E7%9A%84%E8%BF%AD%E4%BB%A3"><span class="nav-number">2.4.</span> <span class="nav-text">指定起点的迭代</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%90%E9%9B%86%E8%BF%AD%E4%BB%A3"><span class="nav-number">2.5.</span> <span class="nav-text">子集迭代</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E7%BC%80%E8%BF%AD%E4%BB%A3"><span class="nav-number">2.6.</span> <span class="nav-text">前缀迭代</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%B9%E9%87%8F%E5%86%99%E5%85%A5"><span class="nav-number">2.7.</span> <span class="nav-text">批量写入</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#interface-go"><span class="nav-number">3.1.</span> <span class="nav-text">interface.go</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#database-go"><span class="nav-number">3.2.</span> <span class="nav-text">database.go</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E9%80%A0"><span class="nav-number">3.2.1.</span> <span class="nav-text">构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NewLDBDatabase"><span class="nav-number">3.2.2.</span> <span class="nav-text">NewLDBDatabase</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#put%EF%BC%8Chas%EF%BC%8Cget%EF%BC%8Cdelete"><span class="nav-number">3.2.3.</span> <span class="nav-text">put，has，get，delete</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Batch%E5%8F%8A%E5%85%B6%E6%93%8D%E4%BD%9C"><span class="nav-number">3.2.4.</span> <span class="nav-text">Batch及其操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Meter"><span class="nav-number">3.2.5.</span> <span class="nav-text">Meter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#close"><span class="nav-number">3.2.6.</span> <span class="nav-text">close</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#memory-database-go"><span class="nav-number">3.3.</span> <span class="nav-text">memory_database.go</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E9%80%A0-1"><span class="nav-number">3.3.1.</span> <span class="nav-text">构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E7%A1%80%E6%93%8D%E4%BD%9C"><span class="nav-number">3.3.2.</span> <span class="nav-text">基础操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Batch"><span class="nav-number">3.3.3.</span> <span class="nav-text">Batch</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#table-go%E4%B8%8Etable-batch-go"><span class="nav-number">3.4.</span> <span class="nav-text">table.go与table_batch.go</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/03/27/go-ethereum%E4%B8%ADethdb%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go-ethereum中ethdb源码学习
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-03-27 16:19:14" itemprop="dateCreated datePublished" datetime="2019-03-27T16:19:14+08:00">2019-03-27</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go-ethereum%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">go-ethereum源码学习</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>9.1k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>8 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/1/db1.png"></p>
+<span id="more"></span>
+<p>前面学习了ethereum的编码和数据结构，这里学习一些ethereum的持久化存储也就是数据相关的源码。</p>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>go-ethereum的数据存储时借助于<a target="_blank" rel="noopener" href="http://leveldb.org/">leveldb数据库</a>，它是Google开发的一种键值对类型的数据库，另外Facebook又基于其开发了RocksDB数据库。简单来说，leveldb具有轻量以及高性能的特点。</p>
+<p>原生的leveldb是用c++写的，并不方便直接用到go项目中，好在leveldb的开发者用go重新实现了leveldb，我们可以直接使用(<a target="_blank" rel="noopener" href="https://github.com/syndtr/goleveldb">github地址</a>)。</p>
+<p>go版本的leveldb需要go1.5以上版本，安装很简单，执行下面命令</p>
+<pre class="line-numbers language-none"><code class="language-none">go get github.com&#x2F;syndtr&#x2F;goleveldb&#x2F;leveldb<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h1 id="go-leveldb使用"><a href="#go-leveldb使用" class="headerlink" title="go-leveldb使用"></a>go-leveldb使用</h1><p>由于是键值对类型的数据库，所以使用比较简单，下面简单介绍一下基本操作，更高级的操作参见<a target="_blank" rel="noopener" href="https://godoc.org/github.com/syndtr/goleveldb">API文档</a>。下面操作示例代码见<a target="_blank" rel="noopener" href="https://github.com/chenyaoyang/example/blob/master/code/leveldb/leveltest.go">这里</a></p>
+<h2 id="打开数据库"><a href="#打开数据库" class="headerlink" title="打开数据库"></a>打开数据库</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">db<span class="token punctuation">,</span> err <span class="token operator">:=</span> leveldb<span class="token punctuation">.</span><span class="token function">OpenFile</span><span class="token punctuation">(</span><span class="token string">"db"</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token keyword">if</span><span class="token punctuation">(</span>err<span class="token operator">!=</span><span class="token boolean">nil</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	log<span class="token punctuation">.</span><span class="token function">Fatalln</span><span class="token punctuation">(</span>err<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">defer</span> db<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>OpenFile会创建或打开一个数据库。</p>
+<h2 id="增删改查"><a href="#增删改查" class="headerlink" title="增删改查"></a>增删改查</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">err <span class="token operator">=</span> db<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"key"</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"value"</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+err <span class="token operator">=</span> db<span class="token punctuation">.</span><span class="token function">Delete</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"key"</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+data<span class="token punctuation">,</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"key"</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>基本上就对于put，get，delete几个方法，其中更改一个记录的话也是用put。</p>
+<h2 id="普通迭代"><a href="#普通迭代" class="headerlink" title="普通迭代"></a>普通迭代</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">iter <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">NewIterator</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> iter<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    key <span class="token operator">:=</span> iter<span class="token punctuation">.</span><span class="token function">Key</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    value <span class="token operator">:=</span> iter<span class="token punctuation">.</span><span class="token function">Value</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+iter<span class="token punctuation">.</span><span class="token function">Release</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>就是迭代数据库全部键值对</p>
+<h2 id="指定起点的迭代"><a href="#指定起点的迭代" class="headerlink" title="指定起点的迭代"></a>指定起点的迭代</h2><p>首先需要明白的是，leveldb的存储是按key的顺序存储的，所以可以指定一个key，从该key开始遍历</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">iter<span class="token operator">:=</span>db<span class="token punctuation">.</span><span class="token function">NewIterator</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">,</span><span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> ok<span class="token operator">:=</span>iter<span class="token punctuation">.</span><span class="token function">Seek</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>ok<span class="token punctuation">;</span>ok<span class="token operator">=</span>iter<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>iter<span class="token punctuation">.</span><span class="token function">Key</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token string">"---"</span><span class="token punctuation">,</span><span class="token function">string</span><span class="token punctuation">(</span>iter<span class="token punctuation">.</span><span class="token function">Value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+iter<span class="token punctuation">.</span><span class="token function">Release</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+err <span class="token operator">:=</span> iter<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="子集迭代"><a href="#子集迭代" class="headerlink" title="子集迭代"></a>子集迭代</h2><p>可以指定区间进行迭代</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">iter<span class="token operator">:=</span>db<span class="token punctuation">.</span><span class="token function">NewIterator</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>util<span class="token punctuation">.</span>Range<span class="token punctuation">&#123;</span>Start<span class="token punctuation">:</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"key2"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>Limit<span class="token punctuation">:</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"key6"</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span><span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> iter<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>iter<span class="token punctuation">.</span><span class="token function">Key</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token string">"---"</span><span class="token punctuation">,</span><span class="token function">string</span><span class="token punctuation">(</span>iter<span class="token punctuation">.</span><span class="token function">Value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+iter<span class="token punctuation">.</span><span class="token function">Release</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+err <span class="token operator">:=</span> iter<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="前缀迭代"><a href="#前缀迭代" class="headerlink" title="前缀迭代"></a>前缀迭代</h2><p>只迭代有指定前缀的</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">iter<span class="token operator">:=</span>db<span class="token punctuation">.</span><span class="token function">NewIterator</span><span class="token punctuation">(</span>util<span class="token punctuation">.</span><span class="token function">BytesPrefix</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span>prefix<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> iter<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token function">string</span><span class="token punctuation">(</span>iter<span class="token punctuation">.</span><span class="token function">Key</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token string">"---"</span><span class="token punctuation">,</span><span class="token function">string</span><span class="token punctuation">(</span>iter<span class="token punctuation">.</span><span class="token function">Value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+iter<span class="token punctuation">.</span><span class="token function">Release</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+err <span class="token operator">:=</span> iter<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="批量写入"><a href="#批量写入" class="headerlink" title="批量写入"></a>批量写入</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">batch<span class="token operator">:=</span><span class="token function">new</span><span class="token punctuation">(</span>leveldb<span class="token punctuation">.</span>Batch<span class="token punctuation">)</span>
+<span class="token keyword">for</span> i<span class="token operator">:=</span><span class="token number">0</span><span class="token punctuation">;</span> i<span class="token operator">&lt;</span><span class="token number">10</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+	batch<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"batch"</span><span class="token operator">+</span>strconv<span class="token punctuation">.</span><span class="token function">Itoa</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"batch"</span><span class="token operator">+</span>strconv<span class="token punctuation">.</span><span class="token function">Itoa</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+err<span class="token operator">:=</span>db<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>batch<span class="token punctuation">,</span><span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>源码集中在ethdb目录内，主要是对leveldb的封装。</p>
+<h2 id="interface-go"><a href="#interface-go" class="headerlink" title="interface.go"></a>interface.go</h2><p>顾名思义就是定义了一些接口，如数据库接口：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Database <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+	Putter
+	Deleter
+	<span class="token function">Get</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+	<span class="token function">Has</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">bool</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+	<span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token function">NewBatch</span><span class="token punctuation">(</span><span class="token punctuation">)</span> Batch
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Batch接口。用于批量操作，不能用于并发</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Batch <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+	Putter
+	Deleter
+	<span class="token function">ValueSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">int</span> 
+	<span class="token function">Write</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span>
+	<span class="token function">Reset</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面两个结构又包含了Putter和Deleter接口</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Putter <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+	<span class="token function">Put</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> value <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">type</span> Deleter <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+	<span class="token function">Delete</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="database-go"><a href="#database-go" class="headerlink" title="database.go"></a>database.go</h2><h3 id="构造"><a href="#构造" class="headerlink" title="构造"></a>构造</h3><p>这就是ethereum所使用的代码，先看结构体</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> LDBDatabase <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	fn <span class="token builtin">string</span>      <span class="token comment">// filename for reporting</span>
+	db <span class="token operator">*</span>leveldb<span class="token punctuation">.</span>DB <span class="token comment">// LevelDB instance</span>
+
+	compTimeMeter    metrics<span class="token punctuation">.</span>Meter <span class="token comment">// Meter for measuring the total time spent in database compaction</span>
+	compReadMeter    metrics<span class="token punctuation">.</span>Meter <span class="token comment">// Meter for measuring the data read during compaction</span>
+	compWriteMeter   metrics<span class="token punctuation">.</span>Meter <span class="token comment">// Meter for measuring the data written during compaction</span>
+	writeDelayNMeter metrics<span class="token punctuation">.</span>Meter <span class="token comment">// Meter for measuring the write delay number due to database compaction</span>
+	writeDelayMeter  metrics<span class="token punctuation">.</span>Meter <span class="token comment">// Meter for measuring the write delay duration due to database compaction</span>
+	diskReadMeter    metrics<span class="token punctuation">.</span>Meter <span class="token comment">// Meter for measuring the effective amount of data read</span>
+	diskWriteMeter   metrics<span class="token punctuation">.</span>Meter <span class="token comment">// Meter for measuring the effective amount of data written</span>
+
+	quitLock sync<span class="token punctuation">.</span>Mutex      <span class="token comment">// Mutex protecting the quit channel access</span>
+	quitChan <span class="token keyword">chan</span> <span class="token keyword">chan</span> <span class="token builtin">error</span> <span class="token comment">// Quit channel to stop the metrics collection before closing the database</span>
+
+	log log<span class="token punctuation">.</span>Logger <span class="token comment">// Contextual logger tracking the database path</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="NewLDBDatabase"><a href="#NewLDBDatabase" class="headerlink" title="NewLDBDatabase"></a>NewLDBDatabase</h3><p>成员很多，关键的就是一个leveldb.DB对象和几个同步操作的成员。接下来看新建数据库的方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">NewLDBDatabase</span><span class="token punctuation">(</span>file <span class="token builtin">string</span><span class="token punctuation">,</span> cache <span class="token builtin">int</span><span class="token punctuation">,</span> handles <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>LDBDatabase<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	logger <span class="token operator">:=</span> log<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">"database"</span><span class="token punctuation">,</span> file<span class="token punctuation">)</span>
+	
+	<span class="token comment">//从init调用过来时，cache和handles都为0</span>
+	<span class="token comment">//默认启动节点，cache为512，handles为0，在node.DefaultConfig配置</span>
+	<span class="token keyword">if</span> cache <span class="token operator">&lt;</span> <span class="token number">16</span> <span class="token punctuation">&#123;</span>
+		cache <span class="token operator">=</span> <span class="token number">16</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> handles <span class="token operator">&lt;</span> <span class="token number">16</span> <span class="token punctuation">&#123;</span>
+		handles <span class="token operator">=</span> <span class="token number">16</span>
+	<span class="token punctuation">&#125;</span>
+	logger<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Allocated cache and file handles"</span><span class="token punctuation">,</span> <span class="token string">"cache"</span><span class="token punctuation">,</span> common<span class="token punctuation">.</span><span class="token function">StorageSize</span><span class="token punctuation">(</span>cache<span class="token operator">*</span><span class="token number">1024</span><span class="token operator">*</span><span class="token number">1024</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"handles"</span><span class="token punctuation">,</span> handles<span class="token punctuation">)</span>
+
+	db<span class="token punctuation">,</span> err <span class="token operator">:=</span> leveldb<span class="token punctuation">.</span><span class="token function">OpenFile</span><span class="token punctuation">(</span>file<span class="token punctuation">,</span> <span class="token operator">&amp;</span>opt<span class="token punctuation">.</span>Options<span class="token punctuation">&#123;</span>
+		OpenFilesCacheCapacity<span class="token punctuation">:</span> handles<span class="token punctuation">,</span>
+		BlockCacheCapacity<span class="token punctuation">:</span>     cache <span class="token operator">/</span> <span class="token number">2</span> <span class="token operator">*</span> opt<span class="token punctuation">.</span>MiB<span class="token punctuation">,</span>
+		WriteBuffer<span class="token punctuation">:</span>            cache <span class="token operator">/</span> <span class="token number">4</span> <span class="token operator">*</span> opt<span class="token punctuation">.</span>MiB<span class="token punctuation">,</span> 
+		Filter<span class="token punctuation">:</span>                 filter<span class="token punctuation">.</span><span class="token function">NewBloomFilter</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> corrupted <span class="token operator">:=</span> err<span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>errors<span class="token punctuation">.</span>ErrCorrupted<span class="token punctuation">)</span><span class="token punctuation">;</span> corrupted <span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">,</span> err <span class="token operator">=</span> leveldb<span class="token punctuation">.</span><span class="token function">RecoverFile</span><span class="token punctuation">(</span>file<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>LDBDatabase<span class="token punctuation">&#123;</span>
+		fn<span class="token punctuation">:</span>  file<span class="token punctuation">,</span>
+		db<span class="token punctuation">:</span>  db<span class="token punctuation">,</span>
+		log<span class="token punctuation">:</span> logger<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>逻辑很简单，创建了一个levelDB对象，主要看一下options的内容：</p>
+<ol>
+<li>OpenFilesCacheCapacity：定义打开的文件缓存大小，默认是500，设为-1或0时表示不缓存</li>
+<li>BlockCacheCapacity：定义了一个名为sorted table的缓存容量，默认是8MB，设为-1或0时表示不缓存</li>
+<li>WriteBuffer：定义memdb的大小，它是一个内存数据库，默认是4MB.</li>
+<li>Filter：定义过滤器，优化读性能。这是使用了一个布隆过滤器</li>
+</ol>
+<h3 id="put，has，get，delete"><a href="#put，has，get，delete" class="headerlink" title="put，has，get，delete"></a>put，has，get，delete</h3><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>LDBDatabase<span class="token punctuation">)</span> <span class="token function">Put</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> value <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> db<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>LDBDatabase<span class="token punctuation">)</span> <span class="token function">Has</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">bool</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> db<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Has</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>LDBDatabase<span class="token punctuation">)</span> <span class="token function">Get</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	dat<span class="token punctuation">,</span> err <span class="token operator">:=</span> db<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> dat<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>LDBDatabase<span class="token punctuation">)</span> <span class="token function">Delete</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> db<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Delete</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>都是对leveldb做了封装而已。</p>
+<h3 id="Batch及其操作"><a href="#Batch及其操作" class="headerlink" title="Batch及其操作"></a>Batch及其操作</h3><p>批量读写的封装</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> ldbBatch <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	db   <span class="token operator">*</span>leveldb<span class="token punctuation">.</span>DB
+	b    <span class="token operator">*</span>leveldb<span class="token punctuation">.</span>Batch
+	size <span class="token builtin">int</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>put、delete、write、reset</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>ldbBatch<span class="token punctuation">)</span> <span class="token function">Put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">.</span>b<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+	b<span class="token punctuation">.</span>size <span class="token operator">+=</span> <span class="token function">len</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>ldbBatch<span class="token punctuation">)</span> <span class="token function">Delete</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">.</span>b<span class="token punctuation">.</span><span class="token function">Delete</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+	b<span class="token punctuation">.</span>size <span class="token operator">+=</span> <span class="token number">1</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>ldbBatch<span class="token punctuation">)</span> <span class="token function">Write</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> b<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>b<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>ldbBatch<span class="token punctuation">)</span> <span class="token function">Reset</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">.</span>b<span class="token punctuation">.</span><span class="token function">Reset</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	b<span class="token punctuation">.</span>size <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Meter"><a href="#Meter" class="headerlink" title="Meter"></a>Meter</h3><p>这是用于初始化LDBDatabase的一系列Meter成员用的</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>LDBDatabase<span class="token punctuation">)</span> <span class="token function">Meter</span><span class="token punctuation">(</span>prefix <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	db<span class="token punctuation">.</span>compTimeMeter <span class="token operator">=</span> metrics<span class="token punctuation">.</span><span class="token function">NewRegisteredMeter</span><span class="token punctuation">(</span>prefix<span class="token operator">+</span><span class="token string">"compact/time"</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	db<span class="token punctuation">.</span>compReadMeter <span class="token operator">=</span> metrics<span class="token punctuation">.</span><span class="token function">NewRegisteredMeter</span><span class="token punctuation">(</span>prefix<span class="token operator">+</span><span class="token string">"compact/input"</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	db<span class="token punctuation">.</span>compWriteMeter <span class="token operator">=</span> metrics<span class="token punctuation">.</span><span class="token function">NewRegisteredMeter</span><span class="token punctuation">(</span>prefix<span class="token operator">+</span><span class="token string">"compact/output"</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	db<span class="token punctuation">.</span>diskReadMeter <span class="token operator">=</span> metrics<span class="token punctuation">.</span><span class="token function">NewRegisteredMeter</span><span class="token punctuation">(</span>prefix<span class="token operator">+</span><span class="token string">"disk/read"</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	db<span class="token punctuation">.</span>diskWriteMeter <span class="token operator">=</span> metrics<span class="token punctuation">.</span><span class="token function">NewRegisteredMeter</span><span class="token punctuation">(</span>prefix<span class="token operator">+</span><span class="token string">"disk/write"</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	db<span class="token punctuation">.</span>writeDelayMeter <span class="token operator">=</span> metrics<span class="token punctuation">.</span><span class="token function">NewRegisteredMeter</span><span class="token punctuation">(</span>prefix<span class="token operator">+</span><span class="token string">"compact/writedelay/duration"</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+	db<span class="token punctuation">.</span>writeDelayNMeter <span class="token operator">=</span> metrics<span class="token punctuation">.</span><span class="token function">NewRegisteredMeter</span><span class="token punctuation">(</span>prefix<span class="token operator">+</span><span class="token string">"compact/writedelay/counter"</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+
+	db<span class="token punctuation">.</span>quitLock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	db<span class="token punctuation">.</span>quitChan <span class="token operator">=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token keyword">chan</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+	db<span class="token punctuation">.</span>quitLock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">go</span> db<span class="token punctuation">.</span><span class="token function">meter</span><span class="token punctuation">(</span><span class="token number">3</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个方法内先初始化各种Meter，然后创建了一个chan，最后启动一个goroutine运行meter，之后每3秒收集一次信息并反馈到Meter。这一段代码比较长，就不贴出来了。主要是利用db.db.GetProperty(“leveldb.stats”)获取信息，信息格式如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">&#x2F;&#x2F;    Level |   Tables   |    Size(MB)   |    Time(sec)  |    Read(MB)   |   Write(MB)
+&#x2F;&#x2F;   -------+------------+---------------+---------------+---------------+---------------
+&#x2F;&#x2F;      0   |          0 |       0.00000 |       1.27969 |       0.00000 |      12.31098
+&#x2F;&#x2F;      1   |         85 |     109.27913 |      28.09293 |     213.92493 |     214.26294
+&#x2F;&#x2F;      2   |        523 |    1000.37159 |       7.26059 |      66.86342 |      66.77884
+&#x2F;&#x2F;      3   |        570 |    1113.18458 |       0.00000 |       0.00000 |       0.00000<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>下面就是解析这个字符串并写入Meter。另外一点这段代周期循环的关键代码如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">1</span><span class="token punctuation">;</span> errc <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> merr <span class="token operator">==</span> <span class="token boolean">nil</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">//....</span>
+    <span class="token keyword">select</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">case</span> errc <span class="token operator">=</span> <span class="token operator">&lt;-</span>db<span class="token punctuation">.</span>quitChan<span class="token punctuation">:</span>
+		<span class="token keyword">case</span> <span class="token operator">&lt;-</span>time<span class="token punctuation">.</span><span class="token function">After</span><span class="token punctuation">(</span>refresh<span class="token punctuation">)</span><span class="token punctuation">:</span>
+		<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>到select出会阻塞，3秒后进行下一次循环，退出时向Meter方法中初始化的chan发送信息，导致errc不为nil，就自然退出循环</p>
+<h3 id="close"><a href="#close" class="headerlink" title="close"></a>close</h3><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>LDBDatabase<span class="token punctuation">)</span> <span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	db<span class="token punctuation">.</span>quitLock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> db<span class="token punctuation">.</span>quitLock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> db<span class="token punctuation">.</span>quitChan <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		errc <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">chan</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+		db<span class="token punctuation">.</span>quitChan <span class="token operator">&lt;-</span> errc
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> <span class="token operator">&lt;-</span>errc<span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			db<span class="token punctuation">.</span>log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Metrics collection failed"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+		db<span class="token punctuation">.</span>quitChan <span class="token operator">=</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	err <span class="token operator">:=</span> db<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">.</span>log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Database closed"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">.</span>log<span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Failed to close database"</span><span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>退出代码也很简单，主要就是在加锁环境下，向quitChan写入信息，停止meter，然后等待反馈（在meter发出反馈），最后关闭数据库。</p>
+<h2 id="memory-database-go"><a href="#memory-database-go" class="headerlink" title="memory_database.go"></a>memory_database.go</h2><p>这是一个用于测试的基于内存的数据库。在源码中主要是在geth初始化时，如果最后创建数据库时依旧没有有效的datadir则使用这个数据库代替</p>
+<h3 id="构造-1"><a href="#构造-1" class="headerlink" title="构造"></a>构造</h3><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> MemDatabase <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	db   <span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+	lock sync<span class="token punctuation">.</span>RWMutex
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">NewMemDatabase</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>MemDatabase <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>MemDatabase<span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">:</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可见就是基于map的封装。</p>
+<h3 id="基础操作"><a href="#基础操作" class="headerlink" title="基础操作"></a>基础操作</h3><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>MemDatabase<span class="token punctuation">)</span> <span class="token function">Put</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> value <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	db<span class="token punctuation">.</span>db<span class="token punctuation">[</span><span class="token function">string</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> common<span class="token punctuation">.</span><span class="token function">CopyBytes</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>MemDatabase<span class="token punctuation">)</span> <span class="token function">Has</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">bool</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">RLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">RUnlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token boolean">_</span><span class="token punctuation">,</span> ok <span class="token operator">:=</span> db<span class="token punctuation">.</span>db<span class="token punctuation">[</span><span class="token function">string</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">]</span>
+	<span class="token keyword">return</span> ok<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>MemDatabase<span class="token punctuation">)</span> <span class="token function">Get</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">RLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">RUnlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> entry<span class="token punctuation">,</span> ok <span class="token operator">:=</span> db<span class="token punctuation">.</span>db<span class="token punctuation">[</span><span class="token function">string</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span> ok <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> common<span class="token punctuation">.</span><span class="token function">CopyBytes</span><span class="token punctuation">(</span>entry<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> errors<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">"not found"</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>MemDatabase<span class="token punctuation">)</span> <span class="token function">Delete</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token function">delete</span><span class="token punctuation">(</span>db<span class="token punctuation">.</span>db<span class="token punctuation">,</span> <span class="token function">string</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>全是基于map操作，只不过进行了加锁</p>
+<h3 id="Batch"><a href="#Batch" class="headerlink" title="Batch"></a>Batch</h3><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> memBatch <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	db     <span class="token operator">*</span>MemDatabase
+	writes <span class="token punctuation">[</span><span class="token punctuation">]</span>kv
+	size   <span class="token builtin">int</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">type</span> kv <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	k<span class="token punctuation">,</span> v <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+	del  <span class="token builtin">bool</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>db <span class="token operator">*</span>MemDatabase<span class="token punctuation">)</span> <span class="token function">NewBatch</span><span class="token punctuation">(</span><span class="token punctuation">)</span> Batch <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>memBatch<span class="token punctuation">&#123;</span>db<span class="token punctuation">:</span> db<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>memBatch<span class="token punctuation">)</span> <span class="token function">Put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">.</span>writes <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>writes<span class="token punctuation">,</span> kv<span class="token punctuation">&#123;</span>common<span class="token punctuation">.</span><span class="token function">CopyBytes</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">,</span> common<span class="token punctuation">.</span><span class="token function">CopyBytes</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	b<span class="token punctuation">.</span>size <span class="token operator">+=</span> <span class="token function">len</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>memBatch<span class="token punctuation">)</span> <span class="token function">Delete</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">.</span>writes <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>writes<span class="token punctuation">,</span> kv<span class="token punctuation">&#123;</span>common<span class="token punctuation">.</span><span class="token function">CopyBytes</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	b<span class="token punctuation">.</span>size <span class="token operator">+=</span> <span class="token number">1</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>memBatch<span class="token punctuation">)</span> <span class="token function">Write</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">.</span>db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> b<span class="token punctuation">.</span>db<span class="token punctuation">.</span>lock<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> kv <span class="token operator">:=</span> <span class="token keyword">range</span> b<span class="token punctuation">.</span>writes <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> kv<span class="token punctuation">.</span>del <span class="token punctuation">&#123;</span>
+			<span class="token function">delete</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>db<span class="token punctuation">.</span>db<span class="token punctuation">,</span> <span class="token function">string</span><span class="token punctuation">(</span>kv<span class="token punctuation">.</span>k<span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token keyword">continue</span>
+		<span class="token punctuation">&#125;</span>
+		b<span class="token punctuation">.</span>db<span class="token punctuation">.</span>db<span class="token punctuation">[</span><span class="token function">string</span><span class="token punctuation">(</span>kv<span class="token punctuation">.</span>k<span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> kv<span class="token punctuation">.</span>v
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>memBatch<span class="token punctuation">)</span> <span class="token function">Reset</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	b<span class="token punctuation">.</span>writes <span class="token operator">=</span> b<span class="token punctuation">.</span>writes<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span>
+	b<span class="token punctuation">.</span>size <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>批量操作先存储在一个KV类型的数组内，等到写入时遍历那个数组，依次存入数据库</p>
+<h2 id="table-go与table-batch-go"><a href="#table-go与table-batch-go" class="headerlink" title="table.go与table_batch.go"></a>table.go与table_batch.go</h2><p>这两个也是对数据的封装，之所以叫table是因为实例化一个table时要指定一个前缀，之后利用table的基本操作都会给key添加指定的前缀。table_batch也类似，直接看一下table.go的源码</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">NewTable</span><span class="token punctuation">(</span>db Database<span class="token punctuation">,</span> prefix <span class="token builtin">string</span><span class="token punctuation">)</span> Database <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>table<span class="token punctuation">&#123;</span>
+		db<span class="token punctuation">:</span>     db<span class="token punctuation">,</span>
+		prefix<span class="token punctuation">:</span> prefix<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>dt <span class="token operator">*</span>table<span class="token punctuation">)</span> <span class="token function">Put</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> value <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> dt<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span>dt<span class="token punctuation">.</span>prefix<span class="token punctuation">)</span><span class="token punctuation">,</span> key<span class="token operator">...</span><span class="token punctuation">)</span><span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>dt <span class="token operator">*</span>table<span class="token punctuation">)</span> <span class="token function">Has</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">bool</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> dt<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Has</span><span class="token punctuation">(</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span>dt<span class="token punctuation">.</span>prefix<span class="token punctuation">)</span><span class="token punctuation">,</span> key<span class="token operator">...</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>dt <span class="token operator">*</span>table<span class="token punctuation">)</span> <span class="token function">Get</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> dt<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span>dt<span class="token punctuation">.</span>prefix<span class="token punctuation">)</span><span class="token punctuation">,</span> key<span class="token operator">...</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>dt <span class="token operator">*</span>table<span class="token punctuation">)</span> <span class="token function">Delete</span><span class="token punctuation">(</span>key <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> dt<span class="token punctuation">.</span>db<span class="token punctuation">.</span><span class="token function">Delete</span><span class="token punctuation">(</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span>dt<span class="token punctuation">.</span>prefix<span class="token punctuation">)</span><span class="token punctuation">,</span> key<span class="token operator">...</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"><i class="fa fa-tag"></i> 数据库</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/03/27/RC4%E5%8A%A0%E5%AF%86/" rel="prev" title="RC4加密与实现">
+                  <i class="fa fa-chevron-left"></i> RC4加密与实现
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/03/28/RC5%E5%8A%A0%E5%AF%86/" rel="next" title="RC5加密">
+                  RC5加密 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

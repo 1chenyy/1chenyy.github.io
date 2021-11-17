@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:title" content="go-ethereum交易发送流程源码分析">
+<meta property="og:url" content="http://example.com/2019/06/10/go-ethereum%E4%BA%A4%E6%98%93%E5%8F%91%E9%80%81%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/trevor-cole-1067315-unsplash.jpg">
+<meta property="article:published_time" content="2019-06-10T09:08:26.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.498Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="以太坊">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="go-ethereum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/trevor-cole-1067315-unsplash.jpg">
+
+
+<link rel="canonical" href="http://example.com/2019/06/10/go-ethereum%E4%BA%A4%E6%98%93%E5%8F%91%E9%80%81%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/06/10/go-ethereum%E4%BA%A4%E6%98%93%E5%8F%91%E9%80%81%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/","path":"2019/06/10/go-ethereum交易发送流程源码分析/","title":"go-ethereum交易发送流程源码分析"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>go-ethereum交易发送流程源码分析 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B4%A6%E6%88%B7%E8%A7%A3%E9%94%81"><span class="nav-number">2.</span> <span class="nav-text">账户解锁</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%91%E9%80%81%E4%BA%A4%E6%98%93"><span class="nav-number">3.</span> <span class="nav-text">发送交易</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8B%E4%BB%B6%E8%A7%A6%E5%8F%91%E5%8F%8A%E5%90%8E%E7%BB%AD"><span class="nav-number">4.</span> <span class="nav-text">事件触发及后续</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/06/10/go-ethereum%E4%BA%A4%E6%98%93%E5%8F%91%E9%80%81%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go-ethereum交易发送流程源码分析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-10 17:08:26" itemprop="dateCreated datePublished" datetime="2019-06-10T17:08:26+08:00">2019-06-10</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go-ethereum%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">go-ethereum源码学习</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>11k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>10 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/trevor-cole-1067315-unsplash.jpg"></p>
+<span id="more"></span>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>如果只是为了测试，可以启动以太坊的rpc测试工具：ganache-cli。然后使用attach命令去连接测试节点<code>geth attach http://127.0.0.1:8545</code>。当然，你也可以利用geth搭建一个私链去测试，这里不再多做介绍，ganache-cli安装如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">npm install -g ganache-cli<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>先介绍几个命令：</p>
+<pre class="line-numbers language-none"><code class="language-none">查看所有账户：eth.accounts
+查看某个账户的余额：eth.getBalance(eth.accounts[0])
+解锁某个账户：personal.unlockAccount(eth.accounts[0],&quot;密码&quot;)
+交易：eth.sendTransaction(&#123;from:**,to:**,value:**&#125;) <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h1 id="账户解锁"><a href="#账户解锁" class="headerlink" title="账户解锁"></a>账户解锁</h1><p>交易前必须解锁账户，所以我们先从这里开始分析。解锁账户的命令时：personal.unlockAccount。回顾之前geth启动流程，在启动服务时会启动rpc服务，此时会收集所有api</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>n <span class="token operator">*</span>Node<span class="token punctuation">)</span> <span class="token function">startRPC</span><span class="token punctuation">(</span>services <span class="token keyword">map</span><span class="token punctuation">[</span>reflect<span class="token punctuation">.</span>Type<span class="token punctuation">]</span>Service<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	apis <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">apis</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> service <span class="token operator">:=</span> <span class="token keyword">range</span> services <span class="token punctuation">&#123;</span>
+		apis <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>apis<span class="token punctuation">,</span> service<span class="token punctuation">.</span><span class="token function">APIs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">...</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startInProc</span><span class="token punctuation">(</span>apis<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startIPC</span><span class="token punctuation">(</span>apis<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span><span class="token function">stopInProc</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startHTTP</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>httpEndpoint<span class="token punctuation">,</span> apis<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>HTTPModules<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>HTTPCors<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>HTTPVirtualHosts<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>HTTPTimeouts<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span><span class="token function">stopIPC</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		n<span class="token punctuation">.</span><span class="token function">stopInProc</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> n<span class="token punctuation">.</span><span class="token function">startWS</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>wsEndpoint<span class="token punctuation">,</span> apis<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>WSModules<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>WSOrigins<span class="token punctuation">,</span> n<span class="token punctuation">.</span>config<span class="token punctuation">.</span>WSExposeAll<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span><span class="token function">stopHTTP</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		n<span class="token punctuation">.</span><span class="token function">stopIPC</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		n<span class="token punctuation">.</span><span class="token function">stopInProc</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	n<span class="token punctuation">.</span>rpcAPIs <span class="token operator">=</span> apis
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一步先收集node提供的api，之后再收集所有服务提供的api，由于默认只有ethereum服务，所有我们能用的api都来自这两个地方。API实际上是一个结构体</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> API <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Namespace <span class="token builtin">string</span>     
+	Version   <span class="token builtin">string</span>      
+	Service   <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> 
+	Public    <span class="token builtin">bool</span>        
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>他有四个成员，Namespace是命名空间，我们使用的personal.unlockAccount命令中personal就是一个命名空间，一个命名空间下有若干个实际的命令。Version就是版本号，Service就是该API具体逻辑的结构体。Public指该API是否对外公开。</p>
+<p>回顾rpc源码，在启动rpc服务时会传入所有要提供服务的API，之后对每个api使用RegisterName进行注册，将API指定的结构体中可导出的每个方法包装成一个个callback，每个callback对应的名字就是方法名，只不过第一个字母小写。同一个结构体的所有可调用的方法包装成一个service，service的name字段就是API的Namespace。收到请求时就是根据命名空间及对应的方法名取查找对应callback来执行逻辑。</p>
+<p>这里我们同过查找发现personal.unlockAccount的这个指令对应的PrivateAccountAPI结构体中的UnlockAccount方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// go-ethereum\internal\ethapi\api.go</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>s <span class="token operator">*</span>PrivateAccountAPI<span class="token punctuation">)</span> <span class="token function">UnlockAccount</span><span class="token punctuation">(</span>addr common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> password <span class="token builtin">string</span><span class="token punctuation">,</span> duration <span class="token operator">*</span><span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">bool</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">const</span> max <span class="token operator">=</span> <span class="token function">uint64</span><span class="token punctuation">(</span>time<span class="token punctuation">.</span><span class="token function">Duration</span><span class="token punctuation">(</span>math<span class="token punctuation">.</span>MaxInt64<span class="token punctuation">)</span> <span class="token operator">/</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">)</span>
+	<span class="token keyword">var</span> d time<span class="token punctuation">.</span>Duration
+	<span class="token keyword">if</span> duration <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		d <span class="token operator">=</span> <span class="token number">300</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token operator">*</span>duration <span class="token operator">></span> max <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">,</span> errors<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">"unlock duration too large"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		d <span class="token operator">=</span> time<span class="token punctuation">.</span><span class="token function">Duration</span><span class="token punctuation">(</span><span class="token operator">*</span>duration<span class="token punctuation">)</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second
+	<span class="token punctuation">&#125;</span>
+	err <span class="token operator">:=</span> <span class="token function">fetchKeystore</span><span class="token punctuation">(</span>s<span class="token punctuation">.</span>am<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">TimedUnlock</span><span class="token punctuation">(</span>accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span>Address<span class="token punctuation">:</span> addr<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> password<span class="token punctuation">,</span> d<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Failed account unlock attempt"</span><span class="token punctuation">,</span> <span class="token string">"address"</span><span class="token punctuation">,</span> addr<span class="token punctuation">,</span> <span class="token string">"err"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> err <span class="token operator">==</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里我们发现实际上这个方法接收三个参数，但第三个参数可以为空。这三个参数分别是要解锁的账户地址，密码以及解锁状态持续时间。默认保持解锁300秒，可以自定义，但不能过大。接着主要逻辑开始，首先调用fetchKeystore方法去从accountmanager中获取一个keystore对象，之后调用其TimedUnlock方法。这个方法之前在分析geth的account子命令时分析过，解锁实际上就是用提供的密码解密账户对应的keystore文件，获得账户对应的私钥。并持续一定时间的解锁状态，所谓解锁状态是指地址对应的unlocked可以找得到，到期后将对应unlocked对象中的私钥清零，并将其移除unlocked集合。</p>
+<h1 id="发送交易"><a href="#发送交易" class="headerlink" title="发送交易"></a>发送交易</h1><p>发送交易的实际代码如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>s <span class="token operator">*</span>PublicTransactionPoolAPI<span class="token punctuation">)</span> <span class="token function">SendTransaction</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> args SendTxArgs<span class="token punctuation">)</span> <span class="token punctuation">(</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+	account <span class="token operator">:=</span> accounts<span class="token punctuation">.</span>Account<span class="token punctuation">&#123;</span>Address<span class="token punctuation">:</span> args<span class="token punctuation">.</span>From<span class="token punctuation">&#125;</span>
+
+	wallet<span class="token punctuation">,</span> err <span class="token operator">:=</span> s<span class="token punctuation">.</span>b<span class="token punctuation">.</span><span class="token function">AccountManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Find</span><span class="token punctuation">(</span>account<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>Nonce <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		s<span class="token punctuation">.</span>nonceLock<span class="token punctuation">.</span><span class="token function">LockAddr</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>From<span class="token punctuation">)</span>
+		<span class="token keyword">defer</span> s<span class="token punctuation">.</span>nonceLock<span class="token punctuation">.</span><span class="token function">UnlockAddr</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>From<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> args<span class="token punctuation">.</span><span class="token function">setDefaults</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> s<span class="token punctuation">.</span>b<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	tx <span class="token operator">:=</span> args<span class="token punctuation">.</span><span class="token function">toTransaction</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	signed<span class="token punctuation">,</span> err <span class="token operator">:=</span> wallet<span class="token punctuation">.</span><span class="token function">SignTx</span><span class="token punctuation">(</span>account<span class="token punctuation">,</span> tx<span class="token punctuation">,</span> s<span class="token punctuation">.</span>b<span class="token punctuation">.</span><span class="token function">ChainConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>ChainID<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token function">SubmitTransaction</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> s<span class="token punctuation">.</span>b<span class="token punctuation">,</span> signed<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>注意这个方法有两个参数，但是调用时我们没有指定第一个参数，由于不是基本类型，所以我们也无法指定第一个参数。回顾rpc源码。在注册服务时，如果方法的第一个参数是contextType类型，则跳过第一个参数并标记该callback的hasCtx为true。</p>
+<p>SendTransaction方法的第二个参数也不是基本参数，但是我们查看SendTxArgs的定义</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> SendTxArgs <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	From     common<span class="token punctuation">.</span>Address  <span class="token string">`json:"from"`</span>
+	To       <span class="token operator">*</span>common<span class="token punctuation">.</span>Address <span class="token string">`json:"to"`</span>
+	Gas      <span class="token operator">*</span>hexutil<span class="token punctuation">.</span>Uint64 <span class="token string">`json:"gas"`</span>
+	GasPrice <span class="token operator">*</span>hexutil<span class="token punctuation">.</span>Big    <span class="token string">`json:"gasPrice"`</span>
+	Value    <span class="token operator">*</span>hexutil<span class="token punctuation">.</span>Big    <span class="token string">`json:"value"`</span>
+	Nonce    <span class="token operator">*</span>hexutil<span class="token punctuation">.</span>Uint64 <span class="token string">`json:"nonce"`</span>
+
+	Data  <span class="token operator">*</span>hexutil<span class="token punctuation">.</span>Bytes <span class="token string">`json:"data"`</span>
+	Input <span class="token operator">*</span>hexutil<span class="token punctuation">.</span>Bytes <span class="token string">`json:"input"`</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>SendTxArgs实际上是一个json对象，所以我们只要输入json格式的字符串即可，在处理请求时会自动序列化为json对象。</p>
+<p>方法的第一步是先构造一个account对象，先只赋值地址参数。之后去寻找这个账户对于的钱包对象。找到的话，如果参数中的nonce字段为空，则调用nonceLock.LockAddr方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>l <span class="token operator">*</span>AddrLocker<span class="token punctuation">)</span> <span class="token function">LockAddr</span><span class="token punctuation">(</span>address common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	l<span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span>address<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>l <span class="token operator">*</span>AddrLocker<span class="token punctuation">)</span> <span class="token function">lock</span><span class="token punctuation">(</span>address common<span class="token punctuation">.</span>Address<span class="token punctuation">)</span> <span class="token operator">*</span>sync<span class="token punctuation">.</span>Mutex <span class="token punctuation">&#123;</span>
+	l<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> l<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> l<span class="token punctuation">.</span>locks <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		l<span class="token punctuation">.</span>locks <span class="token operator">=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">]</span><span class="token operator">*</span>sync<span class="token punctuation">.</span>Mutex<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ok <span class="token operator">:=</span> l<span class="token punctuation">.</span>locks<span class="token punctuation">[</span>address<span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token operator">!</span>ok <span class="token punctuation">&#123;</span>
+		l<span class="token punctuation">.</span>locks<span class="token punctuation">[</span>address<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>sync<span class="token punctuation">.</span>Mutex<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> l<span class="token punctuation">.</span>locks<span class="token punctuation">[</span>address<span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>实际上就是给每个地址创建一个互斥锁并进行锁定。回到SendTransaction中，有调用了setDefaults进行参数补全</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>args <span class="token operator">*</span>SendTxArgs<span class="token punctuation">)</span> <span class="token function">setDefaults</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> b Backend<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>Gas <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		args<span class="token punctuation">.</span>Gas <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>hexutil<span class="token punctuation">.</span>Uint64<span class="token punctuation">)</span>
+		<span class="token operator">*</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token builtin">uint64</span><span class="token punctuation">)</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>Gas<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">90000</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>GasPrice <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		price<span class="token punctuation">,</span> err <span class="token operator">:=</span> b<span class="token punctuation">.</span><span class="token function">SuggestPrice</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+		args<span class="token punctuation">.</span>GasPrice <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">*</span>hexutil<span class="token punctuation">.</span>Big<span class="token punctuation">)</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>Value <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		args<span class="token punctuation">.</span>Value <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>hexutil<span class="token punctuation">.</span>Big<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>Nonce <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		nonce<span class="token punctuation">,</span> err <span class="token operator">:=</span> b<span class="token punctuation">.</span><span class="token function">GetPoolNonce</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> args<span class="token punctuation">.</span>From<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+		args<span class="token punctuation">.</span>Nonce <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">*</span>hexutil<span class="token punctuation">.</span>Uint64<span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>nonce<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>Data <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> args<span class="token punctuation">.</span>Input <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>bytes<span class="token punctuation">.</span><span class="token function">Equal</span><span class="token punctuation">(</span><span class="token operator">*</span>args<span class="token punctuation">.</span>Data<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">.</span>Input<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> errors<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">`Both "data" and "input" are set and not equal. Please use "input" to pass transaction call data.`</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>To <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">// Contract creation</span>
+		<span class="token keyword">var</span> input <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+		<span class="token keyword">if</span> args<span class="token punctuation">.</span>Data <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			input <span class="token operator">=</span> <span class="token operator">*</span>args<span class="token punctuation">.</span>Data
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> args<span class="token punctuation">.</span>Input <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			input <span class="token operator">=</span> <span class="token operator">*</span>args<span class="token punctuation">.</span>Input
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>input<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> errors<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">`contract creation without any data provided`</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个主要是补全SendTxArgs的一些空成员变量，也就是我们为提供的值，一般发生一个普通交易我们只要提供收发双方地址和交易金额即可。接着调用toTransaction组装一个交易对象</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>args <span class="token operator">*</span>SendTxArgs<span class="token punctuation">)</span> <span class="token function">toTransaction</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction <span class="token punctuation">&#123;</span>
+	<span class="token keyword">var</span> input <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>Data <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		input <span class="token operator">=</span> <span class="token operator">*</span>args<span class="token punctuation">.</span>Data
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> args<span class="token punctuation">.</span>Input <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		input <span class="token operator">=</span> <span class="token operator">*</span>args<span class="token punctuation">.</span>Input
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> args<span class="token punctuation">.</span>To <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> types<span class="token punctuation">.</span><span class="token function">NewContractCreation</span><span class="token punctuation">(</span><span class="token function">uint64</span><span class="token punctuation">(</span><span class="token operator">*</span>args<span class="token punctuation">.</span>Nonce<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>Value<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">uint64</span><span class="token punctuation">(</span><span class="token operator">*</span>args<span class="token punctuation">.</span>Gas<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>GasPrice<span class="token punctuation">)</span><span class="token punctuation">,</span> input<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> types<span class="token punctuation">.</span><span class="token function">NewTransaction</span><span class="token punctuation">(</span><span class="token function">uint64</span><span class="token punctuation">(</span><span class="token operator">*</span>args<span class="token punctuation">.</span>Nonce<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">.</span>To<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>Value<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">uint64</span><span class="token punctuation">(</span><span class="token operator">*</span>args<span class="token punctuation">.</span>Gas<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>GasPrice<span class="token punctuation">)</span><span class="token punctuation">,</span> input<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先Data与Input都表示交易携带的信息，Input是一个新名字而已。接着根据接收人地址是否为空构造不同的交易对象</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">NewTransaction</span><span class="token punctuation">(</span>nonce <span class="token builtin">uint64</span><span class="token punctuation">,</span> to common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">,</span> gasLimit <span class="token builtin">uint64</span><span class="token punctuation">,</span> gasPrice <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">,</span> data <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token operator">*</span>Transaction <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">newTransaction</span><span class="token punctuation">(</span>nonce<span class="token punctuation">,</span> <span class="token operator">&amp;</span>to<span class="token punctuation">,</span> amount<span class="token punctuation">,</span> gasLimit<span class="token punctuation">,</span> gasPrice<span class="token punctuation">,</span> data<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">NewContractCreation</span><span class="token punctuation">(</span>nonce <span class="token builtin">uint64</span><span class="token punctuation">,</span> amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">,</span> gasLimit <span class="token builtin">uint64</span><span class="token punctuation">,</span> gasPrice <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">,</span> data <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token operator">*</span>Transaction <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">newTransaction</span><span class="token punctuation">(</span>nonce<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> amount<span class="token punctuation">,</span> gasLimit<span class="token punctuation">,</span> gasPrice<span class="token punctuation">,</span> data<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>二者调用的实际上是一个方法，区别就是接受者的地址是否为空</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">newTransaction</span><span class="token punctuation">(</span>nonce <span class="token builtin">uint64</span><span class="token punctuation">,</span> to <span class="token operator">*</span>common<span class="token punctuation">.</span>Address<span class="token punctuation">,</span> amount <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">,</span> gasLimit <span class="token builtin">uint64</span><span class="token punctuation">,</span> gasPrice <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">,</span> data <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token operator">*</span>Transaction <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		data <span class="token operator">=</span> common<span class="token punctuation">.</span><span class="token function">CopyBytes</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	d <span class="token operator">:=</span> txdata<span class="token punctuation">&#123;</span>
+		AccountNonce<span class="token punctuation">:</span> nonce<span class="token punctuation">,</span>
+		Recipient<span class="token punctuation">:</span>    to<span class="token punctuation">,</span>
+		Payload<span class="token punctuation">:</span>      data<span class="token punctuation">,</span>
+		Amount<span class="token punctuation">:</span>       <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		GasLimit<span class="token punctuation">:</span>     gasLimit<span class="token punctuation">,</span>
+		Price<span class="token punctuation">:</span>        <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		V<span class="token punctuation">:</span>            <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		R<span class="token punctuation">:</span>            <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		S<span class="token punctuation">:</span>            <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> amount <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		d<span class="token punctuation">.</span>Amount<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>amount<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> gasPrice <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		d<span class="token punctuation">.</span>Price<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>gasPrice<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>Transaction<span class="token punctuation">&#123;</span>data<span class="token punctuation">:</span> d<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里先构建了一个txdata对象，包含了交易的一些基本信息，然后构建了一个Transaction对象。回到SendTransaction，这里调用了SignTx对交易进行签名</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>keystoreWallet<span class="token punctuation">)</span> <span class="token function">SignTx</span><span class="token punctuation">(</span>account accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> tx <span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">,</span> chainID <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token operator">!</span>w<span class="token punctuation">.</span><span class="token function">Contains</span><span class="token punctuation">(</span>account<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> accounts<span class="token punctuation">.</span>ErrUnknownAccount
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> w<span class="token punctuation">.</span>keystore<span class="token punctuation">.</span><span class="token function">SignTx</span><span class="token punctuation">(</span>account<span class="token punctuation">,</span> tx<span class="token punctuation">,</span> chainID<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>ks <span class="token operator">*</span>KeyStore<span class="token punctuation">)</span> <span class="token function">SignTx</span><span class="token punctuation">(</span>a accounts<span class="token punctuation">.</span>Account<span class="token punctuation">,</span> tx <span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">,</span> chainID <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	ks<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">RLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> ks<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">RUnlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	unlockedKey<span class="token punctuation">,</span> found <span class="token operator">:=</span> ks<span class="token punctuation">.</span>unlocked<span class="token punctuation">[</span>a<span class="token punctuation">.</span>Address<span class="token punctuation">]</span>
+	<span class="token keyword">if</span> <span class="token operator">!</span>found <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> ErrLocked
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> chainID <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> types<span class="token punctuation">.</span><span class="token function">SignTx</span><span class="token punctuation">(</span>tx<span class="token punctuation">,</span> types<span class="token punctuation">.</span><span class="token function">NewEIP155Signer</span><span class="token punctuation">(</span>chainID<span class="token punctuation">)</span><span class="token punctuation">,</span> unlockedKey<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> types<span class="token punctuation">.</span><span class="token function">SignTx</span><span class="token punctuation">(</span>tx<span class="token punctuation">,</span> types<span class="token punctuation">.</span>HomesteadSigner<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> unlockedKey<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>先查找钱包中是否包含该账户，有的话调用KeyStore的SignTx方法。首先检查账户是否已解锁，然后调用SignTx方法签名，但根据是否指定网络ID来决定使用什么singer</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">SignTx</span><span class="token punctuation">(</span>tx <span class="token operator">*</span>Transaction<span class="token punctuation">,</span> s Signer<span class="token punctuation">,</span> prv <span class="token operator">*</span>ecdsa<span class="token punctuation">.</span>PrivateKey<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>Transaction<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	h <span class="token operator">:=</span> s<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span>tx<span class="token punctuation">)</span>
+	sig<span class="token punctuation">,</span> err <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">Sign</span><span class="token punctuation">(</span>h<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> prv<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> tx<span class="token punctuation">.</span><span class="token function">WithSignature</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> sig<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>首先对交易计算hash值，去然后用对hash值进行签名。我们以HomesteadSigner为Signer分析一下。首先hash方法如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>fs FrontierSigner<span class="token punctuation">)</span> <span class="token function">Hash</span><span class="token punctuation">(</span>tx <span class="token operator">*</span>Transaction<span class="token punctuation">)</span> common<span class="token punctuation">.</span>Hash <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token function">rlpHash</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#123;</span>
+		tx<span class="token punctuation">.</span>data<span class="token punctuation">.</span>AccountNonce<span class="token punctuation">,</span>
+		tx<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Price<span class="token punctuation">,</span>
+		tx<span class="token punctuation">.</span>data<span class="token punctuation">.</span>GasLimit<span class="token punctuation">,</span>
+		tx<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Recipient<span class="token punctuation">,</span>
+		tx<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Amount<span class="token punctuation">,</span>
+		tx<span class="token punctuation">.</span>data<span class="token punctuation">.</span>Payload<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">rlpHash</span><span class="token punctuation">(</span>x <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>h common<span class="token punctuation">.</span>Hash<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	hw <span class="token operator">:=</span> sha3<span class="token punctuation">.</span><span class="token function">NewLegacyKeccak256</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	rlp<span class="token punctuation">.</span><span class="token function">Encode</span><span class="token punctuation">(</span>hw<span class="token punctuation">,</span> x<span class="token punctuation">)</span>
+	hw<span class="token punctuation">.</span><span class="token function">Sum</span><span class="token punctuation">(</span>h<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> h
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>hash方法是将交易的账户nonce、gasPrice、gaslimit、接受者地址、交易金额以及额外数据这些信息先进行rlp编码，然后使用keccak256算法进行hash计算，得到256位hash值。</p>
+<p>Sign方法就是ECDSA数字签名算法，根据输入的私钥，计算出一个长度为65的字节数组。包含着ECDSA数字签名的结果R、S、V。注意原始的ECDSA签名算法只有R和S，这里又多出一个V，它是第65个字节，被称作“恢复ID”。关于ECDSA算法介绍见<a target="_blank" rel="noopener" href="https://blog.grapefruit.tk/2019/03/31/%E9%9D%9E%E5%AF%B9%E7%A7%B0%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95%E4%B8%8E%E6%95%B0%E5%AD%97%E7%AD%BE%E5%90%8D/">这里</a>。</p>
+<p>WithSignature方法如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>tx <span class="token operator">*</span>Transaction<span class="token punctuation">)</span> <span class="token function">WithSignature</span><span class="token punctuation">(</span>signer Signer<span class="token punctuation">,</span> sig <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>Transaction<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	r<span class="token punctuation">,</span> s<span class="token punctuation">,</span> v<span class="token punctuation">,</span> err <span class="token operator">:=</span> signer<span class="token punctuation">.</span><span class="token function">SignatureValues</span><span class="token punctuation">(</span>tx<span class="token punctuation">,</span> sig<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	cpy <span class="token operator">:=</span> <span class="token operator">&amp;</span>Transaction<span class="token punctuation">&#123;</span>data<span class="token punctuation">:</span> tx<span class="token punctuation">.</span>data<span class="token punctuation">&#125;</span>
+	cpy<span class="token punctuation">.</span>data<span class="token punctuation">.</span>R<span class="token punctuation">,</span> cpy<span class="token punctuation">.</span>data<span class="token punctuation">.</span>S<span class="token punctuation">,</span> cpy<span class="token punctuation">.</span>data<span class="token punctuation">.</span>V <span class="token operator">=</span> r<span class="token punctuation">,</span> s<span class="token punctuation">,</span> v
+	<span class="token keyword">return</span> cpy<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>fs FrontierSigner<span class="token punctuation">)</span> <span class="token function">SignatureValues</span><span class="token punctuation">(</span>tx <span class="token operator">*</span>Transaction<span class="token punctuation">,</span> sig <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>r<span class="token punctuation">,</span> s<span class="token punctuation">,</span> v <span class="token operator">*</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>sig<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">65</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">panic</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"wrong size for signature: got %d, want 65"</span><span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>sig<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	r <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetBytes</span><span class="token punctuation">(</span>sig<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">32</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	s <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetBytes</span><span class="token punctuation">(</span>sig<span class="token punctuation">[</span><span class="token number">32</span><span class="token punctuation">:</span><span class="token number">64</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	v <span class="token operator">=</span> <span class="token function">new</span><span class="token punctuation">(</span>big<span class="token punctuation">.</span>Int<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">SetBytes</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">&#123;</span>sig<span class="token punctuation">[</span><span class="token number">64</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token number">27</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> r<span class="token punctuation">,</span> s<span class="token punctuation">,</span> v<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>先从刚才计算得到的签名值中解析出e、s、v的值。然后给transaction的data对于字段赋值。最后返回交易。</p>
+<p>回到SendTransaction，获得已签名的交易后调用SubmitTransaction方法提交交易</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">SubmitTransaction</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> b Backend<span class="token punctuation">,</span> tx <span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">)</span> <span class="token punctuation">(</span>common<span class="token punctuation">.</span>Hash<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> b<span class="token punctuation">.</span><span class="token function">SendTx</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> tx<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> tx<span class="token punctuation">.</span><span class="token function">To</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		signer <span class="token operator">:=</span> types<span class="token punctuation">.</span><span class="token function">MakeSigner</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span><span class="token function">ChainConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> b<span class="token punctuation">.</span><span class="token function">CurrentBlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Number</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		from<span class="token punctuation">,</span> err <span class="token operator">:=</span> types<span class="token punctuation">.</span><span class="token function">Sender</span><span class="token punctuation">(</span>signer<span class="token punctuation">,</span> tx<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> common<span class="token punctuation">.</span>Hash<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> err
+		<span class="token punctuation">&#125;</span>
+		addr <span class="token operator">:=</span> crypto<span class="token punctuation">.</span><span class="token function">CreateAddress</span><span class="token punctuation">(</span>from<span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">Nonce</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Submitted contract creation"</span><span class="token punctuation">,</span> <span class="token string">"fullhash"</span><span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Hex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"contract"</span><span class="token punctuation">,</span> addr<span class="token punctuation">.</span><span class="token function">Hex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Submitted transaction"</span><span class="token punctuation">,</span> <span class="token string">"fullhash"</span><span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Hex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"recipient"</span><span class="token punctuation">,</span> tx<span class="token punctuation">.</span><span class="token function">To</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> tx<span class="token punctuation">.</span><span class="token function">Hash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>第一步SendTx方法如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>b <span class="token operator">*</span>EthAPIBackend<span class="token punctuation">)</span> <span class="token function">SendTx</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> signedTx <span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> b<span class="token punctuation">.</span>eth<span class="token punctuation">.</span>txPool<span class="token punctuation">.</span><span class="token function">AddLocal</span><span class="token punctuation">(</span>signedTx<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>实际调用的是txpool的方法，</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>pool <span class="token operator">*</span>TxPool<span class="token punctuation">)</span> <span class="token function">AddLocal</span><span class="token punctuation">(</span>tx <span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> pool<span class="token punctuation">.</span><span class="token function">addTx</span><span class="token punctuation">(</span>tx<span class="token punctuation">,</span> <span class="token operator">!</span>pool<span class="token punctuation">.</span>config<span class="token punctuation">.</span>NoLocals<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>pool <span class="token operator">*</span>TxPool<span class="token punctuation">)</span> <span class="token function">addTxs</span><span class="token punctuation">(</span>txs <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">,</span> local <span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	pool<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> pool<span class="token punctuation">.</span>mu<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">return</span> pool<span class="token punctuation">.</span><span class="token function">addTxsLocked</span><span class="token punctuation">(</span>txs<span class="token punctuation">,</span> local<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里最终以本地模式将交易添加到交易池中，若是一个全新的交易，则还要额外调用promoteExecutables将该地址的一些交易放到可执行交易的队列中。</p>
+<p>回到SubmitTransaction中，放到交易池中后，如果接收人地址为空，则表示是一个合约创建交易，这时计算合约地址并打印log。最后方法返回交易的hash。所谓交易的hash就是对交易的rlp编码值计算hash值。</p>
+<p>到此发送交易的源码已经分析的差不多了，但是源码还未到此结束，前面只是将交易添加到了交易池中，我们再来看一下后续的流程</p>
+<h1 id="事件触发及后续"><a href="#事件触发及后续" class="headerlink" title="事件触发及后续"></a>事件触发及后续</h1><p>在使用txpool的add方法时，方法结尾在一个单独的goroutine中发送了一个NewTxsEvent事件，那么是在哪里注册的呢。这还要回到ProtocolManager源码中，回顾之前ProtocolManager的源码分析，在启动ProtocolManager时注册了NewTxsEvent事件，然后启动了一个单独的goroutine执行txBroadcastLoop来处理这个事件，具体源码及分析见<a target="_blank" rel="noopener" href="https://blog.grapefruit.tk/2019/04/29/go-ethereum%E4%B8%ADeth-ProtocolManager%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">此文</a></p>
+<p>最终是将交易发送给所有peer，每个节点收到交易时调用AddRemotes方法将其添加到交易池中，这个方法和AddLocal类似，只是不适用本地模式而已。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>pool <span class="token operator">*</span>TxPool<span class="token punctuation">)</span> <span class="token function">AddRemotes</span><span class="token punctuation">(</span>txs <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>types<span class="token punctuation">.</span>Transaction<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> pool<span class="token punctuation">.</span><span class="token function">addTxs</span><span class="token punctuation">(</span>txs<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>除了ProtocolManager注册了该事件，还有miner/worker也注册了，这个在miner源码中再分析。</p>
+<blockquote>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/z2icBh4A9i0">https://unsplash.com/photos/z2icBh4A9i0</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" rel="tag"><i class="fa fa-tag"></i> 区块链</a>
+              <a href="/tags/%E4%BB%A5%E5%A4%AA%E5%9D%8A/" rel="tag"><i class="fa fa-tag"></i> 以太坊</a>
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+              <a href="/tags/go-ethereum/" rel="tag"><i class="fa fa-tag"></i> go-ethereum</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/06/08/geth%E5%AD%90%E5%91%BD%E4%BB%A4%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%9Ainit%E3%80%81account/" rel="prev" title="geth子命令源码分析：init、account">
+                  <i class="fa fa-chevron-left"></i> geth子命令源码分析：init、account
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/06/10/go-ethereum%E4%B8%ADevent%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="next" title="go-ethereum中event源码分析">
+                  go-ethereum中event源码分析 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

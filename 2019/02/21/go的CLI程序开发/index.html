@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monda:300,300italic,400,400italic,700,700italic%7CRoboto+Slab:300,300italic,400,400italic,700,700italic%7CConsolas:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="go语言学习笔记：CLI程序开发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go的CLI程序开发">
+<meta property="og:url" content="http://example.com/2019/02/21/go%E7%9A%84CLI%E7%A8%8B%E5%BA%8F%E5%BC%80%E5%8F%91/index.html">
+<meta property="og:site_name" content="AmorFati">
+<meta property="og:description" content="go语言学习笔记：CLI程序开发">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-02-21T10:26:06.000Z">
+<meta property="article:modified_time" content="2021-11-17T13:54:30.499Z">
+<meta property="article:author" content="AmorFati">
+<meta property="article:tag" content="go">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2019/02/21/go%E7%9A%84CLI%E7%A8%8B%E5%BA%8F%E5%BC%80%E5%8F%91/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/02/21/go%E7%9A%84CLI%E7%A8%8B%E5%BA%8F%E5%BC%80%E5%8F%91/","path":"2019/02/21/go的CLI程序开发/","title":"go的CLI程序开发"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>go的CLI程序开发 | AmorFati</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">AmorFati</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">风吹过窗前的书，又翻过一页</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Arguments"><span class="nav-number">1.</span> <span class="nav-text">Arguments</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flag"><span class="nav-number">2.</span> <span class="nav-text">flag</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#flag%E5%AE%9A%E4%B9%89"><span class="nav-number">2.1.</span> <span class="nav-text">flag定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flag%E6%A0%BC%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">flag格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E6%96%B9%E6%B3%95"><span class="nav-number">2.3.</span> <span class="nav-text">其他方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#urfave-cli"><span class="nav-number">3.</span> <span class="nav-text">urfave&#x2F;cli</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E4%B8%8E%E5%AF%BC%E5%8C%85"><span class="nav-number">3.1.</span> <span class="nav-text">安装与导包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8"><span class="nav-number">3.2.</span> <span class="nav-text">简单使用</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="AmorFati"
+      src="/assets/img/icon.jpg">
+  <p class="site-author-name" itemprop="name">AmorFati</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/1chenyy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;1chenyy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:henyang4346@foxmail.com" title="E-Mail → mailto:henyang4346@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.jianshu.com/u/52c1bec4559c" title="简书 → https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;52c1bec4559c" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>简书</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2019/02/21/go%E7%9A%84CLI%E7%A8%8B%E5%BA%8F%E5%BC%80%E5%8F%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/img/icon.jpg">
+      <meta itemprop="name" content="AmorFati">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AmorFati">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go的CLI程序开发
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-02-21 18:26:06" itemprop="dateCreated datePublished" datetime="2019-02-21T18:26:06+08:00">2019-02-21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">go语言学习笔记</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>6.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>6 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <blockquote class="blockquote-center">
+<p>go语言学习笔记：CLI程序开发 </p>
+
+</blockquote> 
+<span id="more"></span> 
+<p>CLI(command-line interface)就是命令行界面，我们在linux命令行中输入的一个个指令都是CLI程序，典型如tar命令，一般使用go开发一个命令行程序有以下几种方法</p>
+<h2 id="Arguments"><a href="#Arguments" class="headerlink" title="Arguments"></a>Arguments</h2><p>这个算是最基本的方法，但也是最繁琐的。主要借助os.Args，查看源码，介绍如下</p>
+<pre class="line-numbers language-none"><code class="language-none">&#x2F;&#x2F; Args hold the command-line arguments, starting with the program name.
+var Args []string<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这里告诉我们这个数组切片保存了命令行的参数，且第一个参数程序名。这里需要注意的一点是，就算一个参数不附加，os.Args这个数组也是有一个值的，就是当前的程序，所以我们在通过len(os.Args)判断是否有额外参数时，len(os.Args)&gt;1才能说明有额外参数</p>
+<p>既然我们可以通过这个数组获取所有参数，那么就可以通过一系列参数判断，开发出一个命令行程序，但无疑是很繁琐的，所以go标准库中提供了一个简单的库来帮助我们</p>
+<h2 id="flag"><a href="#flag" class="headerlink" title="flag"></a>flag</h2><p>我们先引入一个小例子</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	dir <span class="token operator">:=</span> flag<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span><span class="token string">"dir"</span><span class="token punctuation">,</span><span class="token string">"/home/user"</span><span class="token punctuation">,</span><span class="token string">"data directory"</span><span class="token punctuation">)</span>
+	flag<span class="token punctuation">.</span><span class="token function">Parse</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token operator">*</span>dir<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>之后再命令行输入下面命令去运行，</p>
+<pre class="line-numbers language-none"><code class="language-none">go run example.go   
+输出&#x2F;home&#x2F;user
+
+go run example.go -dir &#x2F;etc&#x2F;opt     
+输出&#x2F;etc&#x2F;opt
+
+go run in.go -h
+输出：
+Usage of ...&#x2F;example.exe
+    -dir string
+        data directory (default &quot;&#x2F;home&#x2F;user&quot;)
+        
+go run example.go -dirs &#x2F;etc
+输出：
+flag provided but not defined: -dirs
+Usage of ...&#x2F;example.exe
+    -dir string
+        data directory (default &quot;&#x2F;home&#x2F;user&quot;)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看出这已经是一个比较完善的命令程序，我们指定了参数名：dir，默认值：”/home/user”，以及参数解释：”data directory”。之后flag包自动帮我们解析参数，并附带了-h帮助信息，以及未定义参数的提示信息</p>
+<p>通过上面的例子基本可以了解flag大体使用方法，首先定义一些参数，之后flag.Parse()进行解析，最后使用解析到的数据即可，关于Parse()源码如下</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">Parse</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	CommandLine<span class="token punctuation">.</span><span class="token function">Parse</span><span class="token punctuation">(</span>os<span class="token punctuation">.</span>Args<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>可见也是用的os.Args[1:]作为输入，只不过这个包帮我们做好了匹配及错误处理而已。接下来详细学习一下用法</p>
+<h3 id="flag定义"><a href="#flag定义" class="headerlink" title="flag定义"></a>flag定义</h3><p>基本上分三大类：</p>
+<ol>
+<li>*<em>flag.Xxx(name,value,usage) <em>Xxx</em></em> Xxx表示相应的数据类型，如Bool，Float64，Int，String等等，参数都是三个：名称，默认值，用法介绍。返回值1是相应类型的一个指针变量。例子如下：</li>
+</ol>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">dir <span class="token operator">:=</span> flag<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span><span class="token string">"dir"</span><span class="token punctuation">,</span><span class="token string">"/home/user"</span><span class="token punctuation">,</span><span class="token string">"data directory"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ol start="2">
+<li><strong>flag.XxxVar(p,name,value,usage)</strong> Xxx也是表示相应的数据类型，和上面那个一样，区别是多了一个参数，需要传入一个变量的引用，然后解析时会把值赋给这个变量，没有返回值，例子如下</li>
+</ol>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">var</span> dir <span class="token builtin">string</span>
+flag<span class="token punctuation">.</span><span class="token function">StringVar</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>dir<span class="token punctuation">,</span><span class="token string">"dir"</span><span class="token punctuation">,</span><span class="token string">"/home/user"</span><span class="token punctuation">,</span><span class="token string">"data directory"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<ol start="3">
+<li><strong>flag.Var(value,name,usage)</strong> 当包中预定义的数据类型不能满足要求时，就需要这个方法了，第一个参数是一个引用，其类是实现flag.Value 接口，剩下的两个参数意义和上边的一样。先看一下这个接口</li>
+</ol>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Value <span class="token keyword">interface</span> <span class="token punctuation">&#123;</span>
+	<span class="token function">String</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">string</span>
+	<span class="token function">Set</span><span class="token punctuation">(</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>基本上就是要定义存取方法，只不过存取的值都必须是string类型，举一个简单的例子</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> student <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	name <span class="token builtin">string</span>
+	age <span class="token builtin">int64</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>s <span class="token operator">*</span>student<span class="token punctuation">)</span> <span class="token function">String</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> s<span class="token punctuation">.</span>name<span class="token operator">+</span><span class="token function">string</span><span class="token punctuation">(</span>s<span class="token punctuation">.</span>age<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>s <span class="token operator">*</span>student<span class="token punctuation">)</span> <span class="token function">Set</span><span class="token punctuation">(</span>str <span class="token builtin">string</span><span class="token punctuation">)</span><span class="token builtin">error</span><span class="token punctuation">&#123;</span>
+	slice<span class="token operator">:=</span>strings<span class="token punctuation">.</span><span class="token function">Split</span><span class="token punctuation">(</span>str<span class="token punctuation">,</span><span class="token string">","</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>slice<span class="token punctuation">)</span><span class="token operator">!=</span><span class="token number">2</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> errors<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">"bad format"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	i<span class="token punctuation">,</span>err<span class="token operator">:=</span>strconv<span class="token punctuation">.</span><span class="token function">ParseInt</span><span class="token punctuation">(</span>slice<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token number">10</span><span class="token punctuation">,</span><span class="token number">64</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err<span class="token operator">!=</span><span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	s<span class="token punctuation">.</span>name <span class="token operator">=</span> slice<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+	s<span class="token punctuation">.</span>age <span class="token operator">=</span> i
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">var</span> dir student
+	flag<span class="token punctuation">.</span><span class="token function">Var</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>dir<span class="token punctuation">,</span><span class="token string">"stu"</span><span class="token punctuation">,</span><span class="token string">"student info"</span><span class="token punctuation">)</span>
+	flag<span class="token punctuation">.</span><span class="token function">Parse</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>dir<span class="token punctuation">.</span>name<span class="token punctuation">,</span><span class="token string">"+++"</span><span class="token punctuation">,</span>dir<span class="token punctuation">.</span>age<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">//用法</span>
+<span class="token comment">//go run example.go -stu wang,21</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="flag格式"><a href="#flag格式" class="headerlink" title="flag格式"></a>flag格式</h3><p>一般形式如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">-flag
+-flag &#x3D; x
+-flag x &#x2F;&#x2F;仅适用于非boolean类型flag<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>其中-和–都是允许的</p>
+<p>flag解析会在遇到第一个非flag参数或单独的–之后停止，例</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	n <span class="token operator">:=</span> flag<span class="token punctuation">.</span><span class="token function">Int</span><span class="token punctuation">(</span><span class="token string">"n"</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token string">"number"</span><span class="token punctuation">)</span>
+	flag<span class="token punctuation">.</span><span class="token function">Parse</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token operator">*</span>n<span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>flag<span class="token punctuation">.</span><span class="token function">NArg</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>下面的命令都会由于提前停止解析得不到所要的值</p>
+<pre class="line-numbers language-none"><code class="language-none">go run example.go 45 -n 1 &#x2F;&#x2F;flag.NArg()会返回3
+go run example.go - -n 1 &#x2F;&#x2F;flag.NArg()会返回3
+go run example.go -- -n 1 &#x2F;&#x2F;flag.NArg()会返回2，--被当做终止符<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+
+<h3 id="其他方法"><a href="#其他方法" class="headerlink" title="其他方法"></a>其他方法</h3><ol>
+<li><p><strong>Arg(i int)string ， Args()[]string ， NArg()int ， NFlag()int</strong></p>
+<p> Arg(i int)返回的是在被flag解析后，第i个剩余的参数，没有的话返回空字符串</p>
+<p> Args()返回的是被flag解析后，剩余参数数组切片</p>
+<p> NArg()返回的是被flag解析后，剩余参数的个数</p>
+<p> NFlag()返回的是接收到的flag参数个数（并不是定义的个数）</p>
+</li>
+</ol>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">n <span class="token operator">:=</span> flag<span class="token punctuation">.</span><span class="token function">Int</span><span class="token punctuation">(</span><span class="token string">"n"</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token string">"number"</span><span class="token punctuation">)</span>
+flag<span class="token punctuation">.</span><span class="token function">Parse</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span>
+
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>flag<span class="token punctuation">.</span><span class="token function">Arg</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment">//输入>go run example.go -n 1 454 555，返回555</span>
+                        <span class="token comment">//输入>go run example.go -n 1 454 ，返回空</span>
+                        
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>flag<span class="token punctuation">.</span><span class="token function">Args</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment">//输入>go run example.go -n 1 454 555，返回[454,555]</span>
+
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>flag<span class="token punctuation">.</span><span class="token function">NArg</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment">//输入>go run example.go -n 1 454 555,返回2</span>
+
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>flag<span class="token punctuation">.</span><span class="token function">NFlag</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment">//输入>go run example.go -n 1 454 555，返回1</span>
+                        <span class="token comment">//输入>go run example.go 454 555，返回0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ol start="2">
+<li><p><strong>flag.Parsed()bool</strong></p>
+<p> 判断参数是否解析过</p>
+</li>
+<li><p><strong>Set(name, value string) error</strong></p>
+<p> 给指定的flag赋值</p>
+</li>
+<li><p><strong>flag.Usage</strong></p>
+<p> 库里已经帮我们自动生成了一套帮助信息，可以使用-h或-help查看，另外我们也可以自己定制，重写Usage例</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">   flag<span class="token punctuation">.</span>Usage <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p> 另外我们也可以看一下源码，原来的帮助信息是怎么生成的</p>
+</li>
+</ol>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">var</span> Usage <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Fprintf</span><span class="token punctuation">(</span>CommandLine<span class="token punctuation">.</span><span class="token function">Output</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"Usage of %s:\n"</span><span class="token punctuation">,</span> os<span class="token punctuation">.</span>Args<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+	<span class="token function">PrintDefaults</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可见，先是打印了os.Args[0]，也就是程序信息，之后调用了PrintDefaults()，打印了所有flag的信息</p>
+<h2 id="urfave-cli"><a href="#urfave-cli" class="headerlink" title="urfave/cli"></a>urfave/cli</h2><p>其实官方给出的flag已能满足大部分要求，如果有更复杂的需要，可以借助这个强大的第三方包<a target="_blank" rel="noopener" href="https://github.com/urfave/cli">urfave/cli</a></p>
+<h3 id="安装与导包"><a href="#安装与导包" class="headerlink" title="安装与导包"></a>安装与导包</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">go get github.com&#x2F;urfave&#x2F;cli<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">import</span> <span class="token punctuation">(</span>
+  <span class="token string">"gopkg.in/urfave/cli.v1"</span>
+<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="简单使用"><a href="#简单使用" class="headerlink" title="简单使用"></a>简单使用</h3><p>该包的github主页有详细的使用说明，这里就不一一赘述了，只简单说一下常用的使用流程</p>
+<ol>
+<li>实例化App对象<pre class="line-numbers language-go" data-language="go"><code class="language-go">app <span class="token operator">:=</span> cli<span class="token punctuation">.</span><span class="token function">NewApp</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+<li>配置App信息<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">//这个包可以配置丰富的App描述信息，如名称，版本号，作者，版权信息，程序简介等</span>
+app<span class="token punctuation">.</span>Name <span class="token operator">=</span> <span class="token string">"HelloWorld"</span>
+app<span class="token punctuation">.</span>Version <span class="token operator">=</span> <span class="token string">"1.0.0"</span>
+app<span class="token punctuation">.</span>Authors <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Author<span class="token punctuation">&#123;</span>
+	cli<span class="token punctuation">.</span>Author<span class="token punctuation">&#123;</span>
+		Name<span class="token punctuation">:</span>  <span class="token string">"Tom"</span><span class="token punctuation">,</span>
+		Email<span class="token punctuation">:</span> <span class="token string">"Tom@example.com"</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span>
+app<span class="token punctuation">.</span>Copyright <span class="token operator">=</span> <span class="token string">"(c) 1999 Serious Enterprise"</span>
+app<span class="token punctuation">.</span>Usage <span class="token operator">=</span> <span class="token string">"greet"</span>
+app<span class="token punctuation">.</span>UsageText <span class="token operator">=</span> <span class="token string">"Example program"</span>
+<span class="token comment">//输入go run example.go -h后显示如下</span>
+<span class="token comment">/*
+NAME:
+   HelloWorld - greet
+
+USAGE:
+   Example program
+
+VERSION:
+   1.0.0
+
+AUTHOR:
+   Tom &lt;Tom@example.com>
+
+COMMANDS:
+     help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h     show help
+   --version, -v  print the version
+
+COPYRIGHT:
+   (c) 1999 Serious Enterprise
+*/</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+<li>定义程序执行逻辑</li>
+</ol>
+<p>这里是指程序运行的逻辑。主要是配置app.Action，例：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">app<span class="token punctuation">.</span>Action <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>c <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"hello world"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token comment">//go run example.go   </span>
+<span class="token comment">//输出hello world</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>当然我们也可以不在这里定义主程序逻辑，在这里定义的一个好处是cli.Context携带了许多有用的上下文环境变量供我们使用，后面可以见到。</p>
+<p>app.Action是执行程序时执行的逻辑，我们也可以定义在程序执行前后所要插入的逻辑，定义app.Before与app.After即可，例</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	app <span class="token operator">:=</span> cli<span class="token punctuation">.</span><span class="token function">NewApp</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	app<span class="token punctuation">.</span>Before <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>context <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"before hello world"</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	app<span class="token punctuation">.</span>Action <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>c <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"hello world"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	app<span class="token punctuation">.</span>After <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>context <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"after hello world"</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	err <span class="token operator">:=</span> app<span class="token punctuation">.</span><span class="token function">Run</span><span class="token punctuation">(</span>os<span class="token punctuation">.</span>Args<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token comment">//执行go run example.go</span>
+<span class="token comment">/* 输出：
+before hello world
+hello world
+after hello world
+*/</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>注意：如果app.Before返回的error不为空，app.Action的内容将不会执行，而不管app.Action与app.Before中是否有错误发生，app.After的内容都会执行，app.After可用于收尾工作。<br>4. 定义flag</p>
+<p>这里的flag概念和上文中go的标准包中flag类似，直接看一个例子：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	app <span class="token operator">:=</span> cli<span class="token punctuation">.</span><span class="token function">NewApp</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	app<span class="token punctuation">.</span>Flags <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Flag<span class="token punctuation">&#123;</span>
+		cli<span class="token punctuation">.</span>StringFlag<span class="token punctuation">&#123;</span>
+			Name<span class="token punctuation">:</span><span class="token string">"path"</span><span class="token punctuation">,</span>
+			Value<span class="token punctuation">:</span><span class="token string">"/home/"</span><span class="token punctuation">,</span>
+			Usage<span class="token punctuation">:</span><span class="token string">"setting path"</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+	app<span class="token punctuation">.</span>Action <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>c <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span><span class="token string">"path"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	err <span class="token operator">:=</span> app<span class="token punctuation">.</span><span class="token function">Run</span><span class="token punctuation">(</span>os<span class="token punctuation">.</span>Args<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"aaa"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token comment">//输入go run example.go -path /home/base</span>
+<span class="token comment">//输出：/home/base</span>
+<span class="token comment">//输入go run example.go</span>
+<span class="token comment">//输出：/home/</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>定义起来很简单，关键几个要素就是Name和Value，取值时使用cli.Context提供的对应取值方法即可。包内预定义了许多种类型的flag，基本涵盖了所有基本类型，详见<a target="_blank" rel="noopener" href="https://godoc.org/github.com/urfave/cli">这里</a></p>
+<p>另外在取值时，除了调用如c.Int(),c.String()之类的方法，还可以在定义flag时直接绑定到某些变量上，如：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">var</span> age <span class="token builtin">int</span>
+cli<span class="token punctuation">.</span>IntFlag<span class="token punctuation">&#123;</span>
+	Name<span class="token punctuation">:</span><span class="token string">"age"</span><span class="token punctuation">,</span>
+	Value<span class="token punctuation">:</span><span class="token number">100</span><span class="token punctuation">,</span>
+	Destination<span class="token punctuation">:</span><span class="token operator">&amp;</span>age<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>另外，还可以配置flag的简写或别名，只需在定义Name时定义多个名称，中间用逗号隔开即可，例：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">cli<span class="token punctuation">.</span>IntFlag<span class="token punctuation">&#123;</span>
+	Name<span class="token punctuation">:</span><span class="token string">"age,a,ege"</span><span class="token punctuation">,</span>
+	Value<span class="token punctuation">:</span><span class="token number">100</span><span class="token punctuation">,</span>
+	Destination<span class="token punctuation">:</span><span class="token operator">&amp;</span>age<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+<span class="token comment">//-age -a -ege 都是有效的</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>配置子命令</li>
+</ol>
+<p>如git push …中push就是一个子命令，这个包为我们提供了便捷定义子命令及其动作的方法</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">app<span class="token punctuation">.</span>Commands <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>cli<span class="token punctuation">.</span>Command<span class="token punctuation">&#123;</span>
+		<span class="token punctuation">&#123;</span>
+			Name<span class="token punctuation">:</span>    <span class="token string">"push"</span><span class="token punctuation">,</span>
+			Aliases<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span><span class="token string">"p"</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+			Usage<span class="token punctuation">:</span>   <span class="token string">"push a file to the server"</span><span class="token punctuation">,</span>
+			Action<span class="token punctuation">:</span> <span class="token keyword">func</span><span class="token punctuation">(</span>c <span class="token operator">*</span>cli<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+				fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"push flie: "</span><span class="token punctuation">,</span> c<span class="token punctuation">.</span><span class="token function">Args</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">First</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment">//c.Args().First()取命令后的第一个参数</span>
+				<span class="token keyword">return</span> <span class="token boolean">nil</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token comment">//执行go run example.go push test.txt</span>
+<span class="token comment">//输出：push flie:  test.txt</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>用法很简单，指定命名名，别名用法，以及相应动作即可。另外子命令可以像它的一个程序一样，有自己flag，Before，After，甚至是自己的子命令，使用Subcommands定义</p>
+<p>注意，如果即定义了app的action，又定义了子命令的action，同一时间只能执行一个，如调用子命令时，app的action就不会执行</p>
+<ol start="6">
+<li>启动程序</li>
+</ol>
+<p>所有配置都配置完成后，就需要启动程序，不然是不会生效的</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">err <span class="token operator">:=</span> app<span class="token punctuation">.</span><span class="token function">Run</span><span class="token punctuation">(</span>os<span class="token punctuation">.</span>Args<span class="token punctuation">)</span>
+<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+	log<span class="token punctuation">.</span><span class="token function">Fatal</span><span class="token punctuation">(</span><span class="token string">"aaa"</span><span class="token punctuation">,</span>err<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>最后给出一个详细例子，这是给出的，基本上涵盖了所有配置要点:<a target="_blank" rel="noopener" href="https://github.com/urfave/cli#full-api-example">例子</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/go/" rel="tag"><i class="fa fa-tag"></i> go</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/12/20/hello-world/" rel="prev" title="Hello World">
+                  <i class="fa fa-chevron-left"></i> Hello World
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/02/21/go-ethereum%E7%BC%96%E8%AF%91%E6%B5%81%E7%A8%8B%E7%AE%80%E5%8D%95%E5%AD%A6%E4%B9%A0/" rel="next" title="go-ethereum编译流程简单学习">
+                  go-ethereum编译流程简单学习 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">AmorFati</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">633k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:36</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
