@@ -22,28 +22,29 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 <meta property="og:type" content="article">
-<meta property="og:title" content="Android源码下载及编译">
-<meta property="og:url" content="http://example.com/2019/06/17/Android%E6%BA%90%E7%A0%81%E4%B8%8B%E8%BD%BD%E5%8F%8A%E7%BC%96%E8%AF%91/index.html">
+<meta property="og:title" content="5月浅思">
+<meta property="og:url" content="http://example.com/2021/11/17/5%E6%9C%88%E6%B5%85%E6%80%9D/index.html">
 <meta property="og:site_name" content="AmorFati">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/brandon-lam-29892-unsplash.jpg">
-<meta property="og:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/aosp1.png">
-<meta property="article:published_time" content="2019-06-17T10:04:50.000Z">
-<meta property="article:modified_time" content="2021-11-17T13:54:30.480Z">
+<meta property="og:image" content="https://raw.githubusercontent.com/1chenyy/blog-pic/master/head/felix-rottmann-y50kCzzgIh8-unsplash.jpg">
+<meta property="article:published_time" content="2021-11-17T10:34:55.000Z">
+<meta property="article:modified_time" content="2022-05-13T19:11:10.670Z">
 <meta property="article:author" content="AmorFati">
-<meta property="article:tag" content="Android">
+<meta property="article:tag" content="博客">
+<meta property="article:tag" content="感悟">
+<meta property="article:tag" content="生活">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/brandon-lam-29892-unsplash.jpg">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/1chenyy/blog-pic/master/head/felix-rottmann-y50kCzzgIh8-unsplash.jpg">
 
 
-<link rel="canonical" href="http://example.com/2019/06/17/Android%E6%BA%90%E7%A0%81%E4%B8%8B%E8%BD%BD%E5%8F%8A%E7%BC%96%E8%AF%91/">
+<link rel="canonical" href="http://example.com/2021/11/17/5%E6%9C%88%E6%B5%85%E6%80%9D/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2019/06/17/Android%E6%BA%90%E7%A0%81%E4%B8%8B%E8%BD%BD%E5%8F%8A%E7%BC%96%E8%AF%91/","path":"2019/06/17/Android源码下载及编译/","title":"Android源码下载及编译"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2021/11/17/5%E6%9C%88%E6%B5%85%E6%80%9D/","path":"2021/11/17/5月浅思/","title":"5月浅思"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Android源码下载及编译 | AmorFati</title>
+<title>5月浅思 | AmorFati</title>
   
 
 
@@ -150,7 +151,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E6%BA%90%E7%A0%81"><span class="nav-number">1.</span> <span class="nav-text">下载源码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E5%B9%B6%E8%A7%A3%E5%8E%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E5%8C%85"><span class="nav-number">1.1.</span> <span class="nav-text">下载并解压初始化包</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BDrepo%E5%B7%A5%E5%85%B7"><span class="nav-number">1.2.</span> <span class="nav-text">下载repo工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E6%BA%90%E7%A0%81"><span class="nav-number">1.3.</span> <span class="nav-text">同步源码</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E6%BA%90%E7%A0%81"><span class="nav-number">2.</span> <span class="nav-text">编译源码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85JDK"><span class="nav-number">2.1.</span> <span class="nav-text">安装JDK</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E5%85%B6%E4%BB%96%E7%A8%8B%E5%BA%8F%E5%8C%85"><span class="nav-number">2.2.</span> <span class="nav-text">安装其他程序包</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91"><span class="nav-number">2.3.</span> <span class="nav-text">编译</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E5%8D%95%E4%B8%AA%E6%A8%A1%E5%9D%97"><span class="nav-number">2.4.</span> <span class="nav-text">编译单个模块</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9B%B4%E5%A4%9A%E4%BF%A1%E6%81%AF"><span class="nav-number">3.</span> <span class="nav-text">更多信息</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%9C%8B%E5%B1%B1%E6%98%AF%E5%B1%B1%EF%BC%8C%E7%9C%8B%E5%B1%B1%E4%B8%8D%E6%98%AF%E5%B1%B1%EF%BC%8C%E7%9C%8B%E5%B1%B1%E4%BB%8D%E6%98%AF%E5%B1%B1"><span class="nav-number">1.</span> <span class="nav-text">看山是山，看山不是山，看山仍是山</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%9F%E6%B4%BB%E7%9A%84%E6%84%8F%E4%B9%891"><span class="nav-number">2.</span> <span class="nav-text">生活的意义1</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%9F%E6%B4%BB%E7%9A%84%E6%84%8F%E4%B9%892"><span class="nav-number">3.</span> <span class="nav-text">生活的意义2</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -227,7 +228,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2019/06/17/Android%E6%BA%90%E7%A0%81%E4%B8%8B%E8%BD%BD%E5%8F%8A%E7%BC%96%E8%AF%91/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/17/5%E6%9C%88%E6%B5%85%E6%80%9D/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/assets/img/icon.jpg">
@@ -240,7 +241,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Android源码下载及编译
+          5月浅思
         </h1>
 
         <div class="post-meta-container">
@@ -251,14 +252,14 @@
       </span>
       <span class="post-meta-item-text">发表于</span>
 
-      <time title="创建时间：2019-06-17 18:04:50" itemprop="dateCreated datePublished" datetime="2019-06-17T18:04:50+08:00">2019-06-17</time>
+      <time title="创建时间：2021-11-17 18:34:55" itemprop="dateCreated datePublished" datetime="2021-11-17T18:34:55+08:00">2021-11-17</time>
     </span>
       <span class="post-meta-item">
         <span class="post-meta-item-icon">
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-11-17 21:54:30" itemprop="dateModified" datetime="2021-11-17T21:54:30+08:00">2021-11-17</time>
+        <time title="修改时间：2022-05-14 03:11:10" itemprop="dateModified" datetime="2022-05-14T03:11:10+08:00">2022-05-14</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -266,7 +267,7 @@
       </span>
       <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Android%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">Android开发笔记</span></a>
+          <a href="/categories/%E9%9A%8F%E7%AC%94/" itemprop="url" rel="index"><span itemprop="name">随笔</span></a>
         </span>
     </span>
 
@@ -277,7 +278,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>1.5k</span>
+      <span>1.3k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -295,43 +296,33 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/brandon-lam-29892-unsplash.jpg"></p>
+        <p><img src="https://raw.githubusercontent.com/1chenyy/blog-pic/master/head/felix-rottmann-y50kCzzgIh8-unsplash.jpg"></p>
 <span id="more"></span>
-<p>首先关于环境要Ubuntu系统，而且尽量版本比较新，我的版本是18.04，而且至少要200G的磁盘空间，在书写本文时，整个源码下载并编译后占用的空间大小如下<br><img src="https://raw.githubusercontent.com/chenyaoyang/blog-pic/master/201906/aosp1.png"></p>
-<h1 id="下载源码"><a href="#下载源码" class="headerlink" title="下载源码"></a>下载源码</h1><p>国内环境推荐使用清华源镜像下载，具体步骤如下：</p>
-<h2 id="下载并解压初始化包"><a href="#下载并解压初始化包" class="headerlink" title="下载并解压初始化包"></a>下载并解压初始化包</h2><pre class="line-numbers language-none"><code class="language-none">wget -c https:&#x2F;&#x2F;mirrors.tuna.tsinghua.edu.cn&#x2F;aosp-monthly&#x2F;aosp-latest.tar
-tar xf aosp-latest.tar<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>虽然是通过清华源服务器下载，但是这个初始化包非常大，在写本文的时候这个包大概有50G大小，中间还会因为网络问题而失败，不过没有关系会断点续传。另外需要注意这是单个50G的文件，确认你的文件系统支持单个这么大的文件。</p>
-<p>注意初始化包有50G，解压完还要50G，所以要确保你的磁盘空间足够大</p>
-<h2 id="下载repo工具"><a href="#下载repo工具" class="headerlink" title="下载repo工具"></a>下载repo工具</h2><p>这里还是使用清华源的镜像</p>
-<pre class="line-numbers language-none"><code class="language-none">mkdir repo
-curl https:&#x2F;&#x2F;mirrors.tuna.tsinghua.edu.cn&#x2F;git&#x2F;git-repo -o repo
-chmod +x repo<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>下载完后将repo目录添加到你的PATH中，以便于在任意目录执行该工具。接着换源，在.bashrc文件中添加下面一行</p>
-<pre class="line-numbers language-none"><code class="language-none">export REPO_URL&#x3D;&#39;https:&#x2F;&#x2F;mirrors.tuna.tsinghua.edu.cn&#x2F;git&#x2F;git-repo&#x2F;&#39;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>记着重启终端或者执行该文件以生效</p>
-<h2 id="同步源码"><a href="#同步源码" class="headerlink" title="同步源码"></a>同步源码</h2><p>刚才解压完aosp-latest.tar之后aosp目录是空的，只要一个隐藏的.repo目录，我们需要在aosp目录下执行下面命令</p>
-<pre class="line-numbers language-none"><code class="language-none">repo sync<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>这个过程也会很久，耐心等待</p>
-<h1 id="编译源码"><a href="#编译源码" class="headerlink" title="编译源码"></a>编译源码</h1><p>上一步是下载源码，如果你只需要查看学习源码那么就已经可以了。如果你还想尝试修改编译源码，就需要接下来步骤</p>
-<h2 id="安装JDK"><a href="#安装JDK" class="headerlink" title="安装JDK"></a>安装JDK</h2><p>需要openjdk8版本及以上，安装如下</p>
-<pre class="line-numbers language-none"><code class="language-none">sudo apt-get update
-sudo apt-get install openjdk-8-jdk<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h2 id="安装其他程序包"><a href="#安装其他程序包" class="headerlink" title="安装其他程序包"></a>安装其他程序包</h2><pre class="line-numbers language-none"><code class="language-none">sudo apt-get install git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev ccache libgl1-mesa-dev libxml2-utils xsltproc unzip<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>减一直接复制过去执行，已安装过的会自动忽略</p>
-<h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><ol>
-<li>首先进入aosp目录 <code>cd aosp</code></li>
-<li>设置环境 <code>source build/envsetup.sh</code></li>
-<li>选择编译目标 <code>lunch aosp_arm-eng</code>。注意直接运行<code>lunch</code>可以显示所有可编译的目标</li>
-<li>开始编译 <code>make -j8</code> -j8是执行编译线程数，根据自己cpu核数合理选择。这个过程非常漫长，我在一个40核的服务器上，指定了20个线程编译了快4个小时</li>
-<li>启动模拟器 <code>emulator</code> 。注意如果重启终端的话还要执行2、3步之后才能启动模拟器</li>
-</ol>
-<h2 id="编译单个模块"><a href="#编译单个模块" class="headerlink" title="编译单个模块"></a>编译单个模块</h2><p>在初始化环境（执行编译的2、3步骤）后，使用mmm命令，如编译Music</p>
-<pre class="line-numbers language-none"><code class="language-none">mmm packages&#x2F;apps&#x2F;Music<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>使用<code>hmm</code>或者查看build/envsetup.sh文件可以查阅更多相关命令说明</p>
-<h1 id="更多信息"><a href="#更多信息" class="headerlink" title="更多信息"></a>更多信息</h1><p>更多其他信息请参考：<a target="_blank" rel="noopener" href="https://source.android.google.cn/setup">Android源码官网</a></p>
+<p>现在是2022年5月14日，凌晨2点26。五一节前连着上了15天班，节后到今天又连着上了9天，这个周末终于能休息了。可是今晚却辗转反侧的睡不着。睡不着就看点东西，想点东西吧。</p>
+<p>翻了一遍朋友圈和qq空间，过往回忆又被拾起，有叹息、有欢笑，总体来说回味起来还是很有意思的。</p>
+<p>最近发生了一件不大的大事，可能会是影响一生的，也许吧，谁知道呢，走一步看一步吧。</p>
+<p>抛开这些琐事，浅思一下最近的日子。</p>
+<p>转眼间研究生快毕业一年了，大学也毕业6年了。感觉自己真正充实也就是从大学毕业开始，中间高潮与低谷不断交替，总体来说，这些年每一步都是自己决定的，每一刻都是有意义的。</p>
+<p>最近没了考试压力，突然间有种放空的感觉，不管怎样都不想虚度光阴，这些天一直在思索这个问题。</p>
+<h1 id="看山是山，看山不是山，看山仍是山"><a href="#看山是山，看山不是山，看山仍是山" class="headerlink" title="看山是山，看山不是山，看山仍是山"></a>看山是山，看山不是山，看山仍是山</h1><p>这是宋代禅宗大师青原行思提出的参禅三重境界。这句话是最近看到的，被其中的哲理触动了。</p>
+<p>佛家讲究入世和出世，于尘世间例会佛理真谛。从垂髫小儿到耄耋老者，人生就是这三重境界。</p>
+<p>第一重，涉世之初，满怀着对世界的好奇和新鲜，山就是山，水就是水，固执的详细见到的就是最真实的。</p>
+<p>第二重，红尘中有太多的诱惑，虚伪的面具后有太多潜规则，雾里看花，似真似幻，如真还假，山不是山，水不是水，突然间我们就在现实中迷失，有人自此沉沦在迷失的世界里，山不再是山，水也不再是水。</p>
+<p>第三重，终于，我们能洞察世事，返璞归真，不断的反省，对世事的追求有了清晰的认识，“世事一场大梦，人生几度秋凉”，知道自己追求什么，放弃什么，这时山还是山，水还是水，只不过已有真正的内涵了。</p>
+<p>人本是人，不必刻意去做人。世本是世，无须精心去处世</p>
+<p>人生，最宝贵的是自己的时间，不要去费劲心思的挣额外苦力钱，要想在怎么增加自己的认识，提升自己的能力，创造自己的价值。</p>
+<h1 id="生活的意义1"><a href="#生活的意义1" class="headerlink" title="生活的意义1"></a>生活的意义1</h1><p>没有俊秀的外表，没有挥霍的资本，我们只是普普通通的人。在人前安静，独立，不喜主动搭讪或请求帮助，也很少表现自己。和别人说话很温柔，难过的事自己扛。听歌听一晚，醒来又是新的一天，无数个夜里，无聊的看星星月亮升起又落下，仅此循环</p>
+<p>二十几年的平淡日子里，即没有成为自己的月亮，也惊艳不了谁的岁月</p>
+<p>我脚下的影子从来不试着像谁，对美好生活的向往就是人生的意义。</p>
+<p>去海边看一场日落，去草原骑一匹骏马，到边远的乡村旅行，去写写故乡的云和月。</p>
+<p>生活就是由许多碎片拼成，用最细腻的情感，体验那些包裹在烟火里的琐碎，就会收到新的温暖与感动。不快乐的时候只是我们把重心放错了地方，不必在一件事上停留太久。</p>
+<p>生活原本苦闷，但跑起来就会生风。</p>
+<h1 id="生活的意义2"><a href="#生活的意义2" class="headerlink" title="生活的意义2"></a>生活的意义2</h1><p>给自己活着吧，每个人生命的意义都是内化于心的。天地明媚给你的喜悦才是真的喜悦，花凋月暝给你的悲伤才是真的悲伤。</p>
+<p>人生的意义，在于眼所见，耳所闻，手所触，足所及，把这些汇聚在一起，最后心有所悟，形成一段只属于你个人的代码，回向宇宙万物，跨越生死之间。</p>
+<p>蹉跎半生，始终没有活出自己，只不过是心里都是旁人一张嘴罢了。</p>
+<p>2022年5月14日，凌晨3点8分，睡觉去~</p>
 <blockquote>
-<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/Dd_7xDCuuUo">https://unsplash.com/photos/Dd_7xDCuuUo</a></p>
+<p>题图来自unsplash：<a target="_blank" rel="noopener" href="https://unsplash.com/photos/y50kCzzgIh8">https://unsplash.com/photos/y50kCzzgIh8</a></p>
 </blockquote>
 
     </div>
@@ -342,20 +333,22 @@ sudo apt-get install openjdk-8-jdk<span aria-hidden="true" class="line-numbers-r
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Android/" rel="tag"><i class="fa fa-tag"></i> Android</a>
+              <a href="/tags/%E5%8D%9A%E5%AE%A2/" rel="tag"><i class="fa fa-tag"></i> 博客</a>
+              <a href="/tags/%E6%84%9F%E6%82%9F/" rel="tag"><i class="fa fa-tag"></i> 感悟</a>
+              <a href="/tags/%E7%94%9F%E6%B4%BB/" rel="tag"><i class="fa fa-tag"></i> 生活</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2019/06/10/go-ethereum%E4%B8%ADminer%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="prev" title="go-ethereum中miner源码分析">
-                  <i class="fa fa-chevron-left"></i> go-ethereum中miner源码分析
+                <a href="/2019/06/17/golang%E5%8F%8D%E5%B0%84%E6%80%BB%E7%BB%93/" rel="prev" title="golang反射总结">
+                  <i class="fa fa-chevron-left"></i> golang反射总结
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2019/06/17/golang%E6%96%87%E4%BB%B6IO%E6%93%8D%E4%BD%9C%E6%80%BB%E7%BB%93/" rel="next" title="golang文件IO操作总结">
-                  golang文件IO操作总结 <i class="fa fa-chevron-right"></i>
+                <a href="/2021/11/17/%E5%9B%9E%E5%BD%92/" rel="next" title="回归">
+                  回归 <i class="fa fa-chevron-right"></i>
                 </a>
             </div>
           </div>
